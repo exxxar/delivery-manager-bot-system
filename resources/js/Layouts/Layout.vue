@@ -22,7 +22,7 @@ import GlobalAlert from "@/Components/GlobalAlert.vue";
 
                 <button class="btn btn-link rounded-0 border-0 p-1" type="button"
                         data-bs-toggle="offcanvas" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu">
-                    <span class="navbar-toggler-icon"></span>
+                    <i class="fa-solid fa-bars"></i>
                 </button>
             </div>
         </div>
