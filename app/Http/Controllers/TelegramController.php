@@ -109,7 +109,7 @@ class TelegramController extends Controller
         $keyboard = [
             [
                 ["text" => "💎Войти в систему", "web_app" => [
-                    "url" => env("APP_URL") . "/bot#/"]
+                    "url" => env("APP_URL") . "/bot#/admins"]
                 ],
             ],
         ];
