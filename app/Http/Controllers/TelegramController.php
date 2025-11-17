@@ -93,14 +93,16 @@ class TelegramController extends Controller
                     [
                         [
                             "text" => "\xF0\x9F\x8D\x80Написать в тех. поддержку",
-                            "web_app" => [
-                                "url" => env("APP_URL") . "/bot#/about"
-                            ]
+                            "url" => "https://t.me/EgorShipilov"
                         ],
                     ],
 
                 ]
             );
+    }
+
+    public function helpCommand(...$data) {
+        BotManager::bot()->reply("Как пользоваться ботом");
     }
 
 
