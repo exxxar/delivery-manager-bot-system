@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PHPUnit\Exception;
 
-use Spatie\FlareClient\Api;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 
 
