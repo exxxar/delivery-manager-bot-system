@@ -18,10 +18,10 @@ export interface User {
 const path: string = '/bot-api/users'
 
 
-
 export const useUsersStore = defineStore('users', {
     state: () => ({
         items: [] as User[],
+        self: null,
         loading: false,
         error: null as string | null,
     }),
@@ -29,6 +29,19 @@ export const useUsersStore = defineStore('users', {
         byId: (s) => (id: number) => s.items.find(u => u.id === id),
     },
     actions: {
+        async fetchSelf() {
+            this.loading = true
+            this.error = null
+            try {
+                const {data} = await makeAxiosFactory(`${path}/self`, 'POST')
+                this.self = data
+            } catch (e: any) {
+                this.error = e?.message || 'Failed to load agents'
+            } finally {
+                this.loading = false
+            }
+            return true
+        },
         // @ts-ignore
         async fetchFiltered(page = 1) {
             this.loading = true
@@ -51,7 +64,7 @@ export const useUsersStore = defineStore('users', {
                 // пагинация
                 params.append('page', String(page))
 
-                const { data } = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
+                const {data} = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
                 this.items = data.data
                 this.pagination = data
             } catch (error: any) {
@@ -66,7 +79,7 @@ export const useUsersStore = defineStore('users', {
         },
 
         setSort(field: string, direction: 'asc' | 'desc') {
-            this.sort = { field, direction }
+            this.sort = {field, direction}
         },
         // @ts-ignore
         async fetchAll() {
@@ -84,17 +97,16 @@ export const useUsersStore = defineStore('users', {
         },
         // @ts-ignore
         async fetchAllByPage(page = 1) {
-            const { data } = await makeAxiosFactory(`${path}/?page=${page}`, 'GET')
+            const {data} = await makeAxiosFactory(`${path}/?page=${page}`, 'GET')
             this.items = data.data
             this.pagination = data
         },
         // @ts-ignore
         async fetchByUrl(url: string) {
-            const { data } = await makeAxiosFactory(url, 'GET')
+            const {data} = await makeAxiosFactory(url, 'GET')
             this.items = data.data
             this.pagination = data
         },
-
 
 
         async fetchOne(id: number) {

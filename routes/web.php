@@ -207,6 +207,9 @@ require __DIR__ . '/auth.php';
 Route::prefix("bot-api")
     ->middleware(["tg.auth"])
     ->group(function () {
+
+
+
         Route::prefix('forms')
             ->middleware(["tg.role:user"])
             ->group(function () {
@@ -341,6 +344,8 @@ Route::prefix("bot-api")
                 Route::post('/download-personal-report', [AdminController::class, 'downloadPersonalReport']);
                 // Получить конкретную продажу по ID
             });
+
+        Route::post('/users/self', [\App\Http\Controllers\TelegramController::class, "getSelf"]);
 
         Route::prefix('users')
             ->middleware(["tg.role:super"])

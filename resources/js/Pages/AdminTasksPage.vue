@@ -9,11 +9,19 @@ import SaleList from "@/Components/Sales/SaleList.vue";
     </div>
 </template>
 <script>
+import {useUsersStore} from "@/stores/users";
+
+
 export default {
     name: 'TaskView',
+    data(){
+        return {
+            userStore: useUsersStore()
+        }
+    },
     computed:{
         user(){
-            return window.botUser
+            return this.userStore.self || null
         },
     }
 }

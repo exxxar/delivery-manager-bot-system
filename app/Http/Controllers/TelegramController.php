@@ -13,6 +13,18 @@ use Telegram\Bot\FileUpload\InputFile;
 
 class TelegramController extends Controller
 {
+    public function getSelf(Request $request)
+    {
+        if (env("APP_DEBUG")) {
+            $user = User::query()->first();
+            $user->role = RoleEnum::SUPERADMIN->value;
+        } else
+            $user = User::query()
+                ->find($request->botUser->id);
+
+        return response()->json($user);
+    }
+
     public function registerWebhooks(Request $request)
     {
         return response()->json(BotManager::bot()->setWebhook());
@@ -90,22 +102,21 @@ class TelegramController extends Controller
     public function homePage(Request $request)
     {
 
-        if (env("APP_DEBUG")) {
+       /* if (env("APP_DEBUG")) {
             $user = User::query()->first();
             $user->role = RoleEnum::SUPERADMIN->value;
         } else
             $user = BotManager::bot()->currentBotUser();
 
         if (is_null($user))
-            throw new HttpException(404, "Ошибочка");
+            throw new HttpException(404, "Ошибочка");*/
 
         Inertia::setRootView("bot");
-        return Inertia::render('Main', [
-            "botUser" => $user
-        ]);
+        return Inertia::render('Main');
     }
 
-    public function startCommand(){
+    public function startCommand()
+    {
 
         $keyboard = [
             [

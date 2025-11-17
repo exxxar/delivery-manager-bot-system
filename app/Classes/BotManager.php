@@ -31,7 +31,6 @@ class BotManager extends BotCore
     public function currentBotUser()
     {
         return $this->botUser ?? null;
-        // throw new \Error("error!");
     }
 
     protected function createUser($from)
