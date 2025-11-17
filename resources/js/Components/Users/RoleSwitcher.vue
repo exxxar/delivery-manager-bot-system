@@ -36,7 +36,7 @@ export default {
     data() {
         return {
             userStore: useUsersStore(),
-            selectedRole: this.userStore.self.role || 0,
+            selectedRole: useUsersStore().self.role || 0,
             roles: {
                 0: 'Пользователь',
                 1: 'Агент',
