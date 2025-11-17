@@ -29,6 +29,9 @@ export const useUsersStore = defineStore('users', {
         byId: (s) => (id: number) => s.items.find(u => u.id === id),
     },
     actions: {
+        setRole(role) {
+            this.self.role = role
+        },
         async fetchSelf() {
             this.loading = true
             this.error = null

@@ -28,11 +28,15 @@
 </template>
 
 <script>
+
+import {useUsersStore} from "@/stores/users";
+
 export default {
     name: 'RoleSwitcher',
     data() {
         return {
-            selectedRole: window.botUser?.role ?? 0,
+            userStore: useUsersStore(),
+            selectedRole: this.userStore.self.role || 0,
             roles: {
                 0: 'Пользователь',
                 1: 'Агент',
@@ -44,15 +48,15 @@ export default {
     },
     computed: {
         baseRoleLabel() {
-            return this.roles[window.botUser?.base_role ?? 0]
+            return this.roles[this.userStore.self.base_role ?? 0]
         },
         roleLabel() {
-            return this.roles[window.botUser?.role ?? 0]
+            return this.roles[this.userStore.self.role ?? 0]
         }
     },
     methods: {
         changeRole() {
-            window.botUser.role = this.selectedRole
+            this.userStore.setRole(this.selectedRole)
             this.$emit('role-changed', this.selectedRole)
         }
     }

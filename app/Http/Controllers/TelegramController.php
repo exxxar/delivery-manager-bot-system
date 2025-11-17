@@ -18,9 +18,14 @@ class TelegramController extends Controller
         if (env("APP_DEBUG")) {
             $user = User::query()->first();
             $user->role = RoleEnum::SUPERADMIN->value;
-        } else
+            $user->base_role = RoleEnum::SUPERADMIN->value;
+        } else {
             $user = User::query()
                 ->find($request->botUser->id);
+
+            $user->base_role = $user->role;
+        }
+
 
         return response()->json($user);
     }
@@ -102,14 +107,14 @@ class TelegramController extends Controller
     public function homePage(Request $request)
     {
 
-       /* if (env("APP_DEBUG")) {
-            $user = User::query()->first();
-            $user->role = RoleEnum::SUPERADMIN->value;
-        } else
-            $user = BotManager::bot()->currentBotUser();
+        /* if (env("APP_DEBUG")) {
+             $user = User::query()->first();
+             $user->role = RoleEnum::SUPERADMIN->value;
+         } else
+             $user = BotManager::bot()->currentBotUser();
 
-        if (is_null($user))
-            throw new HttpException(404, "Ошибочка");*/
+         if (is_null($user))
+             throw new HttpException(404, "Ошибочка");*/
 
         Inertia::setRootView("bot");
         return Inertia::render('Main');
