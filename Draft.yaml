@@ -1,0 +1,79 @@
+models:
+  Supplier:
+    name: string
+    address: string nullable
+    phone: string
+    birthday: date nullable
+    email: string nullable
+    hasMany: Product
+
+  ProductCategory:
+    name: string
+    description: longtext
+    hasMany: Product
+
+  Product:
+    name: string
+    description: text
+    price: decimal:8,2
+    count: integer
+    supplier_id: id foreign:suppliers
+    product_category_id: id foreign:product_categories
+    belongsTo: Supplier, ProductCategory
+
+  Agent:
+    user_id: id foreign:users
+    name: string
+    phone: string
+    email: string
+    region: string
+    percents: json nullable
+    hasMany: DeliveryTask
+
+  DeliveryTask:
+    title: string
+    description: text
+    status: enum:pending,assigned,completed
+    due_date: date
+    agent_id: id foreign:agents
+    product_id: id foreign:products
+    belongsTo: Agent, Product
+
+  Customer:
+    name: string
+    company_name: string
+    address: string
+    phone: string
+    email: string
+    hasMany: Sale
+
+  Sale:
+    sale_date: date
+    quantity: integer
+    total_price: decimal:10,2
+    product_id: id foreign:products
+    agent_id: id foreign:agents
+    customer_id: id foreign:customers
+    belongsTo: Product, Agent, Customer
+
+controllers:
+  Supplier:
+    resource
+
+  ProductCategory:
+    resource
+
+  Product:
+    resource
+
+  Representative:
+    resource
+
+  DeliveryTask:
+    resource
+
+  Customer:
+    resource
+
+  Sale:
+   resource

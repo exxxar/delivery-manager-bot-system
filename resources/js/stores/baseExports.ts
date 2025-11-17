@@ -1,0 +1,62 @@
+import { defineStore } from 'pinia'
+import { makeAxiosFactory } from './utillites/makeAxiosFactory'
+import { useAlertStore } from './utillites/useAlertStore'
+
+const path: string = '/bot-api/exports'
+
+export const useBaseExports = defineStore('exports', {
+    state: () => ({
+        loading: false as boolean,
+        error: null as string | null,
+        successMessage: null as string | null,
+        exportData: null as any
+    }),
+    actions: {
+        async exportAgents() {
+            return this._exportHelper(`${path}/agents`, 'Агенты выгружены')
+        },
+        async exportAdmins() {
+            return this._exportHelper(`${path}/admins`, 'Администраторы выгружены')
+        },
+        async exportUsers() {
+            return this._exportHelper(`${path}/users`, 'Пользователи выгружены')
+        },
+        async exportProducts() {
+            return this._exportHelper(`${path}/products`, 'Продукты выгружены')
+        },
+        async exportCategories() {
+            return this._exportHelper(`${path}/categories`, 'Категории продуктов выгружены')
+        },
+        async exportClients() {
+            return this._exportHelper(`${path}/clients`, 'Покупатели выгружены')
+        },
+        async exportSuppliers() {
+            return this._exportHelper(`${path}/suppliers`, 'Поставщики выгружены')
+        },
+        async exportSalesHistory() {
+            return this._exportHelper(`${path}/sales-history`, 'История продаж выгружена')
+        },
+
+        // 🔹 универсальный хелпер
+        async _exportHelper(url: string, successMsg: string) {
+
+            const alertStore = useAlertStore()
+
+            this.loading = true
+            this.error = null
+            try {
+                const { data } = await makeAxiosFactory(url, 'GET')
+                this.successMessage = successMsg
+                this.exportData = data
+                alertStore.show( this.successMessage,"success")
+                return data
+            } catch (error: any) {
+                this.error = error.response?.data?.message ?? 'Ошибка выгрузки'
+                alertStore.show( this.error,"error")
+                throw error
+            } finally {
+                this.loading = false
+            }
+        }
+    }
+})

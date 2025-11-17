@@ -1,0 +1,88 @@
+created:
+    - app/Http/Controllers/SupplierController.php
+    - app/Http/Controllers/ProductCategoryController.php
+    - app/Http/Controllers/ProductController.php
+    - app/Http/Controllers/RepresentativeController.php
+    - app/Http/Controllers/DeliveryTaskController.php
+    - app/Http/Controllers/CustomerController.php
+    - app/Http/Controllers/SaleController.php
+    - database/factories/SupplierFactory.php
+    - database/factories/ProductCategoryFactory.php
+    - database/factories/ProductFactory.php
+    - database/factories/AgentFactory.php
+    - database/factories/DeliveryTaskFactory.php
+    - database/factories/CustomerFactory.php
+    - database/factories/SaleFactory.php
+    - database/migrations/2025_11_08_184205_create_suppliers_table.php
+    - database/migrations/2025_11_08_184206_create_product_categories_table.php
+    - database/migrations/2025_11_08_184207_create_products_table.php
+    - database/migrations/2025_11_08_184208_create_agents_table.php
+    - database/migrations/2025_11_08_184209_create_delivery_tasks_table.php
+    - database/migrations/2025_11_08_184210_create_customers_table.php
+    - database/migrations/2025_11_08_184211_create_sales_table.php
+    - app/Models/Supplier.php
+    - app/Models/ProductCategory.php
+    - app/Models/Product.php
+    - app/Models/Agent.php
+    - app/Models/DeliveryTask.php
+    - app/Models/Customer.php
+    - app/Models/Sale.php
+    - tests/Feature/Http/Controllers/SupplierControllerTest.php
+    - tests/Feature/Http/Controllers/ProductCategoryControllerTest.php
+    - tests/Feature/Http/Controllers/ProductControllerTest.php
+    - tests/Feature/Http/Controllers/RepresentativeControllerTest.php
+    - tests/Feature/Http/Controllers/DeliveryTaskControllerTest.php
+    - tests/Feature/Http/Controllers/CustomerControllerTest.php
+    - tests/Feature/Http/Controllers/SaleControllerTest.php
+    - app/Http/Requests/SupplierStoreRequest.php
+    - app/Http/Requests/SupplierUpdateRequest.php
+    - app/Http/Requests/ProductCategoryStoreRequest.php
+    - app/Http/Requests/ProductCategoryUpdateRequest.php
+    - app/Http/Requests/ProductStoreRequest.php
+    - app/Http/Requests/ProductUpdateRequest.php
+    - app/Http/Requests/RepresentativeStoreRequest.php
+    - app/Http/Requests/RepresentativeUpdateRequest.php
+    - app/Http/Requests/DeliveryTaskStoreRequest.php
+    - app/Http/Requests/DeliveryTaskUpdateRequest.php
+    - app/Http/Requests/CustomerStoreRequest.php
+    - app/Http/Requests/CustomerUpdateRequest.php
+    - app/Http/Requests/SaleStoreRequest.php
+    - app/Http/Requests/SaleUpdateRequest.php
+    - resources/views/supplier/index.blade.php
+    - resources/views/supplier/create.blade.php
+    - resources/views/supplier/show.blade.php
+    - resources/views/supplier/edit.blade.php
+    - resources/views/productCategory/index.blade.php
+    - resources/views/productCategory/create.blade.php
+    - resources/views/productCategory/show.blade.php
+    - resources/views/productCategory/edit.blade.php
+    - resources/views/product/index.blade.php
+    - resources/views/product/create.blade.php
+    - resources/views/product/show.blade.php
+    - resources/views/product/edit.blade.php
+    - resources/views/representative/index.blade.php
+    - resources/views/representative/create.blade.php
+    - resources/views/representative/show.blade.php
+    - resources/views/representative/edit.blade.php
+    - resources/views/deliveryTask/index.blade.php
+    - resources/views/deliveryTask/create.blade.php
+    - resources/views/deliveryTask/show.blade.php
+    - resources/views/deliveryTask/edit.blade.php
+    - resources/views/customer/index.blade.php
+    - resources/views/customer/create.blade.php
+    - resources/views/customer/show.blade.php
+    - resources/views/customer/edit.blade.php
+    - resources/views/sale/index.blade.php
+    - resources/views/sale/create.blade.php
+    - resources/views/sale/show.blade.php
+    - resources/views/sale/edit.blade.php
+updated:
+    - routes/web.php
+models:
+    Supplier: { name: string, address: 'string nullable', phone: string, birthday: 'date nullable', email: 'string nullable', hasMany: Product }
+    ProductCategory: { name: string, description: longtext, hasMany: Product }
+    Product: { name: string, description: text, price: 'decimal:8,2', count: integer, supplier_id: 'id foreign:suppliers', product_category_id: 'id foreign:product_categories', belongsTo: 'Supplier, ProductCategory' }
+    Agent: { user_id: 'id foreign:users', name: string, phone: string, email: string, region: string, percents: 'json nullable', hasMany: DeliveryTask }
+    DeliveryTask: { title: string, description: text, status: 'enum:pending,assigned,completed', due_date: date, agent_id: 'id foreign:agents', product_id: 'id foreign:products', belongsTo: 'Agent, Product' }
+    Customer: { name: string, company_name: string, address: string, phone: string, email: string, hasMany: Sale }
+    Sale: { sale_date: date, quantity: integer, total_price: 'decimal:10,2', product_id: 'id foreign:products', agent_id: 'id foreign:agents', customer_id: 'id foreign:customers', belongsTo: 'Product, Agent, Customer' }
