@@ -550,17 +550,16 @@ abstract class BotCore
 
         $channel = env('TELEGRAM_ADMIN_CHANNEL');
         if (!is_null($channel)) {
-            $botDomain = $this->getSelf()->bot_domain;
+            $botDomain = env("TELEGRAM_BOT_DOMAIN");
             $link = "https://t.me/$botDomain?start=" . base64_encode("003" . $this->currentBotUser()->telegram_chat_id);
 
-            $thread = $this->getSelf()->topics["response"] ?? null;
 
             if (strlen($channel) > 6 && str_starts_with($channel, "-")) {
 
                 $result = $this->addMessageToJson("chat-history-" . $this->currentBotUser()->telegram_chat_id, [
-                    "bot_id" => $this->getSelf()->id,
+                    "bot_id" => $botDomain,
                     "channel" => $channel,
-                    "thread" => $thread,
+                    //"thread" => $thread,
                     "link" => $link,
                     "user" => [
                         "name" => $name,
