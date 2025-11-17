@@ -42,6 +42,7 @@ Route::get("/test-bot", function () {
 
 Route::any('/register-webhook', [\App\Http\Controllers\TelegramController::class, "registerWebhooks"]);
 Route::post('/webhook', [\App\Http\Controllers\TelegramController::class, "handler"]);
+Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePage"]);
 
 Route::get("/test-2", function () {
 
@@ -370,4 +371,4 @@ Route::prefix("bot-api")
     });
 
 
-Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePage"]);
+

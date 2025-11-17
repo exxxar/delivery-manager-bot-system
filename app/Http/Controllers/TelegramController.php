@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
 use App\Facades\BotManager;
+use App\Facades\BotMethods;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -93,7 +94,7 @@ class TelegramController extends Controller
             $user = User::query()->first();
             $user->role = RoleEnum::SUPERADMIN->value;
         } else
-            $user = $request->botUser ?? null;
+            $user = BotManager::bot()->currentBotUser();
 
         if (is_null($user))
             throw new HttpException(404, "Ошибочка");
