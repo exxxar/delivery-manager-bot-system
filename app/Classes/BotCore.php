@@ -21,6 +21,8 @@ use Telegram\Bot\FileUpload\InputFile;
 
 abstract class BotCore
 {
+    protected $bot;
+
     protected $controller = null;
 
     protected $chatId;
@@ -91,9 +93,9 @@ abstract class BotCore
 
                 $this->chatId = $data["inline_query"]["from"]["id"] ?? null;*/
 
-    /*    InlineQueryService::inline()
-            ->setBot($this->getSelf())
-            ->handler($inlineData);*/
+        /*    InlineQueryService::inline()
+                ->setBot($this->getSelf())
+                ->handler($inlineData);*/
 
         //  $this->tryCall($this->inline, $query, null, $id, $offset);
     }
@@ -297,7 +299,6 @@ abstract class BotCore
     }
 
 
-
     public function successfulPaymentHandler($data)
     {
         $totalAmount = $data->total_amount;
@@ -356,12 +357,12 @@ abstract class BotCore
         }
         try {
             if (isset($update["pre_checkout_query"])) {
-               // $this->preCheckoutQueryHandler($item->pre_checkout_query);
+                // $this->preCheckoutQueryHandler($item->pre_checkout_query);
                 return;
             }
 
             if (isset($update["shipping_query"])) {
-              //  $this->shippingQueryHandler($item->shipping_query);
+                //  $this->shippingQueryHandler($item->shipping_query);
                 return;
             }
         } catch (\Exception $e) {
