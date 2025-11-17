@@ -183,7 +183,7 @@ Route::get("/test", function () {
 });
 
 Route::get('/', function () {
-    return Inertia::render('Default.Welcome', [
+    return Inertia::render('Default/Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
@@ -192,7 +192,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    return Inertia::render('Default/Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
