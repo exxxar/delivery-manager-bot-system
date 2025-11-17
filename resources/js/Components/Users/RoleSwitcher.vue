@@ -1,7 +1,7 @@
 <template>
 
 
-        <div class="form-floating w-100">
+        <div class="form-floating my-2 w-100">
 
             <select
                 id="roleSelect"
