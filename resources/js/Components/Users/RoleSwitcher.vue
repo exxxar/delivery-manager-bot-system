@@ -1,6 +1,6 @@
 <template>
 
-    <div class="container">
+
         <div class="form-floating w-100">
 
             <select
@@ -23,7 +23,7 @@
         <p class="mt-2" v-if="roleLabel!==baseRoleLabel">
             Базовая роль роль: <strong>{{ baseRoleLabel }}</strong>
         </p>
-    </div>
+
 
 </template>
 

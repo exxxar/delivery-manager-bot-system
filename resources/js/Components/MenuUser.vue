@@ -6,14 +6,14 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 </script>
 
 <template>
-    <div class="container py-3">
+
         <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
             <button type="button" data-bs-toggle="modal" data-bs-target="#adminJobModal" class="btn btn-outline-primary p-3">Стать администратором</button>
             <button type="button" data-bs-toggle="modal" data-bs-target="#agentJobModal" class="btn btn-outline-primary p-3">Стать торговым представителем</button>
             <button type="button" data-bs-toggle="modal" data-bs-target="#supplierJobModal" class="btn btn-outline-primary p-3">Стать поставщиком</button>
             <button type="button" data-bs-toggle="modal" data-bs-target="#clientJobModal" class="btn btn-outline-primary p-3">Стать клиентом (сотрудничество)</button>
         </div>
-    </div>
+
 
     <!-- Модалка: Администратор -->
     <div class="modal fade" id="adminJobModal" tabindex="-1">

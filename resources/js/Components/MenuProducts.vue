@@ -1,5 +1,5 @@
 <template>
-    <div class="container py-3">
+
         <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
             <button type="button"
                     @click="selectMenu('products')"
@@ -12,7 +12,7 @@
             <button
                 type="button" class="btn btn-outline-primary p-3">Загрузить прайс с товарами и категориями</button>
         </div>
-    </div>
+
 
 </template>
 <script>

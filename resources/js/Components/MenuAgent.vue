@@ -2,7 +2,7 @@
 import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </script>
 <template>
-    <div class="container py-3">
+
         <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
             <button type="button"
                     @click="goTo('AgentTaskPage')"
@@ -11,7 +11,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                     data-bs-toggle="modal" :data-bs-target="'#reportModal'"
                     class="btn btn-outline-primary p-3">Сформировать отчет</button>
         </div>
-    </div>
+
 
     <!-- Модалка -->
     <div class="modal fade" :id="'reportModal'" tabindex="-1">

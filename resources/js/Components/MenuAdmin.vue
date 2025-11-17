@@ -4,7 +4,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 import CreateAgentTaskForm from "@/Components/Sales/Forms/CreateAgentTaskForm.vue";
 </script>
 <template>
-    <div class="container py-3">
+
     <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню действий">
         <button type="button"
                 @click="goTo('SalePage')"
@@ -22,7 +22,7 @@ import CreateAgentTaskForm from "@/Components/Sales/Forms/CreateAgentTaskForm.vu
                 @click="goTo('SupplierPage')"
                 class="btn btn-outline-primary p-3">Список поставщиков</button>
     </div>
-</div>
+
 
     <!-- Модалка -->
     <div class="modal fade" :id="'agentTaskModal'" tabindex="-1">

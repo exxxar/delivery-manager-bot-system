@@ -2,7 +2,7 @@
 import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </script>
 <template>
-    <div class="container py-3">
+
         <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню отчетов">
 
             <!-- Кнопка вызова модалки -->
@@ -38,7 +38,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                 @click="goTo('ExcelExportPage')"
                 class="btn btn-outline-success p-3 w-100">Выгрузка данных в эксель</button>
 
-    </div>
+
 
     <!-- Модалка -->
     <div class="modal fade" :id="'reportModal'" tabindex="-1">
