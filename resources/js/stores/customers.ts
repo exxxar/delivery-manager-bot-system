@@ -27,7 +27,7 @@ export const useCustomersStore = defineStore('customers', {
         async fetchAll() {
             this.loading = true; this.error = null
             try {
-                const { data } = await makeAxiosFactory('/api/customers')
+                const { data } = await makeAxiosFactory(`${path}`, 'GET')
                 this.items = data
             } catch (e: any) {
                 this.error = e?.message || 'Failed to load customers'
@@ -37,7 +37,7 @@ export const useCustomersStore = defineStore('customers', {
         },
         // @ts-ignore
         async fetchAllByPage(page = 1) {
-            const { data } = await makeAxiosFactory(`${path}/?page=${page}`, 'GET')
+            const { data } = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
             this.items = data.data
             this.pagination = data
         },

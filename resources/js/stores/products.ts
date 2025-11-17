@@ -38,7 +38,7 @@ export const useProductsStore = defineStore('products', {
         },
         // @ts-ignore
         async fetchAllByPage(page = 1) {
-            const { data } = await makeAxiosFactory(`${path}/?page=${page}`, 'GET')
+            const { data } = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
             this.items = data.data
             this.pagination = data
         },

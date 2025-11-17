@@ -30,7 +30,7 @@ export const useAdminsStore = defineStore('admins', {
     actions: {
         // @ts-ignore
         async fetchAdminsByPage(page = 1) {
-            const {data} = await makeAxiosFactory(`${path}/?page=${page}`, 'GET')
+            const {data} = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
             this.items = data.data
             this.pagination = data
         },
