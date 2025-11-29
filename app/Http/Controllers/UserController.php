@@ -149,7 +149,7 @@ class UserController extends Controller
 
         \App\Facades\BotMethods::bot()->sendMessage(
             $user->telegram_chat_id,
-            "Вам была изменена роль в систем с $oldRoleName на $newRoleName</b>"
+            "Вам была изменена роль в системе с $oldRoleName на $newRoleName"
         );
 
         return response()->json($user);
