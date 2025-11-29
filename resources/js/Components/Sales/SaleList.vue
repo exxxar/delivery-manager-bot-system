@@ -79,7 +79,7 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
                 @click="addSale"
                 type="button"
                 class="btn btn-primary w-100 p-3">
-               Добавить продажу
+                Добавить продажу
             </button>
         </div>
     </nav>
@@ -224,7 +224,7 @@ export default {
         }
     },
     computed: {
-        user(){
+        user() {
             return this.userStore.self || null
         },
         filteredSales() {
@@ -238,7 +238,11 @@ export default {
             product_id: this.productId || null,
             supplier_id: this.supplierId || null,
         })
-        this.salesStore.selfSalesFiltered()
+
+        if (this.user.role >= 3)
+            this.salesStore.fetchFiltered()
+        else
+            this.salesStore.selfSalesFiltered()
     },
     methods: {
         async fetchData(page = 1) {
