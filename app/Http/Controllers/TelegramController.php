@@ -24,7 +24,7 @@ class TelegramController extends Controller
             $user = User::query()
                 ->find($request->botUser->id);
             $user->base_role = $user->role;
-            Log::info("ENV DEBUG FALSE", print_r($user->toArray(),true));
+            Log::info("ENV DEBUG FALSE". print_r($user->toArray(),true));
         }
 
 
