@@ -72,6 +72,7 @@ class User extends Authenticatable
             'Агент',
             'Поставщик',
             'Администратор',
+            'Суперадмин',
         ];
 
         Log::info("roles".print_r($roles,true ));
