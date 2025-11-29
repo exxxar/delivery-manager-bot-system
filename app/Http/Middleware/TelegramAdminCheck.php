@@ -39,8 +39,12 @@ class TelegramAdminCheck
 
             return $next($request);
         }
+
+        Log::info("TelegramAdminCheck");
         $headerTgDataEncrypted = $request->header("X-Tg-Data") ?? null;
         $tgData = $request->tgData;
+
+        Log::info("TelegramAdminCheck tgData".print_r($tgData, true));
 
         if (!is_null($headerTgDataEncrypted))
             $tgData = base64_decode($headerTgDataEncrypted);

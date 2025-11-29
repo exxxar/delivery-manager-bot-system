@@ -37,9 +37,11 @@ class TelegramAuthCheck
             $request->botUser = $botUser;
             return $next($request);
         }
-
+        Log::info("TelegramAuthCheck");
         $headerTgDataEncrypted = $request->header("X-Tg-Data") ?? null;
         $tgData = $request->tgData ?? null;
+
+        Log::info("TelegramAuthCheck tgData".print_r($tgData, true));
 
         if (!is_null($headerTgDataEncrypted))
             $tgData = base64_decode($headerTgDataEncrypted);

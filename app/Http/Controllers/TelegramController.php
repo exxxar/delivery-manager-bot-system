@@ -7,6 +7,7 @@ use App\Facades\BotManager;
 use App\Facades\BotMethods;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Telegram\Bot\FileUpload\InputFile;
@@ -22,8 +23,8 @@ class TelegramController extends Controller
         } else {
             $user = User::query()
                 ->find($request->botUser->id);
-
             $user->base_role = $user->role;
+            Log::info("ENV DEBUG FALSE", print_r($user->toArray(),true));
         }
 
 
