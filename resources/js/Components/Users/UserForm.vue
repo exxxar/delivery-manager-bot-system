@@ -28,6 +28,7 @@
                 <option :value="1">Агент</option>
                 <option :value="2">Поставщик</option>
                 <option :value="3">Администратор</option>
+                <option :value="4">Суперадмин</option>
             </select>
             <label for="role">Роль</label>
         </div>

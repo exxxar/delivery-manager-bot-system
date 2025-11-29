@@ -124,7 +124,7 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Редактирование пользователя</h5>
+                    <h5 class="modal-title">Редактирование роли</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -137,6 +137,7 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                                 <option :value="1">Агент</option>
                                 <option :value="2">Поставщик</option>
                                 <option :value="3">Администратор</option>
+                                <option :value="4">Суперадмин</option>
                             </select>
                             <label for="role">Роль</label>
                         </div>
