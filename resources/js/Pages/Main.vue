@@ -3,13 +3,20 @@ import Layout from "@/Layouts/Layout.vue";
 
 </script>
 <template>
-    <Layout>
+    <Layout v-if="!userStore.self?.blocked_at">
         <template #default>
 
             <router-view/>
 
         </template>
     </Layout>
+
+    <div class="container py-3" v-else>
+        <p class="alert alert-light text-center" >
+            Доступ ограничен
+        </p>
+    </div>
+
 </template>
 
 <script>
@@ -43,6 +50,9 @@ export default {
     methods: {
         open(url) {
             this.tg.openLink(url)
+        },
+        goTo(name) {
+            this.$router.push({name: name})
         },
     }
 

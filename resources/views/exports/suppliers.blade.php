@@ -12,15 +12,13 @@
     <thead>
     <tr>
         <th style="font-weight: bold; ">ID</th>
-        <th style="font-weight: bold; ">Название</th>
-        <th style="font-weight: bold; ">Описание</th>
-        <th style="font-weight: bold; ">Адрес</th>
-        <th style="font-weight: bold; ">Телефон</th>
+        <th style="font-weight: bold;width:300px; ">Название</th>
+        <th style="font-weight: bold;width:250px; ">Описание</th>
+        <th style="font-weight: bold;width:300px; ">Адрес</th>
+        <th style="font-weight: bold;width:150px; ">Телефон</th>
         <th style="font-weight: bold; ">Процент, %</th>
-        <th style="font-weight: bold; ">День рождения</th>
-        <th style="font-weight: bold; ">Электронная почта</th>
-        <th style="font-weight: bold; ">Создано</th>
-        <th style="font-weight: bold; ">Обновлено</th>
+        <th style="font-weight: bold;width:150px; ">День рождения</th>
+        <th style="font-weight: bold;width:250px; ">Электронная почта</th>
     </tr>
     </thead>
     <tbody>
@@ -34,8 +32,7 @@
             <td>{{ $supplier->percent *100}}</td>
             <td>{{ $supplier->birthday ? \Carbon\Carbon::parse($supplier->birthday )->format('d.m.Y'): '' }}</td>
             <td>{{ $supplier->email }}</td>
-            <td>{{ $supplier->created_at }}</td>
-            <td>{{ $supplier->updated_at }}</td>
+
 
         </tr>
     @endforeach

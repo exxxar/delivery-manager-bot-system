@@ -43,6 +43,29 @@ export const useSalesStore = defineStore('sales', {
                 this.loading = false
             }
         },
+        async selfSalesFiltered(page = 1) {
+            const params = new URLSearchParams()
+
+            // фильтры
+            // @ts-ignore
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    params.append(key, String(value))
+                }
+            })
+
+            // сортировка
+            params.append('sort_field', this.sort.field)
+            params.append('sort_direction', this.sort.direction)
+
+            // пагинация
+            params.append('page', String(page))
+
+            const { data } = await makeAxiosFactory(`${path}/self-sales?${params.toString()}`, 'GET')
+            this.items = data.data
+            this.pagination = data
+            return true
+        },
         async fetchFiltered(page = 1) {
             const params = new URLSearchParams()
 

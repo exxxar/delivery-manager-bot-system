@@ -2,6 +2,7 @@
 
 import {Head} from '@inertiajs/vue3'
 import GlobalAlert from "@/Components/GlobalAlert.vue";
+import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
 </script>
 <template>
 
@@ -29,6 +30,7 @@ import GlobalAlert from "@/Components/GlobalAlert.vue";
     </header>
 
     <GlobalAlert></GlobalAlert>
+    <GlobalConfirmModal></GlobalConfirmModal>
     <slot/>
 
 

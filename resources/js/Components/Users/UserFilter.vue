@@ -8,12 +8,14 @@
             <!-- Dropdown сортировки -->
             <div class="dropdown d-inline-block ms-2">
                 <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Сортировка: {{ sort.field }} ({{ sort.direction }})
+                    {{ sortableFields[sort.field].slice(0, 17) }}
+                    <span v-if="sortableFields[sort.field].length>17">...</span>
+                    ({{ sort.direction }})
                 </button>
                 <ul class="dropdown-menu">
-                    <li v-for="field in sortableFields" :key="field">
+                    <li v-for="(name, field ) in sortableFields" :key="field">
                         <a class="dropdown-item" @click="changeSort(field)">
-                            {{ field }}
+                            {{ name }}
                         </a>
                     </li>
                 </ul>
@@ -33,25 +35,28 @@
                         <div class="modal-body">
                             <!-- Имя -->
                             <div class="form-floating mb-2">
-                                <input v-model="filters.name" class="form-control" id="nameInput" placeholder="Имя" />
+                                <input v-model="filters.name" class="form-control" id="nameInput" placeholder="Имя"/>
                                 <label for="nameInput">Имя</label>
                             </div>
 
                             <!-- ФИО из Telegram -->
                             <div class="form-floating mb-2">
-                                <input v-model="filters.fio_from_telegram" class="form-control" id="fioInput" placeholder="ФИО из Telegram" />
+                                <input v-model="filters.fio_from_telegram" class="form-control" id="fioInput"
+                                       placeholder="ФИО из Telegram"/>
                                 <label for="fioInput">ФИО из Telegram</label>
                             </div>
 
                             <!-- Email -->
                             <div class="form-floating mb-2">
-                                <input v-model="filters.email" class="form-control" id="emailInput" placeholder="Email" />
+                                <input v-model="filters.email" class="form-control" id="emailInput"
+                                       placeholder="Email"/>
                                 <label for="emailInput">Email</label>
                             </div>
 
                             <!-- Telegram chat id -->
                             <div class="form-floating mb-2">
-                                <input v-model="filters.telegram_chat_id" class="form-control" id="tgInput" placeholder="Telegram chat id" />
+                                <input v-model="filters.telegram_chat_id" class="form-control" id="tgInput"
+                                       placeholder="Telegram chat id"/>
                                 <label for="tgInput">Telegram chat id</label>
                             </div>
 
@@ -70,26 +75,44 @@
 
                             <!-- Процент -->
                             <div class="form-floating mb-2">
-                                <input type="number" v-model="filters.percent" class="form-control" id="percentInput" placeholder="Процент" />
+                                <input type="number" v-model="filters.percent" class="form-control" id="percentInput"
+                                       placeholder="Процент"/>
                                 <label for="percentInput">Процент</label>
                             </div>
 
                             <!-- Работает -->
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="isWorkCheck" v-model="filters.is_work" />
+                                <input class="form-check-input" type="checkbox" id="isWorkCheck"
+                                       v-model="filters.is_work"/>
                                 <label class="form-check-label" for="isWorkCheck">Работает</label>
                             </div>
 
                             <!-- Верификация email -->
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="verifiedCheck" v-model="filters.email_verified" />
+                                <input class="form-check-input" type="checkbox" id="verifiedCheck"
+                                       v-model="filters.email_verified"/>
                                 <label class="form-check-label" for="verifiedCheck">Email подтверждён</label>
                             </div>
 
                             <!-- Заблокирован -->
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="blockedCheck" v-model="filters.blocked" />
+                                <input class="form-check-input" type="checkbox" id="blockedCheck"
+                                       v-model="filters.blocked"/>
                                 <label class="form-check-label" for="blockedCheck">Заблокирован</label>
+                            </div>
+
+                            <h6>Отображаемые поля</h6>
+                            <div v-for="(label, field) in sortableFields" :key="field"
+                                 class="form-check form-switch mb-2">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    v-model="field_visible[field]"
+                                    :id="`switch-${field}`"
+                                />
+                                <label class="form-check-label" :for="`switch-${field}`">
+                                    {{ label }}
+                                </label>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -107,6 +130,7 @@ export default {
     name: 'UserFilter',
     data() {
         return {
+            field_visible: [],
             filters: {
                 name: '',
                 fio_from_telegram: '',
@@ -122,19 +146,27 @@ export default {
                 field: 'id',
                 direction: 'asc'
             },
-            sortableFields: [
-                'id',
-                'name',
-                'fio_from_telegram',
-                'email',
-                'telegram_chat_id',
-                'role',
-                'percent',
-                'is_work',
-                'email_verified_at',
-                'blocked_at',
-                'created_at'
-            ]
+            sortableFields: {
+                id: "№",
+                name: "Имя",
+                fio_from_telegram: "ФИО из Telegram",
+                email: "Электронная почта",
+                telegram_chat_id: "ID чата Telegram",
+                role: "Роль",
+                percent: "Процент",
+                is_work: "Работает(да\\нет)",
+                email_verified_at: "Дата подтверждения email",
+                blocked_at: "Дата блокировки",
+                created_at: "Дата создания",
+                updated_at: "Дата обновления данных"
+            }
+
+        }
+    },
+    created() {
+        let tmpVisibleFields = [ 'name', 'email']
+        for (const field in this.sortableFields) {
+            this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
         }
     },
     methods: {
@@ -158,11 +190,14 @@ export default {
         applyFilters() {
             const payload = {
                 filters: this.filters,
-                sort: this.sort
+                sort: this.sort,
+                field_visible: this.field_visible
             }
+
             this.$emit('apply-filters', payload)
             bootstrap.Modal.getInstance(document.getElementById('userFilterModal')).hide()
         }
     }
 }
 </script>
+

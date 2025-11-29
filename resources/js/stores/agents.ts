@@ -48,6 +48,7 @@ export const useAgentsStore = defineStore('agents', {
             this.items = data.data
             this.pagination = data
         },
+
         async fetchOne(id: number) {
             try {
                 const {data} = await makeAxiosFactory(`${path}/${id}`, 'GET')
@@ -58,13 +59,13 @@ export const useAgentsStore = defineStore('agents', {
             }
         },
 
-        async create(payload: Omit<Agent, 'id'>) {
+        async create(payload: object) {
             const {data} = await makeAxiosFactory(`${path}`, 'POST', payload)
             this.items.push(data)
             return data as Agent
         },
 
-        async update(id: number, payload: Partial<Agent>) {
+        async update(id: number, payload: object) {
             const {data} = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)
             const idx = this.items.findIndex(a => a.id === id)
             if (idx !== -1) this.items[idx] = data

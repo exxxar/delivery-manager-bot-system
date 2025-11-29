@@ -25,8 +25,19 @@
             <label for="endDate">Дата окончания периода</label>
         </div>
 
+        <div class="form-check form-switch ">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                v-model="need_more_options"
+                :id="'need_more_options'"
+            />
+            <label class="form-check-label" :for="`need_more_options`">
+                Дополнительные параметры отчета
+            </label>
+        </div>
 
-        <template v-if="!isSimple">
+        <template v-if="!isSimple&&need_more_options">
 
             <!-- Тип отчёта -->
             <div class="form-floating mb-2">
@@ -84,6 +95,7 @@ export default {
     props: ["type", "isSimple"],
     data() {
         return {
+            need_more_options: false,
             adminsStore: useAdminsStore(),
             report: {
 

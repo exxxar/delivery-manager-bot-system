@@ -53,7 +53,8 @@
         </div>
 
         <!-- Категории товаров -->
-        <div class="form-floating mb-2">
+
+        <div class="form-floating">
             <input
                 type="text"
                 class="form-control"
@@ -61,8 +62,9 @@
                 v-model="form.categories"
                 placeholder="Категории товаров"
             />
-            <label for="categoriesInput">Категории товаров (например: продукты, техника)</label>
+            <label for="categoriesInput">Категории товаров </label>
         </div>
+        <p class="small fst-italic  mb-2">(например: продукты, техника)</p>
 
         <!-- Описание товаров -->
         <div class="form-floating mb-2">

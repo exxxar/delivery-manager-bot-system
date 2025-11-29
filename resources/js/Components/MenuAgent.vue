@@ -31,7 +31,14 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 
 </template>
 <script>
+import {useBaseExports} from "@/stores/baseExports";
+
 export default {
+    data(){
+        return {
+            reportStore:useBaseExports()
+        }
+    },
     methods:{
         goTo(name) {
             this.$router.push({ name: name})
@@ -41,8 +48,9 @@ export default {
 
             const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'))
             modal.hide()
-            console.log('Отчёт сформирован:', payload)
-            // тут можно вызвать API или Pinia store
+
+
+            this.reportStore.exportFull(payload)
         }
     }
 }

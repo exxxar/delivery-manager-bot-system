@@ -64,7 +64,7 @@
                 min="0"
                 required
             />
-            <label for="salaryInput">Зарплатные ожидания (₽)</label>
+            <label for="salaryInput">Зарплатные ожидания (₽\мес)</label>
         </div>
 
         <!-- Опыт работы -->

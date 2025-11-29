@@ -27,6 +27,10 @@ class CheckRole
             abort(403, 'Нет доступа');
         }
 
+        if (!is_null($user->blocked_at)) {
+            abort(403, 'Нет доступа');
+        }
+
         $userRole = $user->role;
 
         // если роль пользователя выше или равна требуемой

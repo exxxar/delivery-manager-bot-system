@@ -6,6 +6,7 @@ use App\Models\Agent;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Supplier;
+use App\Models\User;
 use Carbon\Carbon;
 
 class BusinessLogic
@@ -15,7 +16,8 @@ class BusinessLogic
         return $this;
     }
 
-    public function truncateTitle($title, $maxLength = 30) {
+    public function truncateTitle($title, $maxLength = 30)
+    {
         if (mb_strlen($title) > $maxLength) {
             return mb_substr($title, 0, $maxLength) . '…';
         }
@@ -27,7 +29,7 @@ class BusinessLogic
 
         // Получаем заказы за интересующий период
         $orders = Sale::with('supplier')
-            ->where("status","completed")
+            ->where("status", "completed")
             ->whereNotNull('sale_date') // исключаем заказы без даты продажи
             ->orderBy('sale_date')
             ->get();
@@ -61,7 +63,7 @@ class BusinessLogic
             }
 
             if (is_null($results[$supplier][$month] ?? null))
-                $results[$supplier][$month]  = 0;
+                $results[$supplier][$month] = 0;
 
             // Обновляем доходы по этому поставщику и месяцу
             $results[$supplier][$month] += $order->total_price;
@@ -130,6 +132,99 @@ class BusinessLogic
         return $finalResult;
     }
 
+    public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate)
+    {
+
+
+        // Общая сумма продаж
+        $totalSales = Sale::query()
+            ->where("agent_id", $agent->id)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->sum('total_price');
+
+        // Налог и переводы
+        $taxPercent = env('TAX_PERCENT', 8); // %
+        $transferPercent = env('TRANSFER_PERCENT', 8); // %
+
+        $taxAmount = $totalSales * ($taxPercent / 100);
+        $afterTax = $totalSales - $taxAmount;
+
+        $transferFromTotal = $totalSales * ($transferPercent / 100);
+        $transferFromAfterTax = $afterTax * ($transferPercent / 100);
+        $revenueTotal = 0;
+        $revenueWithoutTaxTotal = 0;
+
+        // --- 1. Продажи по датам и поставщикам ---
+        $salesByDateSupplier = Sale::query()
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->where("agent_id", $agent->id)
+            ->orderBy('sale_date')
+            ->with('supplier')
+            ->get()
+            ->map(function ($sale) use ($taxPercent, &$revenueTotal, &$revenueWithoutTaxTotal) {
+                $percent = $sale->supplier->percent ?? 0;
+                $revenueLocal = $sale->total_price * ($percent / 1);
+                $taxAmount = $revenueLocal * ($taxPercent / 100);
+                $revenueAfterTax = $revenueLocal - $taxAmount;
+
+                $revenueTotal += $revenueLocal;
+                $revenueWithoutTaxTotal += $revenueAfterTax;
+                return [
+                    'date' => $sale->sale_date,
+                    'supplier_id' => $sale->supplier_id,
+                    'supplier_name' => $sale->supplier->name ?? 'Unknown',
+                    'sale_amount' => $sale->total_price,
+                    'percent' => $percent,
+                    'revenue_total' => $revenueLocal,
+                    'revenue_after_tax' => $revenueAfterTax,
+                ];
+            });
+
+
+        // --- 2. Доход админов ---
+        $adminsRevenue = User::query()
+            ->where('is_work', true)
+            ->get()
+            ->map(function ($user) use ($revenueTotal, $revenueWithoutTaxTotal) {
+                $incomeTotal = $revenueTotal * ($user->percent / 100);
+                $incomeAfterTax = $revenueWithoutTaxTotal * ($user->percent / 100);
+
+                return [
+                    'admin_id' => $user->id,
+                    'admin_name' => $user->name,
+                    'percent' => $user->percent,
+                    'income_total' => $incomeTotal,
+                    'income_after_tax' => $incomeAfterTax,
+                ];
+            });
+
+        $agentPercent = env("AGENT_PERCENT", 5);
+        return [
+            'agent' => [
+                "id" => $agent->id,
+                "name" => $agent->name,
+                "salary" => $afterTax * ($agentPercent / 100)
+            ],
+            'period' => [
+                'start' => $startDate,
+                'end' => $endDate,
+            ],
+            'summary' => [
+                'total_sales' => $totalSales,
+                'tax_percent' => $taxPercent,
+                'tax_amount' => $taxAmount,
+                'after_tax' => $afterTax,
+                'transfer_percent' => $transferPercent,
+                'transfer_from_total' => $transferFromTotal,
+                'transfer_from_after_tax' => $transferFromAfterTax,
+                'revenue_total' => $revenueTotal,
+                'revenue_without_tax_total' => $revenueWithoutTaxTotal,
+            ],
+            'sales_by_date_supplier' => $salesByDateSupplier,
+            'admins' => $adminsRevenue,
+        ];
+    }
+
     public function getMonthlySalesSummaryForAllAgentsByCurrentSupplier($supplier, $fromDate, $toDate): array
     {
 
@@ -166,7 +261,6 @@ class BusinessLogic
                     ->get();
 
 
-
                 // Формируем объект сделки
                 $saleObject = [
                     'price' => $salesDetails->sum('total_price'),
@@ -180,7 +274,6 @@ class BusinessLogic
 
             // Суммируем продажи за день
             $totalDailySales = array_sum(array_column($day, 'price'));
-
 
 
             $dayName = $daysOfWeek[Carbon::parse($currentDate)->englishDayOfWeek];
@@ -201,14 +294,15 @@ class BusinessLogic
         return [
             "id" => $supplier->id,
             "title" => $supplier->name,
-            'agents'=>$agents,
+            'agents' => $agents,
             "total_sum" => array_sum(array_column($supplierReport, 'total')),
             "period" => $supplierReport,
         ];
 
     }
 
-    public function getPersonalAgentSales(int $agentId, $fromDate = null, $toDate = null){
+    public function getPersonalAgentSales(int $agentId, $fromDate = null, $toDate = null)
+    {
 
         $fromDate = $fromDate ?: Carbon::now(); // начальная дата
         $toDate = $toDate ?: Carbon::now()->addMonth();
@@ -216,7 +310,7 @@ class BusinessLogic
         // Получаем все продажи агента за указанный период
         $sales = Sale::with('supplier')
             ->where('agent_id', $agentId)
-            ->where("status","completed")
+            ->where("status", "completed")
             ->whereBetween('sale_date', [$fromDate, $toDate])
             ->get();
 
@@ -233,7 +327,7 @@ class BusinessLogic
                 'supplier_name' => $supplier->name,               // название поставщика
                 'total_price' => $sale->total_price,              // сумма продажи
                 'percent' => $supplier->percent,              // процент с продажи
-                'commission' => $supplier->percent * $sale->total_price , // выручка (комиссия)
+                'commission' => $supplier->percent * $sale->total_price, // выручка (комиссия)
             ];
         }
 
@@ -243,7 +337,7 @@ class BusinessLogic
     public function getSalesGroupedByStatus(int $createdById, string $dateFrom, string $dateTo): array
     {
         // выборка по created_by_id и периоду
-        $query = Sale::where('created_by_id', $createdById)
+        $query = Sale::query()->where('created_by_id', $createdById)
             ->whereBetween('due_date', [
                 Carbon::parse($dateFrom)->startOfDay(),
                 Carbon::parse($dateTo)->endOfDay()
@@ -252,14 +346,15 @@ class BusinessLogic
 
         $sales = $query->get();
 
+
         // формируем массив групп
         $result = [
-            'all'       => [],
-            'pending'   => [],
-            'assigned'  => [],
+            'all' => [],
+            'pending' => [],
+            'assigned' => [],
             'delivered' => [],
             'completed' => [],
-            'rejected'  => [],
+            'rejected' => [],
         ];
 
         foreach ($sales as $sale) {
@@ -273,7 +368,8 @@ class BusinessLogic
         return $result;
     }
 
-    public function getProducts(){
+    public function getProducts()
+    {
         $products = Product::query()
             ->with('category', 'supplier')
             ->get();
@@ -281,7 +377,8 @@ class BusinessLogic
         return $products;
     }
 
-    public function getSuppliers(){
+    public function getSuppliers()
+    {
         $suppliers = Supplier::query()
             ->get();
 

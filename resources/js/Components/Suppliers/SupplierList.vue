@@ -17,14 +17,16 @@ import Pagination from "@/Components/Pagination.vue";
             v-for="supplier in filteredSuppliers" :key="supplier.id"
             class="list-group-item d-flex justify-content-between align-items-start">
             <div class="ms-2 me-auto">
-                <div class="fw-bold">{{ supplier.name }}</div>
+                <div class="fw-bold">{{ supplier.name }}
+                    <span class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
+                </div>
                 <small class="text-muted">
                     Телефон: {{ supplier.phone }}<br>
                     Email: {{ supplier.email }}<br>
                     Адрес: {{ supplier.address }}
                 </small>
             </div>
-            <span class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
+
         </li>
     </ul>
 

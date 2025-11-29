@@ -39,9 +39,9 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 
             <!-- Dropdown -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                <button class="btn btn-sm" type="button"
                         data-bs-toggle="dropdown">
-                    Действия
+                    <i class="fas fa-bars"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a></li>
@@ -59,9 +59,44 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
     </ul>
 
     <Pagination
+        v-if="salesStore.items.length > 0"
         :pagination="salesStore.pagination"
         @page-changed="fetchDataByUrl"
     />
+
+
+    <!-- Сообщение если список пуст -->
+    <div v-if="salesStore.items.length === 0" class="alert alert-info mt-3">
+        На текущий момент у вас нет продаж.
+    </div>
+
+
+    <nav
+        v-if="user.agent"
+        class="navbar bg-transparent position-fixed bottom-0 start-0 w-100">
+        <div class="container-fluid">
+            <button
+                @click="addSale"
+                type="button"
+                class="btn btn-primary w-100 p-3">
+               Добавить продажу
+            </button>
+        </div>
+    </nav>
+
+    <!-- Модалка редактирования -->
+    <div class="modal fade" id="newSaleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Создание задания</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <SaleForm @saved="fetchData"/>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSaleModal" tabindex="-1">
@@ -71,7 +106,7 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <SaleForm v-if="selectedSale" :initialData="selectedSale" @saved="fetchSales"/>
+                    <SaleForm v-if="selectedSale" :initialData="selectedSale" @saved="fetchData"/>
                 </div>
             </div>
         </div>
@@ -160,6 +195,8 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 import axios from 'axios'
 
 import {useSalesStore} from '@/stores/sales'
+import {useAgentsStore} from "@/stores/agents";
+import {useUsersStore} from "@/stores/users";
 
 export default {
     name: 'SaleList',
@@ -168,7 +205,9 @@ export default {
         return {
             sales: [],
             search: '',
+            userStore: useUsersStore(),
             salesStore: useSalesStore(),
+            agentStore: useAgentsStore(),
             selectedSale: null,
             saleStatuses: {
                 pending: "В ожидании",
@@ -185,6 +224,9 @@ export default {
         }
     },
     computed: {
+        user(){
+            return this.userStore.self || null
+        },
         filteredSales() {
             return this.salesStore.items.filter(s => s.title.toLowerCase().includes(this.search.toLowerCase()))
         }
@@ -196,7 +238,7 @@ export default {
             product_id: this.productId || null,
             supplier_id: this.supplierId || null,
         })
-        this.salesStore.fetchFiltered()
+        this.salesStore.selfSalesFiltered()
     },
     methods: {
         async fetchData(page = 1) {
@@ -204,6 +246,9 @@ export default {
         },
         async fetchDataByUrl(url) {
             await this.salesStore.fetchByUrl(url)
+        },
+        addSale() {
+            new bootstrap.Modal(document.getElementById('newSaleModal')).show()
         },
         openEdit(sale) {
             this.selectedSale = sale

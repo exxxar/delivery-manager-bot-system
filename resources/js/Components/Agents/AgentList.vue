@@ -26,9 +26,9 @@ import Pagination from "@/Components/Pagination.vue";
 
             <!-- Dropdown кнопка -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                <button class="btn btn-sm" type="button"
                         data-bs-toggle="dropdown">
-                    Действия
+                    <i class="fas fa-bars"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <template v-if="forSelect">

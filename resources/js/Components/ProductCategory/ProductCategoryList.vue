@@ -20,12 +20,9 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 
                 <!-- Dropdown меню -->
                 <div class="dropdown">
-                    <button
-                        class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                    >
-                        Действия
+                    <button class="btn btn-sm" type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="fas fa-bars"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>

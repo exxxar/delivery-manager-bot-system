@@ -12,10 +12,16 @@ import ExcelExportPage from '../Pages/ExcelExportPage.vue'
 // @ts-ignore
 import SalePage from '../Pages/SalePage.vue'
 import AdminTasksPage from '../Pages/AdminTasksPage.vue'
-import AgentTasksPage from '../Pages/AgentTasksPage.vue'
+import AgentTaskPage from '../Pages/AgentTaskPage.vue'
 import ProductCategoryPage from '../Pages/ProductCategoryPage.vue'
+import BlockedPage from '../Pages/BlockedPage.vue'
 
 const routes = [
+    {
+        path: '/blocked',
+        name: 'BlockedPage',
+        component: BlockedPage,
+    },
     {
         path: '/',
         name: 'MenuPage',
@@ -39,8 +45,8 @@ const routes = [
     },
     {
         path: '/agent-tasks',
-        name: 'AgentTasksPage',
-        component: AgentTasksPage,
+        name: 'AgentTaskPage',
+        component: AgentTaskPage,
     },
     {
         path: '/agents',

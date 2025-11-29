@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -52,6 +53,58 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_work' => 'boolean',
         'password' => 'hashed',
     ];
+
+    protected $with = ['agent'];
+
+    public function getUserTelegramLink(): string
+    {
+        return "\n<a href='tg://user?id=" . $this->telegram_chat_id . "'>Перейти к чату с пользователем</a>";
+    }
+
+    public function getRoleName(): string
+    {
+        $roles = [
+            0 => 'Пользователь',
+            1 => 'Агент',
+            2 => 'Поставщик',
+            3 => 'Администратор',
+        ];
+
+        return $roles[$this->role] ?? 'Неизвестная роль';
+    }
+
+    public function toTelegramText(): string
+    {
+        $fields = [
+            'Имя' => $this->name,
+            'Email' => $this->email,
+            'ФИО из Telegram' => $this->fio_from_telegram,
+            'ID чата Telegram' => $this->telegram_chat_id,
+            'Роль' => $this->getRoleName(),
+            'Процент' => $this->percent,
+            'Работает' => $this->is_work ? 'Да' : 'Нет',
+            'Email подтверждён' => $this->email_verified_at,
+            'Дата блокировки' => $this->blocked_at ?? 'не заблокирован',
+            'Сообщение блокировки' => $this->blocked_message,
+            'Создан' => $this->created_at,
+            'Обновлён' => $this->updated_at,
+        ];
+
+        $text = "";
+        foreach ($fields as $label => $value) {
+            if (!empty($value)) {
+                $text .= "{$label}: {$value}\n";
+            }
+        }
+
+        return trim($text);
+    }
+
+    public function agent(): HasOne
+    {
+        return $this->hasOne(Agent::class, 'user_id', 'id');
+    }
 }

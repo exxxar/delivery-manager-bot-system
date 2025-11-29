@@ -128,21 +128,30 @@ export const useUsersStore = defineStore('users', {
             return data as User
         },
 
-        async update(id: number, payload: Partial<User>) {
+        async update(id: number, payload: object) {
             const {data} = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)
             const idx = this.items.findIndex(u => u.id === id)
             if (idx !== -1) this.items[idx] = data
             return data as User
         },
-// @ts-ignore
+        // @ts-ignore
         async remove(id: number) {
+            console.log("REMOVE", id)
             await makeAxiosFactory(`${path}/${id}`, 'DELETE')
             this.items = this.items.filter(u => u.id !== id)
         },
+        // @ts-ignore
+        async getTelegramLink(id: number) {
+            await makeAxiosFactory(`${path}/${id}/tg`, 'GET')
+            this.items = this.items.filter(u => u.id !== id)
+        },
+
 
         // 🔹 Дополнительные экшены
         async updateRole(id: number, role: number) {
-            const {data} = await makeAxiosFactory(`${path}/${id}/role`, 'PATCH', {role})
+            const {data} = await makeAxiosFactory(`${path}/${id}/role`, 'POST', {
+                role: role
+            })
             const idx = this.items.findIndex(u => u.id === id)
             if (idx !== -1) this.items[idx] = data
             return data as User
@@ -156,7 +165,9 @@ export const useUsersStore = defineStore('users', {
         },
 
         async updateWorkStatus(id: number, is_work: boolean) {
-            const {data} = await makeAxiosFactory(`${path}/${id}/work-status`, 'PATCH', {is_work})
+            const {data} = await makeAxiosFactory(`${path}/${id}/work-status`, 'POST', {
+                is_work:is_work
+            })
             const idx = this.items.findIndex(u => u.id === id)
             if (idx !== -1) this.items[idx] = data
             return data as User

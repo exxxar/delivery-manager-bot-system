@@ -45,14 +45,25 @@ class BotManager extends BotCore
             ->first();
 
         if (is_null($this->botUser)) {
+
+            $username = $username ?? $telegram_chat_id ?? "unknown";
+
             $this->botUser = User::query()->create([
                 'email' => "$telegram_chat_id@" . env('APP_URL'),
-                'name' => $username ?? $telegram_chat_id ?? "unknown",
+                'name' => $username,
                 'password' => bcrypt($telegram_chat_id),
                 'role_id' => RoleEnum::USER->value,
                 'telegram_chat_id' => $telegram_chat_id,
                 'fio_from_telegram' => "$first_name $last_name" ?? null,
             ]);
+            $tmpUserLink = "\n<a href='tg://user?id=".$this->botUser->telegram_chat_id."'>Перейти к чату с пользователем</a>";
+
+
+            $this->sendMessage(
+               env("TELEGRAM_ADMIN_CHANNEL"),
+               "Создан новый пользователь <b>$username</b>\n$tmpUserLink"
+            );
+
         } else {
             $this->botUser->updated_at = Carbon::now();
             $this->botUser->save();

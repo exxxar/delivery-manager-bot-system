@@ -12,14 +12,13 @@
     <thead>
     <tr>
         <th style="font-weight: bold;">ID</th>
-        <th style="font-weight: bold;">Название</th>
-        <th style="font-weight: bold;">Описание</th>
-        <th style="font-weight: bold;">Цена</th>
-        <th style="font-weight: bold;">Количество</th>
-        <th style="font-weight: bold;">Поставщик</th>
-        <th style="font-weight: bold;">Категория</th>
-        <th style="font-weight: bold;">Создано</th>
-        <th style="font-weight: bold;">Обновлено</th>
+        <th style="font-weight: bold;width:150px;">Название</th>
+        <th style="font-weight: bold;width:350px;">Описание</th>
+        <th style="font-weight: bold;width:150px;">Цена</th>
+        <th style="font-weight: bold;width:150px;">Количество</th>
+        <th style="font-weight: bold;width:250px;">Поставщик</th>
+        <th style="font-weight: bold;width:250px;">Категория</th>
+
     </tr>
     </thead>
     <tbody>
@@ -32,8 +31,7 @@
             <td>{{ $product->count }}</td>
             <td>{{ $product->supplier?->name ?? '—' }}</td>
             <td>{{ $product->category?->name ?? '—' }}</td>
-            <td>{{ $product->created_at }}</td>
-            <td>{{ $product->updated_at }}</td>
+
         </tr>
     @endforeach
     </tbody>

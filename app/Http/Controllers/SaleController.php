@@ -18,7 +18,6 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Sale::query();
 
         $query = Sale::query();
 

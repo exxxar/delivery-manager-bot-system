@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
 use App\Exports\UsersExport;
+use App\Models\Agent;
 use App\Models\User;
 use Carbon\Carbon;
 use HttpException;
@@ -44,15 +45,16 @@ class UserController extends Controller
         }
         if ($request->boolean('blocked')) {
             $query->whereNotNull('blocked_at');
-        }
+        } else
+            $query->whereNull('blocked_at');
 
         // 🔹 Сортировка
         $sortField = $request->get('sort_field', 'id');
         $sortDirection = $request->get('sort_direction', 'asc');
         if (in_array($sortField, [
-                'id','name','fio_from_telegram','email','telegram_chat_id',
-                'role','percent','is_work','email_verified_at','blocked_at','created_at'
-            ]) && in_array($sortDirection, ['asc','desc'])) {
+                'id', 'name', 'fio_from_telegram', 'email', 'telegram_chat_id',
+                'role', 'percent', 'is_work', 'email_verified_at', 'blocked_at', 'created_at'
+            ]) && in_array($sortDirection, ['asc', 'desc'])) {
             $query->orderBy($sortField, $sortDirection);
         }
 
@@ -62,7 +64,6 @@ class UserController extends Controller
 
         return response()->json($users);
     }
-
 
 
     public function store(Request $request)
@@ -81,12 +82,34 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update($request->all());
+
+        $tmpUserLink = $user->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#обновление_данных_пользователя\n<b>Пользователю изменены его персональные данные</b>\n$userInfo\n$tmpUserLink"
+        );
+
         return response()->json($user);
     }
 
     public function destroy($id)
     {
-        User::destroy($id);
+        $user = User::findOrFail($id);
+
+        $tmpUserLink = $user->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#удаление_пользователя\n<b>Пользователь был удален</b>\n$userInfo\n$tmpUserLink"
+        );
+
+        $user->delete();
+
         return response()->json(null, 204);
     }
 
@@ -94,8 +117,41 @@ class UserController extends Controller
     public function updateRole(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        $oldRoleName = $user->getRoleName();
         $user->role = $request->input('role');
         $user->save();
+
+        if ($user->role === RoleEnum::AGENT->value) {
+            Agent::query()
+                ->updateOrCreate([
+                    'user_id' => $user->id,
+
+                ], [
+                    'name' => $user->fio_from_telegram ?? $user->name,
+                    'phone' => '',
+                    'email' => '',
+                    'region' => '',
+                ]);
+        }
+
+        $newRoleName = $user->getRoleName();
+
+        $tmpUserLink = $user->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#смена_роли_пользователя\n<b>Пользователю изменена роль с $oldRoleName на $newRoleName</b>\n$userInfo\n$tmpUserLink"
+        );
+
+        sleep(1);
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            $user->telegram_chat_id,
+            "Вам была изменена роль в систем с $oldRoleName на $newRoleName</b>"
+        );
+
         return response()->json($user);
     }
 
@@ -121,6 +177,23 @@ class UserController extends Controller
         $user->blocked_at = now();
         $user->blocked_message = $request->input('blocked_message');
         $user->save();
+
+        $tmpUserLink = $user->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#блокировка_пользователя\n<b>Пользователь заблокирован</b>\n$userInfo\n$tmpUserLink"
+        );
+
+        sleep(1);
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            $user->telegram_chat_id,
+            "Вам ограничили доступ к системе"
+        );
+
         return response()->json($user);
     }
 
@@ -130,11 +203,48 @@ class UserController extends Controller
         $user->blocked_at = null;
         $user->blocked_message = null;
         $user->save();
+
+        $tmpUserLink = $user->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#блокировка_пользователя\n<b>Пользователь разблокирован</b>\n$userInfo\n$tmpUserLink"
+        );
+
+        sleep(1);
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            $user->telegram_chat_id,
+            "Вам убрали ограничения доступа к системе"
+        );
+
         return response()->json($user);
     }
 
-    public function exportAdmins(Request $request){
+    public function exportAdmins(Request $request)
+    {
 
+    }
+
+    public function getTelegramLink(Request $request, $id)
+    {
+
+        $user = $request->botUser ?? null;
+
+        $findUser = User::findOrFail($id);
+
+        $tmpUserLink = $findUser->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            $user->telegram_chat_id,
+            "#ссылка_на_пользователя\n<b>Ссылка на пользователя</b>\n$userInfo\n$tmpUserLink"
+        );
+
+        return response()->json($user);
     }
 
     /**
@@ -147,11 +257,11 @@ class UserController extends Controller
         if (is_null($user))
             throw new HttpException("Пользователь не авторизован", 403);
 
-        $fileName = "export-users-".Carbon::now()->format("Y-m-d H-i-s").".xlsx";
+        $fileName = "export-users-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
         $data = Excel::raw(new \App\Exports\UsersExport(), \Maatwebsite\Excel\Excel::XLSX);
         \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id,"Экспорт списка пользователей",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data,$fileName));
+            ->sendDocument($user->telegram_chat_id, "Экспорт списка пользователей",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
         return response()->noContent();
     }
 }

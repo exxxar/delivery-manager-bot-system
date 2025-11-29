@@ -43,6 +43,8 @@ class AdminController extends Controller
             "endDate" => "required",
         ]);
 
+        $botUser = $request->botUser;
+
         $admin = \App\Models\User::query()
             ->where("role", \App\Enums\RoleEnum::ADMIN->value)
             ->where("id", $validate["user_id"])
@@ -51,8 +53,8 @@ class AdminController extends Controller
         if (is_null($admin))
             throw new \HttpException("Администратор не найден", 404);
 
-        $fromDate = $validate["startDate"];
-        $toDate = $validate["endDate"];
+        $fromDate = Carbon::parse($validate["startDate"]);
+        $toDate = Carbon::parse($validate["endDate"]);
         $content =
             Excel::raw(new \App\Exports\ExportType3\AdminWorkReport(
                 $admin->id,
@@ -62,7 +64,7 @@ class AdminController extends Controller
 
         $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
         \App\Facades\BotMethods::bot()
-            ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
+            ->sendDocument($botUser->telegram_chat_id,
                 "Отчет работы администратора за период <b>$fromDate</b> - <b>$toDate</b>",
                 \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
 
@@ -70,4 +72,51 @@ class AdminController extends Controller
 
     }
 
+    public function exportFull(Request $request) {
+        $validate = $request->validate([
+            "startDate" => "required",
+            "endDate" => "required",
+        ]);
+
+        $admin = $request->botUser;
+
+
+        $fromDate = Carbon::parse($validate["startDate"]);
+        $toDate = Carbon::parse($validate["endDate"]);
+
+        \App\Facades\BotMethods::bot()
+            ->sendMessage(env("TELEGRAM_ADMIN_CHANNEL"),
+            "Внимание! Готовим отчет по зарплатам, это займет какое-то время!"
+            );
+
+        $content =
+            Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
+                $fromDate ?? Carbon::now()->startOfMonth(),
+                $toDate ?? Carbon::now()->endOfMonth(),
+            ), \Maatwebsite\Excel\Excel::XLSX);
+
+        $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
+        \App\Facades\BotMethods::bot()
+            ->sendDocument($admin->telegram_chat_id,
+                "Отчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
+
+        \App\Facades\BotMethods::bot()
+            ->sendMessage($admin->telegram_chat_id,
+                "Внимание! Готовим отчет по поставщикам, это займет какое-то время!"
+            );
+        $content =
+            Excel::raw(new \App\Exports\ExportType1\SummarySuppliersReport(
+                $fromDate ?? Carbon::now()->startOfMonth(),
+                $toDate ?? Carbon::now()->endOfMonth()
+            ), \Maatwebsite\Excel\Excel::XLSX);
+
+        $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
+        \App\Facades\BotMethods::bot()
+            ->sendDocument($admin->telegram_chat_id,
+                "Отчет по поставщикам <b>$fromDate</b> - <b>$toDate</b>",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
+
+        return response()->noContent();
+    }
 }

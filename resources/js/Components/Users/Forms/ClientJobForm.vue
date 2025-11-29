@@ -78,7 +78,7 @@
         </div>
 
         <!-- Условия сотрудничества -->
-        <div class="form-floating mb-2">
+        <div class="form-floating">
       <textarea
           class="form-control"
           id="termsInput"
@@ -86,9 +86,9 @@
           placeholder="Условия сотрудничества"
           style="height: 100px"
       ></textarea>
-            <label for="termsInput">Условия сотрудничества (сроки, оплата, доставка)</label>
+            <label for="termsInput">Условия сотрудничества </label>
         </div>
-
+        <p class="small fst-italic  mb-2">(сроки, оплата, доставка)</p>
         <!-- Дополнительные комментарии -->
         <div class="form-floating mb-2">
       <textarea
