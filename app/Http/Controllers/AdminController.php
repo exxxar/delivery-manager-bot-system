@@ -80,12 +80,11 @@ class AdminController extends Controller
 
         $admin = $request->botUser;
 
-
         $fromDate = Carbon::parse($validate["startDate"]);
         $toDate = Carbon::parse($validate["endDate"]);
 
         \App\Facades\BotMethods::bot()
-            ->sendMessage(env("TELEGRAM_ADMIN_CHANNEL"),
+            ->sendMessage($admin->telegram_chat_id,
             "Внимание! Готовим отчет по зарплатам, это займет какое-то время!"
             );
 
