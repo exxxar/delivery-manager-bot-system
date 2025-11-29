@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -73,6 +74,8 @@ class User extends Authenticatable
             'Администратор',
         ];
 
+        Log::info("roles".print_r($roles,true ));
+        Log::info("role".print_r($this->role,true ));
         return $roles[$this->role] ?? 'Неизвестная роль';
     }
 
