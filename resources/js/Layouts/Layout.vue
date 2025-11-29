@@ -12,6 +12,7 @@ import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
     </Head>
 
     <header
+        class="fixed-top-menu"
         data-bs-theme="dark">
         <div class="navbar shadow shadow-sm">
             <div class="container flex-row-reverse p-2">
@@ -49,7 +50,7 @@ import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
          style="width: 70%;border-radius: 0px 10px 10px 0px;"
          tabindex="-1" id="sidebar-menu" aria-labelledby="offcanvasExampleLabel">
         <div class="offcanvas-header">
-            <h6 class="offcanvas-title" id="offcanvasExampleLabel">{{  'Магазин' }}</h6>
+            <h6 class="offcanvas-title" id="offcanvasExampleLabel">Меню</h6>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
 
@@ -125,6 +126,11 @@ export default {
 }
 </script>
 
-<style lang="scss">
-
+<style>
+ .fixed-top-menu {
+     position: sticky;
+     top: 0;
+     z-index: 100;
+     background: #ffffff;
+ }
 </style>
