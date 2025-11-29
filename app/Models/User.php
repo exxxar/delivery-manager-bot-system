@@ -67,10 +67,10 @@ class User extends Authenticatable
     public function getRoleName(): string
     {
         $roles = [
-            0 => 'Пользователь',
-            1 => 'Агент',
-            2 => 'Поставщик',
-            3 => 'Администратор',
+            'Пользователь',
+            'Агент',
+            'Поставщик',
+            'Администратор',
         ];
 
         return $roles[$this->role] ?? 'Неизвестная роль';
