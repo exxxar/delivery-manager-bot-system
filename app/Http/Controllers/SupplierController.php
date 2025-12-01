@@ -6,6 +6,8 @@ use App\Exports\SalesExport;
 use App\Exports\SuppliersExport;
 use App\Http\Requests\SupplierStoreRequest;
 use App\Http\Requests\SupplierUpdateRequest;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use HttpException;
@@ -65,5 +67,37 @@ class SupplierController extends Controller
             ->sendDocument($user->telegram_chat_id,"Экспорт списка поставщиков",
                 \Telegram\Bot\FileUpload\InputFile::createFromContents($data,$fileName));
         return response()->noContent();
+    }
+
+    public function indexWithProducts(Request $request){
+
+        $size = $request->size ?? 10;
+        // Список поставщиков с первыми 10 товарами
+        $suppliers = Supplier::query()
+            ->withCount('products')
+            ->paginate($size);
+
+        foreach ($suppliers as $supplier) {
+            $supplier->setRelation(
+                'products',
+                $supplier->products()
+                    ->with(['supplier', 'category'])
+                    ->take(10)->get()
+            );
+        }
+
+        return response()->json($suppliers);
+    }
+
+    public function nextProducts(Request $request, $supplierId){
+        $page = $request->get('page', 1);
+        $perPage = 10;
+
+        $products = Product::query()
+            ->with(["category","supplier"])
+            ->where('supplier_id', $supplierId)
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json($products);
     }
 }

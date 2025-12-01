@@ -16,13 +16,13 @@
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <span><strong>Поставщик:</strong></span>
-            <span>{{ product.supplier?.name || 'не выбран' }}</span>
+            <span style="text-align: right;">{{ product.supplier?.name || 'не выбран' }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <span><strong>Категория:</strong></span>
-            <span>{{ product.category?.name || 'не выбрана' }}</span>
+            <span style="text-align: right;">{{ product.category?.name || 'не выбрана' }}</span>
         </li>
-        <li class="list-group-item">
+        <li class="list-group-item" style="text-align: justify;">
             {{ product.description }}
         </li>
 
@@ -33,6 +33,9 @@
 </template>
 
 <script>
+
+
+
 export default {
     name: 'ProductCard',
     props: {

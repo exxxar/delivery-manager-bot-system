@@ -49,7 +49,7 @@ class BotManager extends BotCore
             $username = $username ?? $telegram_chat_id ?? "unknown";
 
             $this->botUser = User::query()->create([
-                'email' => "$telegram_chat_id@" . env('APP_URL'),
+                'email' => "$telegram_chat_id@" . env('APP_EMAIL_DOMAIN'),
                 'name' => $username,
                 'password' => bcrypt($telegram_chat_id),
                 'role_id' => RoleEnum::USER->value,

@@ -8,7 +8,19 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 <template>
 
     <div class="container-fluid p-3">
-    <ProductCategoryList v-if="!loading"></ProductCategoryList>
+        <h4 class="mb-3">Категории товара</h4>
+        <ProductCategoryList v-if="!loading"></ProductCategoryList>
+
+        <nav class="navbar fixed-bottom p-3">
+            <button
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#createCategoryModal"
+                class="btn w-100 p-3 btn-primary"
+            >
+                Добавить категорию
+            </button>
+        </nav>
     </div>
 
     <!-- Модалка создания -->
@@ -20,34 +32,25 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ProductCategoryForm @saved="fetchData" />
+                    <ProductCategoryForm @saved="fetchData"/>
                 </div>
             </div>
         </div>
     </div>
 
-    <nav class="navbar fixed-bottom p-3">
-        <button
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#createCategoryModal"
-            class="btn w-100 p-3 btn-primary"
-        >
-            Добавить категорию
-        </button>
-    </nav>
+
 </template>
 <script>
 export default {
-    data(){
-      return {
-          loading:false,
-      }
+    data() {
+        return {
+            loading: false,
+        }
     },
-    methods:{
-        fetchData(){
+    methods: {
+        fetchData() {
             this.loading = true
-            this.$nextTick(()=>{
+            this.$nextTick(() => {
                 this.loading = false
             })
         }

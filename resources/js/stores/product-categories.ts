@@ -33,6 +33,19 @@ export const useProductCategoriesStore = defineStore('productCategories', {
             }
         },
         // @ts-ignore
+        async fetchProductsByCategory(page = 1) {
+            const { data } = await makeAxiosFactory(`${path}/with-products?page=${page}`, 'GET')
+            this.items = data.data
+            this.pagination = data
+        },
+
+        // @ts-ignore
+        async loadMoreProductsInCategory(supplierId, page) {
+            const { data } = await makeAxiosFactory(`${path}/fetch-next-products/${supplierId}/products?page=${page}`, 'GET')
+            const category = this.items.find(s => s.id === supplierId)
+            category.products.push(...data.data)
+        },
+        // @ts-ignore
         async fetchAllByPage(page = 1) {
             const { data } = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
             this.items = data.data

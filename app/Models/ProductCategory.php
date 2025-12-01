@@ -25,4 +25,9 @@ class ProductCategory extends Model
    protected $casts =  [
        'id' => 'integer',
    ];
+
+    public function products(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
 }

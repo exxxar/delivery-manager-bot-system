@@ -5,7 +5,6 @@ import Pagination from "@/Components/Pagination.vue";
 
 <template>
 
-    <h4 class="mb-3">Список Агентов</h4>
 
     <div class="form-floating mb-3">
         <input type="search"

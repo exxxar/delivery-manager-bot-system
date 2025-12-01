@@ -1,16 +1,23 @@
 <script setup>
 import Pagination from "@/Components/Pagination.vue";
+import SupplierFilter from "@/Components/Suppliers/SupplierFilter.vue";
 </script>
 
 <template>
 
-    <h4 class="mb-3">Список поставщиков</h4>
+
     <div class="form-floating mb-3">
         <input type="search"
                v-model="search"
                class="form-control" id="searchInput" placeholder="Поиск..." />
         <label for="searchInput">Поиск</label>
     </div>
+
+    <template v-if="!forSelect">
+        <SupplierFilter></SupplierFilter>
+    </template>
+
+
     <ul class="list-group">
         <li
             @click="selectSupplier(supplier)"
@@ -39,6 +46,7 @@ import Pagination from "@/Components/Pagination.vue";
     <div v-if="suppliersStore.items?.length === 0" class="alert alert-info mt-3">
         Поставщиков пока нет.
     </div>
+
 
 </template>
 

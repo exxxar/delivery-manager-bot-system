@@ -21,8 +21,8 @@ export const useBaseExports = defineStore('exports', {
         async exportUsers() {
             return this._exportHelper(`${path}/users`, 'Пользователи выгружены')
         },
-        async exportProducts() {
-            return this._exportHelper(`${path}/products`, 'Продукты выгружены')
+        async exportProducts(type = 0) {
+            return this._exportHelper(`${path}/products?type=${type}`, 'Продукты выгружены')
         },
         async exportFull(payload) {
             const alertStore = useAlertStore()
@@ -61,7 +61,7 @@ export const useBaseExports = defineStore('exports', {
         async _exportHelper(url: string, successMsg: string) {
 
             const alertStore = useAlertStore()
-
+            alertStore.show( "Процесс генерации отчета запущен")
             this.loading = true
             this.error = null
             try {

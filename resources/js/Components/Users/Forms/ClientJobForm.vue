@@ -64,6 +64,7 @@
             <label for="categoriesInput">Категории интересующих товаров</label>
         </div>
 
+        <p class="mb-2 fst-italic">Планируемый объём закупки (шт./мес.)</p>
         <!-- Объём закупки -->
         <div class="form-floating mb-2">
             <input
@@ -74,7 +75,7 @@
                 placeholder="Объём закупки"
                 min="0"
             />
-            <label for="volumeInput">Планируемый объём закупки (шт./мес.)</label>
+            <label for="volumeInput">Объем закупки</label>
         </div>
 
         <!-- Условия сотрудничества -->

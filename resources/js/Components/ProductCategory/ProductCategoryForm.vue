@@ -1,9 +1,9 @@
 <template>
-    <div class="container-fluid">
+
         <form @submit.prevent="submitForm">
 
             <!-- Название категории -->
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-2">
                 <input
                     v-model="form.name"
                     type="text"
@@ -33,7 +33,7 @@
                 {{ isEdit ? 'Сохранить изменения' : 'Добавить категорию' }}
             </button>
         </form>
-    </div>
+
 </template>
 
 <script>

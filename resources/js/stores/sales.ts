@@ -126,22 +126,19 @@ export const useSalesStore = defineStore('sales', {
             return data as Sale
         },
 
-        async update(id: number, payload: Partial<Sale>) {
+        async update(id: number, payload: object) {
             const { data } = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)
             const idx = this.items.findIndex(x => x.id === id)
             if (idx !== -1) this.items[idx] = data
             return data as Sale
         },
         // 🔹 Подтверждение сделки
-        async confirmDeal() {
-            if (!this.selectedSale) return
+        async confirmDeal(sale: any) {
             try {
+
                 const { data } = await makeAxiosFactory(`${path}/${this.selectedSale.id}`, 'PUT', {
-                    ...this.selectedSale,
+                    ...sale,
                     status: 'completed',
-                    sale_date: this.dealForm.sale_date,
-                    quantity: this.dealForm.quantity,
-                    total_price: this.dealForm.total_price
                 })
                 // обновляем список
                 await this.fetchAllByPage(this.pagination?.current_page || 1)
@@ -154,7 +151,6 @@ export const useSalesStore = defineStore('sales', {
 
         // 🔹 Удаление продажи
         async deleteSale(id: number) {
-            if (!this.selectedSale) return
             try {
                 await makeAxiosFactory(`${path}/${id}`, 'DELETE')
                 this.items = this.items.filter(s => s.id !== id)

@@ -5,7 +5,6 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 </script>
 <template>
 
-    <h4 class="mb-3">Список продаж</h4>
 
     <!-- Быстрый поиск -->
     <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
@@ -44,7 +43,13 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
                     <i class="fas fa-bars"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a></li>
+                    <template v-if="forSelect">
+                        <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                    </template>
                     <li><a class="dropdown-item" href="#" @click.prevent="openEdit(sale)">Редактировать</a></li>
                     <li><a class="dropdown-item text-danger" href="#"
                            @click.prevent="confirmDelete(sale)">Удалить</a></li>
@@ -71,22 +76,11 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
     </div>
 
 
-    <nav
-        v-if="user.agent"
-        class="navbar bg-transparent position-fixed bottom-0 start-0 w-100">
-        <div class="container-fluid">
-            <button
-                @click="addSale"
-                type="button"
-                class="btn btn-primary w-100 p-3">
-                Добавить продажу
-            </button>
-        </div>
-    </nav>
+
 
     <!-- Модалка редактирования -->
     <div class="modal fade" id="newSaleModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Создание задания</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -100,7 +94,7 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSaleModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Редактирование задания</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -112,22 +106,7 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
         </div>
     </div>
 
-    <!-- Модалка удаления -->
-    <div class="modal fade" id="deleteSaleModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title text-danger">Удаление задания</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">Вы уверены, что хотите удалить <strong>{{ selectedSale?.title }}</strong>?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-danger" @click="deleteSale">Удалить</button>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Модалка просмотра -->
     <div class="modal fade" id="viewSaleModal" tabindex="-1">
@@ -197,10 +176,11 @@ import axios from 'axios'
 import {useSalesStore} from '@/stores/sales'
 import {useAgentsStore} from "@/stores/agents";
 import {useUsersStore} from "@/stores/users";
+import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 
 export default {
     name: 'SaleList',
-    props: ["adminId", "agentId", "productId", "customerId", "supplierId"],
+    props: ["forSelect","adminId", "agentId", "productId", "customerId", "supplierId"],
     data() {
         return {
             sales: [],
@@ -208,6 +188,7 @@ export default {
             userStore: useUsersStore(),
             salesStore: useSalesStore(),
             agentStore: useAgentsStore(),
+            modalStore: useModalStore(),
             selectedSale: null,
             saleStatuses: {
                 pending: "В ожидании",
@@ -239,7 +220,7 @@ export default {
             supplier_id: this.supplierId || null,
         })
 
-        if (this.user.role >= 3)
+        if ((this.user?.role || 0) >= 3)
             this.salesStore.fetchFiltered()
         else
             this.salesStore.selfSalesFiltered()
@@ -260,7 +241,11 @@ export default {
         },
         confirmDelete(sale) {
             this.selectedSale = sale
-            new bootstrap.Modal(document.getElementById('deleteSaleModal')).show()
+            this.modalStore.open(
+                `Вы уверены, что хотите удалить ${this.selectedSale?.title}?`,
+                () =>  this.salesStore.deleteSale(this.selectedSale.id),
+                () => this.modalStore.close()
+            )
         },
         async deleteSale() {
             try {
@@ -275,12 +260,12 @@ export default {
             new bootstrap.Modal(document.getElementById('viewSaleModal')).show()
         },
         openConfirmDeal(sale) {
-            this.selectedSale = sale
-            this.dealForm = {
-                sale_date: new Date().toISOString().split('T')[0],
-                quantity: 0,
-                total_price: 0
-            }
+            this.modalStore.open(
+                `Подтвердить сделку ${this.selectedSale?.title}?`,
+                () =>  this.salesStore.confirmDeal(this.selectedSale),
+                () => this.modalStore.close()
+            )
+
             new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
         },
         async confirmDeal() {

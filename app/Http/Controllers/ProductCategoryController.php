@@ -6,7 +6,9 @@ use App\Exports\CustomersExport;
 use App\Exports\ProductCategoriesExport;
 use App\Http\Requests\ProductCategoryStoreRequest;
 use App\Http\Requests\ProductCategoryUpdateRequest;
+use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Supplier;
 use Carbon\Carbon;
 use HttpException;
 use Illuminate\Http\RedirectResponse;
@@ -64,5 +66,38 @@ class ProductCategoryController extends Controller
             ->sendDocument($user->telegram_chat_id,"Экспорт списка категорий товара",
                 \Telegram\Bot\FileUpload\InputFile::createFromContents($data,$fileName));
         return response()->noContent();
+    }
+
+    public function indexWithProducts(Request $request){
+
+        $size = $request->size ?? 10;
+        // Список поставщиков с первыми 10 товарами
+        $categories = ProductCategory::query()
+            ->withCount('products')
+            ->paginate($size);
+
+        foreach ($categories as $category) {
+            $category->setRelation(
+                'products',
+                $category->products()
+                    ->with(['supplier', 'category'])
+                    ->take(10)->get()
+            );
+        }
+
+        return response()->json($categories);
+    }
+
+    public function nextProducts(Request $request, $categoryId){
+        $page = $request->get('page', 1);
+        $perPage = 10;
+
+        $products = Product::query()
+            ->with(["category","supplier"])
+            ->where('product_category_id', $categoryId)
+            ->paginate(perPage:$perPage, page: $page);
+
+
+        return response()->json($products);
     }
 }

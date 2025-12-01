@@ -40,6 +40,7 @@ export default {
                 case 1: return 'Агент'
                 case 2: return 'Поставщик'
                 case 3: return 'Администратор'
+                case 4: return 'Суперадмин'
                 default: return 'Неизвестно'
             }
         }

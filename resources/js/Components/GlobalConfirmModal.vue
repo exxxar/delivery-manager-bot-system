@@ -12,7 +12,7 @@ const modal = useModalStore()
                     <button type="button" class="btn-close" @click="modal.close()"></button>
                 </div>
                 <div class="modal-body">
-                    <p>{{ modal.message }}</p>
+                    <p v-html="modal.message"></p>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-success" @click="modal.confirm()">Подтвердить</button>

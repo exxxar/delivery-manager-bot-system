@@ -5,7 +5,6 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 
 <template>
 
-        <h4 class="mb-3">Категории продуктов</h4>
 
         <ul class="list-group">
             <li

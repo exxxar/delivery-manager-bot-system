@@ -50,7 +50,7 @@
                 <label for="total_price">Сумма сделки</label>
             </div>
 
-            <template v-if="user.role>=3">
+            <template v-if="user?.role>=3">
                 <!-- Агент -->
                 <div class="input-group mb-2">
                     <div class="form-floating flex-grow-1">

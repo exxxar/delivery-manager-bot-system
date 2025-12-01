@@ -7,9 +7,6 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </script>
 
 <template>
-
-    <h4 class="mb-3">Список администраторов</h4>
-
     <ul class="list-group">
         <li v-for="user in adminsStore.items" :key="user.id"
             class="list-group-item d-flex justify-content-between align-items-center">
@@ -64,11 +61,6 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
         Администраторов пока нет.
     </div>
 
-    <button
-        type="button"
-        @click="goTo('UserPage')"
-        class="btn btn-outline-success p-3 w-100">Добавить администратора
-    </button>
 
 
     <!-- Модалка -->
@@ -162,10 +154,7 @@ export default {
     },
 
     methods: {
-        goTo(name) {
-            this.$router.push({name: name})
 
-        },
         openRoleSwitcher(user) {
             this.selectedAdmin = user
             new bootstrap.Modal(document.getElementById('roleSwitcherUserModal')).show()

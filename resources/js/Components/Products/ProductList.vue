@@ -1,11 +1,14 @@
 <script setup>
 import Pagination from "@/Components/Pagination.vue";
+import ProductFilter from "@/Components/Products/ProductFilter.vue";
 </script>
 
 <template>
 
-    <h4 class="mb-3">Список товаров</h4>
 
+    <template v-if="!forSelect">
+        <ProductFilter></ProductFilter>
+    </template>
     <ul class="list-group">
         <li v-for="product in productStore.items" :key="product.id"
             class="list-group-item d-flex justify-content-between align-items-center">
@@ -44,6 +47,17 @@ import Pagination from "@/Components/Pagination.vue";
         Товаров пока нет.
     </div>
 
+    <nav
+        class="navbar bg-transparent position-fixed bottom-0 start-0 w-100">
+        <div class="container-fluid">
+            <button
+                type="button"
+                class="btn btn-primary w-100 p-3">
+                Добавить товар
+            </button>
+        </div>
+    </nav>
+
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editProductModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -59,24 +73,6 @@ import Pagination from "@/Components/Pagination.vue";
         </div>
     </div>
 
-    <!-- Модалка удаления -->
-    <div class="modal fade" id="deleteProductModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger">Удаление товара</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    Вы уверены, что хотите удалить <strong>{{ selectedProduct?.name }}</strong>?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-danger" @click="deleteProduct">Удалить</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Модалка просмотра -->
     <div class="modal fade" id="viewProductModal" tabindex="-1">
@@ -102,6 +98,7 @@ import axios from 'axios'
 import ProductForm from './ProductForm.vue'
 import ProductCard from './ProductCard.vue'
 import {useProductsStore} from "@/stores/products";
+import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 
 export default {
     name: 'ProductList',
@@ -110,6 +107,7 @@ export default {
     data() {
         return {
             productStore: useProductsStore(),
+            modalStore: useModalStore(),
             products: [],
             selectedProduct: null
         }
@@ -124,16 +122,23 @@ export default {
         async fetchDataByUrl(url) {
             await this.productStore.fetchByUrl(url)
         },
-        closeEdit(){
-            bootstrap.Modal.getInstance(document.getElementById('viewProductModal')).hide()
+        closeEdit() {
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('viewProductModal'));
+            if (editModal)
+                editModal.hide()
         },
         openEdit(product) {
             this.selectedProduct = product
             new bootstrap.Modal(document.getElementById('editProductModal')).show()
+            this.closeEdit()
         },
         confirmDelete(product) {
             this.selectedProduct = product
-            new bootstrap.Modal(document.getElementById('deleteProductModal')).show()
+            this.modalStore.open(
+                `Вы уверены, что хотите удалить <b>${this.selectedProduct?.name}</b>?`,
+                () => this.productStore.remove(this.selectedProduct.id),
+                () => this.modalStore.close()
+            )
         },
         async deleteProduct() {
             this.productStore.remove(this.selectedProduct.id)

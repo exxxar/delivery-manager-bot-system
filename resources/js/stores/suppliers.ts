@@ -59,7 +59,19 @@ export const useSuppliersStore = defineStore('suppliers', {
                 throw e
             }
         },
+        // @ts-ignore
+        async fetchSupplierWithProducts(page = 1) {
+            const { data } = await makeAxiosFactory(`${path}/with-products?page=${page}`, 'GET')
+            this.items = data.data
+            this.pagination = data
+        },
 
+        // @ts-ignore
+        async loadMoreSupplierProducts(supplierId, page) {
+            const { data } = await makeAxiosFactory(`/fetch-next-products/${supplierId}/products?page=${page}`, 'GET')
+            const supplier = this.items.find(s => s.id === supplierId)
+            supplier.products.push(...data.data)
+        },
         async create(payload: Omit<Supplier, 'id'>) {
             const { data } = await makeAxiosFactory(`${path}`, 'POST', payload)
             this.items.push(data)

@@ -25,7 +25,7 @@
             <label for="endDate">Дата окончания периода</label>
         </div>
 
-        <div class="form-check form-switch ">
+<!--        <div class="form-check form-switch ">
             <input
                 class="form-check-input"
                 type="checkbox"
@@ -35,7 +35,7 @@
             <label class="form-check-label" :for="`need_more_options`">
                 Дополнительные параметры отчета
             </label>
-        </div>
+        </div>-->
 
         <template v-if="!isSimple&&need_more_options">
 

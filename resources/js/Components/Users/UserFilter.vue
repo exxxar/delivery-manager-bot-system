@@ -25,7 +25,7 @@
 
         <!-- Модалка фильтрации -->
         <div class="modal fade" id="userFilterModal" tabindex="-1">
-            <div class="modal-dialog">
+            <div class="modal-dialog ">
                 <div class="modal-content">
                     <form @submit.prevent="applyFilters">
                         <div class="modal-header">

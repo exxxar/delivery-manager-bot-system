@@ -340,6 +340,12 @@ Route::prefix("bot-api")
                 Route::delete('/{id}', [AgentController::class, 'destroy']);
             });
 
+        Route::prefix("imports")
+            ->middleware(["tg.role:super"])
+            ->group(function(){
+                Route::post('/import-products-with-categories', [ProductController::class, 'import'])->name('imports.products');
+            });
+
         // 🔹 Экспорты
         Route::prefix('exports')
             ->middleware(["tg.role:super"])
@@ -358,6 +364,9 @@ Route::prefix("bot-api")
         Route::prefix('suppliers')
             ->middleware(["tg.role:admin"])
             ->group(function () {
+                Route::get('/with-products', [SupplierController::class, 'indexWithProducts']);
+                Route::get('/fetch-next-products/{supplierId}/products', [SupplierController::class, 'nextProducts']);
+
                 // Список всех поставщиков
                 Route::get('/', [SupplierController::class, 'index']);
                 // Создать нового поставщика
@@ -369,7 +378,8 @@ Route::prefix("bot-api")
                 Route::patch('/{id}', [SupplierController::class, 'update']); // частичное обновление
                 // Удалить поставщика
                 Route::delete('/{id}', [SupplierController::class, 'destroy']);
-            });
+
+                 });
 
         Route::prefix('products')
             ->middleware(["tg.role:admin"])
@@ -390,6 +400,9 @@ Route::prefix("bot-api")
         Route::prefix('product-categories')
             ->middleware(["tg.role:admin"])
             ->group(function () {
+                Route::get('/with-products', [ProductCategoryController::class, 'indexWithProducts']);
+                Route::get('/fetch-next-products/{categoryId}/products', [ProductCategoryController::class, 'nextProducts']);
+
                 // Список всех категорий товаров
                 Route::get('/', [ProductCategoryController::class, 'index']);
                 // Создать новую категорию

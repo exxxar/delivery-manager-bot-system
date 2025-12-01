@@ -17,7 +17,7 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
     <!-- Модалка: Администратор -->
     <div class="modal fade" id="adminJobModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Заявка на администратора</h5>
@@ -32,7 +32,7 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
     <!-- Модалка: Торговый агент -->
     <div class="modal fade" id="agentJobModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Заявка на торгового агента</h5>
@@ -47,7 +47,7 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
     <!-- Модалка: Поставщик -->
     <div class="modal fade" id="supplierJobModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Заявка поставщика</h5>
@@ -62,7 +62,7 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
     <!-- Модалка: Клиент -->
     <div class="modal fade" id="clientJobModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Заявка клиента</h5>

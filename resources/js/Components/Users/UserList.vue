@@ -7,10 +7,10 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
 
 <template>
 
-    <h4 class="mb-3">Список пользователей</h4>
 
-    <UserFilter v-on:apply-filters="applyFilter"></UserFilter>
-
+    <template v-if="!forSelect">
+        <UserFilter v-on:apply-filters="applyFilter"></UserFilter>
+    </template>
 
     <ul class="list-group">
         <li v-for="user in usersStore.items" :key="user.id"
@@ -23,7 +23,7 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                 <p class="text-muted small" v-if="field_visible?.telegram_chat_id||false">
                     ТГ id <a href="javascript:void(0)" @click.prevent="getTelegramLink(user)">{{
                         user.telegram_chat_id || 'Не указано'
-                    }}  </a>
+                    }} </a>
                 </p>
                 <p class="text-muted small" v-if="field_visible?.role||false">
                     {{ roles[user.role || 0] || 'неизвестная роль' }}
@@ -36,9 +36,13 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                 <p class="text-muted small" v-if="field_visible?.email_verified_at||false">Дата верификации почты {{
                         user.email_verified_at
                     }}</p>
-                <p class="text-muted small" v-if="field_visible?.blocked_at||false">Дата блокировки {{ user.blocked_at }}</p>
-                <p class="text-muted small" v-if="field_visible?.created_at||false">Дата создания пользователя {{ user.created_at }}</p>
-                <p class="text-muted small" v-if="field_visible?.updated_at||false">Дата последнего обновления данных пользователя {{ user.updated_at }}</p>
+                <p class="text-muted small" v-if="field_visible?.blocked_at||false">Дата блокировки {{
+                        user.blocked_at
+                    }}</p>
+                <p class="text-muted small" v-if="field_visible?.created_at||false">Дата создания пользователя
+                    {{ user.created_at }}</p>
+                <p class="text-muted small" v-if="field_visible?.updated_at||false">Дата последнего обновления данных
+                    пользователя {{ user.updated_at }}</p>
 
             </div>
 
@@ -235,7 +239,7 @@ export default {
             this.selectedUser = user
             this.modalStore.open(
                 `Вы уверены, что хотите удалить ${this.selectedUser?.name}?`,
-                () =>  this.usersStore.remove(this.selectedUser.id),
+                () => this.usersStore.remove(this.selectedUser.id),
                 () => this.modalStore.close()
             )
         },
@@ -258,7 +262,6 @@ export default {
         },
 
 
-
         openView(user) {
             this.selectedUser = user
             new bootstrap.Modal(document.getElementById('viewUserModal')).show()
@@ -267,6 +270,10 @@ export default {
         // 🔹 Дополнительные методы для ролей и блокировки
         async changeRole() {
             await this.usersStore.updateRole(this.selectedUser.id, this.selectedUser.role)
+
+            const viewModal = bootstrap.Modal.getInstance(document.getElementById('roleSwitcherUserModal'))
+            if (viewModal)
+                viewModal.hide()
         },
 
     }
