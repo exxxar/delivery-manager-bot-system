@@ -3,7 +3,7 @@
 
         <div class="d-flex mb-2">
             <!-- Кнопка вызова модалки -->
-            <button class="btn btn-secondary" @click="openFilter">Фильтр</button>
+            <button class="btn btn-primary" @click="openFilter">Фильтр</button>
 
             <!-- Dropdown сортировки -->
             <div class="dropdown d-inline-block ms-2">

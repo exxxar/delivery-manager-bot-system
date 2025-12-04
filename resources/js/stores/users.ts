@@ -1,5 +1,6 @@
 import {defineStore} from 'pinia'
 import {makeAxiosFactory} from './utillites/makeAxiosFactory'
+import { useAlertStore } from './utillites/useAlertStore'
 
 export interface User {
     id: number
@@ -165,9 +166,15 @@ export const useUsersStore = defineStore('users', {
         },
 
         async updateWorkStatus(id: number, is_work: boolean) {
+            const alertStore = useAlertStore()
+
+
             const {data} = await makeAxiosFactory(`${path}/${id}/work-status`, 'POST', {
                 is_work:is_work
             })
+
+            alertStore.show( "Статус успешно обновлен")
+
             const idx = this.items.findIndex(u => u.id === id)
             if (idx !== -1) this.items[idx] = data
             return data as User

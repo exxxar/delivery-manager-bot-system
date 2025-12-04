@@ -7,16 +7,18 @@ import ProductListByCategory from "@/Components/Products/ProductListByCategory.v
 import ProductForm from "@/Components/Products/ProductForm.vue";
 import ImportProducts from "@/Components/Products/ImportProducts.vue";
 import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryForm.vue";
+import BackBtn from "@/Components/BackBtn.vue";
 </script>
 <template>
     <div class="container-fluid p-3">
         <template v-if="tab==='menu'">
+            <BackBtn/>
             <MenuProducts v-on:select="selectMenu"></MenuProducts>
         </template>
         <template v-if="tab==='product'">
             <button
                 @click="tab='menu'"
-                class="btn btn-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <ProductForm v-if="selectedProduct" :initial-data="selectedProduct"></ProductForm>
             <p class="alert alert-info" v-else>
                 Продукт не выбран
@@ -25,21 +27,21 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
         <template v-if="tab==='products'">
             <button
                 @click="tab='menu'"
-                class="btn btn-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров</h4>
             <ProductList></ProductList>
         </template>
         <template v-if="tab==='products-by-supplier'">
             <button
                 @click="tab='menu'"
-                class="btn btn-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров по поставщику</h4>
             <ProductListBySupplier v-on:edit-product="openEditProduct"></ProductListBySupplier>
         </template>
         <template v-if="tab==='products-by-categories'">
             <button
                 @click="tab='menu'"
-                class="btn btn-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров по категориям</h4>
             <ProductListByCategory v-on:edit-product="openEditProduct"></ProductListByCategory>
 
@@ -48,7 +50,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
         <template v-if="tab==='categories'">
             <button
                 @click="tab='menu'"
-                class="btn btn-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Категории товара</h4>
             <ProductCategoryList></ProductCategoryList>
 
@@ -67,7 +69,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
         <template v-if="tab==='import-products'">
             <button
                 @click="tab='menu'"
-                class="btn btn-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <ImportProducts></ImportProducts>
         </template>
     </div>

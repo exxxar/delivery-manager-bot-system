@@ -3,6 +3,7 @@
 import {Head} from '@inertiajs/vue3'
 import GlobalAlert from "@/Components/GlobalAlert.vue";
 import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
+import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
 </script>
 <template>
 
@@ -56,9 +57,11 @@ import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
 
 
         <div class="offcanvas-body">
-
-            <ul class="list-unstyled">
-                <li class="p-1"><a
+            <UserProfileCard
+                v-if="userStore.self"
+                :user="userStore.self"></UserProfileCard>
+            <ul class="list-group list-group-flush my-3">
+                <li class="p-2 list-group-item"><a
                     data-bs-dismiss="offcanvas"
                     v-bind:class="{'fw-bold':$route.name==='MenuPage'}"
                     @click="goTo('MenuPage')"
@@ -73,27 +76,27 @@ import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
     </div>
 
 
-
 </template>
 <script>
-
+import {useUsersStore} from "@/stores/users";
 export default {
     data() {
         return {
-
+            userStore: useUsersStore(),
             currentTheme: '',
             themes: []
         }
     },
-    watch: {
-
+    watch: {},
+    created() {
+        this.userStore.fetchSelf()
     },
     computed: {
         tg() {
             return window.Telegram.WebApp;
         },
-        self(){
-          return window.botUser || null
+        self() {
+            return window.botUser || null
         },
 
     },
@@ -127,10 +130,10 @@ export default {
 </script>
 
 <style>
- .fixed-top-menu {
-     position: sticky;
-     top: 0;
-     z-index: 100;
-     background: #ffffff;
- }
+.fixed-top-menu {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #ffffff;
+}
 </style>

@@ -1,8 +1,11 @@
 <script setup>
 import SupplierList from "@/Components/Suppliers/SupplierList.vue";
+import BackBtn from "@/Components/BackBtn.vue";
 </script>
 <template>
     <div class="container-fluid p-3">
+        <BackBtn/>
+        <h4 class="mb-3">Список поставщиков</h4>
         <SupplierList></SupplierList>
 
         <nav

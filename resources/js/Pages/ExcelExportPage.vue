@@ -1,5 +1,9 @@
+<script setup>
+import BackBtn from "@/Components/BackBtn.vue";
+</script>
 <template>
     <div class="container-fluid p-3">
+        <BackBtn/>
         <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню действий">
             <button
                 type="button"
@@ -79,10 +83,12 @@
 </template>
 
 <script>
-import { useBaseExports } from '@/stores/baseExports'
+import {useBaseExports} from '@/stores/baseExports'
 
 export default {
     name: 'ExportsMenu',
+    components: {},
+
     setup() {
         const jobStore = useBaseExports()
 

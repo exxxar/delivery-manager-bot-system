@@ -3,11 +3,12 @@ import ProductCategoryList from "@/Components/ProductCategory/ProductCategoryLis
 
 import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryForm.vue";
 
-
+import BackBtn from "@/Components/BackBtn.vue";
 </script>
 <template>
 
     <div class="container-fluid p-3">
+        <BackBtn/>
         <h4 class="mb-3">Категории товара</h4>
         <ProductCategoryList v-if="!loading"></ProductCategoryList>
 
