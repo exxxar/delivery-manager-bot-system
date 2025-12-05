@@ -200,7 +200,7 @@ export default {
         selectSupplier(supplier) {
             if (!this.forSelect)
                 return
-            this.$emit("select-supplier", supplier)
+            this.$emit("select", supplier)
         },
         openDeleteModal(supplier) {
             this.selectedSupplier = supplier;

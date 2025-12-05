@@ -134,7 +134,7 @@ export default {
         selectCustomer(customer) {
             if (!this.forSelect)
                 return
-            this.$emit("select-customer", customer)
+            this.$emit("select", customer)
         },
         async fetchData(page = 1) {
             await this.customerStore.fetchAllByPage(page)
