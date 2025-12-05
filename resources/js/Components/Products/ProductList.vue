@@ -12,7 +12,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
     <ul class="list-group">
         <li v-for="product in productStore.items" :key="product.id"
             class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
+            <div @click.prevent="$emit('select', product)">
                 <div class="fw-bold">{{ product.name }}</div>
                 <small class="text-muted">{{ product.price }} ₽</small>
             </div>
