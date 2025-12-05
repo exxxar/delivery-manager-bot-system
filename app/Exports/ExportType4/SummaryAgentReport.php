@@ -14,11 +14,13 @@ class SummaryAgentReport implements WithMultipleSheets
 
     protected $fromDate;
     protected $toDate;
+    protected $agentId;
 
-    public function __construct($fromDate = null, $toDate = null)
+    public function __construct($fromDate = null, $toDate = null, $agentId = null)
     {
         $this->fromDate = $fromDate;
         $this->toDate = $toDate;
+        $this->agentId = $agentId;
     }
 
     /**
@@ -29,7 +31,8 @@ class SummaryAgentReport implements WithMultipleSheets
     public function sheets(): array
     {
 
-        $agents = Agent::query()->get();
+        $agents = is_null($this->agentId ?? null) ? Agent::query()->get() : Agent::query()
+            ->where("id", $this->agentId)->get();
 
         $tmpData = [];
         $tmp = [];
@@ -40,7 +43,6 @@ class SummaryAgentReport implements WithMultipleSheets
             $tmp[] = new RevenueExportSheet($agent->name, $data);
 
         }
-
 
 
         $tmp[] = new SupplierSheet();

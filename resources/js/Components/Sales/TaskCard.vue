@@ -1,48 +1,48 @@
 <template>
-    <div class="card shadow-sm mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">{{ task.title }}</h5>
-            <span class="badge" :class="statusClass(task.status)">
+
+    <h6 class="mb-2">{{ task.title }}
+        <span class="badge" :class="statusClass(task.status)">
         {{ statusLabels[task.status] }}
       </span>
-        </div>
-        <div class="card-body">
-            <p class="text-muted">{{ task.description }}</p>
+    </h6>
 
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item">
-                    <strong>Дата встречи:</strong> {{ formatDate(task.due_date) }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Дата продажи:</strong> {{ formatDate(task.sale_date) }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Планируемая доставка:</strong> {{ formatDate(task.planned_delivery_date) }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Фактическая доставка:</strong> {{ formatDate(task.actual_delivery_date) }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Количество:</strong> {{ task.quantity }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Сумма заказа:</strong> {{ task.total_price }} ₴
-                </li>
-            </ul>
 
-            <div class="mt-3">
-                <h6>Связи:</h6>
-                <p><strong>Агент:</strong> {{ task.agent?.name || '—' }}</p>
-                <p><strong>Покупатель:</strong> {{ task.customer?.name || '—' }}</p>
-                <p><strong>Поставщик:</strong> {{ task.supplier?.name || '—' }}</p>
-                <p><strong>Продукт:</strong> {{ task.product?.name || '—' }}</p>
-                <p><strong>Создан администратором:</strong> {{ task.created_by?.name || '—' }}</p>
-            </div>
+    <div class="mb-2">
+        <p class="text-muted">{{ task.description }}</p>
+
+        <ul class="list-group list-group-flush ">
+            <li class="list-group-item">
+                <strong>Дата встречи:</strong> {{ formatDate(task.due_date) }}
+            </li>
+            <li class="list-group-item">
+                <strong>Дата продажи:</strong> {{ formatDate(task.sale_date) }}
+            </li>
+            <li class="list-group-item">
+                <strong>Планируемая доставка:</strong> {{ formatDate(task.planned_delivery_date) }}
+            </li>
+            <li class="list-group-item">
+                <strong>Фактическая доставка:</strong> {{ formatDate(task.actual_delivery_date) }}
+            </li>
+            <li class="list-group-item">
+                <strong>Количество:</strong> {{ task.quantity }}
+            </li>
+            <li class="list-group-item">
+                <strong>Сумма заказа:</strong> {{ task.total_price }} ₴
+            </li>
+        </ul>
+
+        <div class="mt-3">
+            <h6 class="fw-bold text-primary">Связанные элементы</h6>
+            <p><strong>Агент:</strong> {{ task.agent?.name || '—' }}</p>
+            <p><strong>Покупатель:</strong> {{ task.customer?.name || '—' }}</p>
+            <p><strong>Поставщик:</strong> {{ task.supplier?.name || '—' }}</p>
+            <p><strong>Продукт:</strong> {{ task.product?.name || '—' }}</p>
+            <p><strong>Создан администратором:</strong> {{ task.created_by?.name || '—' }}</p>
         </div>
-        <div class="card-footer text-muted">
-            Создано: {{ formatDate(task.created_at) }} |
-            Обновлено: {{ formatDate(task.updated_at) }}
-        </div>
+    </div>
+    <div class="text-muted small">
+        Создано: {{ formatDate(task.created_at) }} |
+        Обновлено: {{ formatDate(task.updated_at) }}
     </div>
 </template>
 

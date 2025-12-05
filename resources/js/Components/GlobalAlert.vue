@@ -1,9 +1,12 @@
 <template>
     <transition name="fade">
-        <div v-if="alertStore.visible" class="global-alert" :class="alertClass">
-            {{ alertStore.message }}
-            <button class="close-btn" @click="alertStore.hide">×</button>
+        <div class="wrapper-alert">
+            <div v-if="alertStore.visible" class="global-alert" :class="alertClass">
+                {{ alertStore.message }}
+                <button class="close-btn" @click="alertStore.hide">×</button>
+            </div>
         </div>
+
     </transition>
 </template>
 
@@ -31,15 +34,20 @@ export default {
 </script>
 
 <style scoped>
-.global-alert {
+
+.wrapper-alert{
     position: fixed;
     top: 20px;
-    right: 20px;
+    right: 0px;
+    padding: 10px;
+    z-index: 9999;
+}
+.global-alert {
     padding: 12px 20px;
     border-radius: 6px;
     color: #fff;
     font-weight: 500;
-    z-index: 9999;
+
 }
 .alert-success { background-color: #28a745; }
 .alert-error { background-color: #dc3545; }

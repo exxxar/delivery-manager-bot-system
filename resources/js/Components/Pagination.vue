@@ -4,6 +4,7 @@
             <!-- Кнопка "Назад" -->
             <li class="page-item" :class="{ disabled: !pagination.prev_page_url }">
                 <button
+                    type="button"
                     class="page-link"
                     :disabled="!pagination.prev_page_url"
                     @click="changePage(pagination.prev_page_url)"
@@ -22,6 +23,7 @@
             <!-- Кнопка "Вперёд" -->
             <li class="page-item" :class="{ disabled: !pagination.next_page_url }">
                 <button
+                    type="button"
                     class="page-link"
                     :disabled="!pagination.next_page_url"
                     @click="changePage(pagination.next_page_url)"

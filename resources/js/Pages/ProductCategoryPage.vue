@@ -33,7 +33,7 @@ import BackBtn from "@/Components/BackBtn.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ProductCategoryForm @saved="fetchData"/>
+                    <ProductCategoryForm v-on:saved="fetchData"/>
                 </div>
             </div>
         </div>
@@ -50,6 +50,13 @@ export default {
     },
     methods: {
         fetchData() {
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCategoryModal'))
+
+            if (modal)
+                modal.hide()
+
+
             this.loading = true
             this.$nextTick(() => {
                 this.loading = false

@@ -5,7 +5,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 
         <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
             <button type="button"
-                    @click="goTo('AgentTaskPage')"
+                    @click="goTo('SalePage')"
                     class="btn btn-outline-primary p-3">Мои доставки</button>
             <button type="button"
                     data-bs-toggle="modal" :data-bs-target="'#reportModal'"

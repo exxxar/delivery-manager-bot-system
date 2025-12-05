@@ -22,6 +22,9 @@ class Sale extends Model
         'planned_delivery_date',
         'actual_delivery_date',
         'quantity',
+        'title',
+        'description',
+        'status',
         'total_price',
         'product_id',
         'agent_id',
@@ -41,6 +44,8 @@ class Sale extends Model
         'supplier_id' => 'integer',
         'created_by_id' => 'integer',
     ];
+
+    protected $with = ["product","agent","customer","supplier","creator"];
 
     public function product(): BelongsTo
     {
@@ -65,5 +70,25 @@ class Sale extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class,'created_by_id','id');
+    }
+
+    public function toTelegramText(): string
+    {
+        return
+            "<b>Задача #{$this->id}</b>\n" .
+            "<b>Название:</b> {$this->title}\n" .
+            "<b>Описание:</b> {$this->description}\n" .
+            "<b>Статус:</b> {$this->status}\n" .
+            "<b>Дата встречи:</b> " . ($this->due_date ?? '-') . "\n" .
+            "<b>Дата продажи:</b> " . ($this->sale_date ?? '-') . "\n" .
+            "<b>План. доставка:</b> " . ($this->planned_delivery_date ?? '-') . "\n" .
+            "<b>Факт. доставка:</b> " . ($this->actual_delivery_date ?? '-') . "\n" .
+            "<b>Количество:</b> {$this->quantity}\n" .
+            "<b>Сумма заказа:</b> {$this->total_price}\n" .
+            "<b>Агент:</b> " . ($this->agent?->name ?? '-') . "\n" .
+            "<b>Клиент:</b> " . ($this->customer?->name ?? '-') . "\n" .
+            "<b>Поставщик:</b> " . ($this->supplier?->name ?? '-') . "\n" .
+            "<b>Продукт:</b> " . ($this->product?->name ?? '-') . "\n" .
+            "<b>Создан админом:</b> " . ($this->creator?->name ?? '-') . "\n";
     }
 }

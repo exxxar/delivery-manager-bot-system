@@ -402,6 +402,7 @@ Route::prefix("bot-api")
             ->group(function () {
                 Route::get('/with-products', [ProductCategoryController::class, 'indexWithProducts']);
                 Route::get('/fetch-next-products/{categoryId}/products', [ProductCategoryController::class, 'nextProducts']);
+                Route::post('/remove-all', [ProductCategoryController::class, 'removeAll']);
 
                 // Список всех категорий товаров
                 Route::get('/', [ProductCategoryController::class, 'index']);
@@ -413,7 +414,7 @@ Route::prefix("bot-api")
                 Route::put('/{id}', [ProductCategoryController::class, 'update']);
                 Route::patch('/{id}', [ProductCategoryController::class, 'update']); // частичное обновление
                 // Удалить категорию
-                Route::delete('/product-categories/{id}', [ProductCategoryController::class, 'destroy']);
+                Route::delete('/{id}', [ProductCategoryController::class, 'destroy']);
 
             });
 

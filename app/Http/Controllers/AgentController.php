@@ -38,7 +38,10 @@ class AgentController extends Controller
 
 
         $query = Sale::query()
-            ->where('agent_id', $agent->id);
+            ->where(function ($q) use ($botUser, $agent) {
+                return $q->where("agent_id", $agent->id)
+                    ->orWhere("created_by_id", $botUser->id);
+            });
 
         // 🔹 Фильтры по тексту и статусу
         if (isset($request->title)) {

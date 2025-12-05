@@ -3,7 +3,7 @@ import Pagination from "@/Components/Pagination.vue";
 </script>
 
 <template>
-    <h4 class="mb-3">Товары по поставщикам</h4>
+
         <div
             v-for="supplier in supplierStore.items"
             :key="supplier.id"

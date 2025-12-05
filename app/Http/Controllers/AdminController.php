@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RoleEnum;
 use App\Http\Requests\SupplierStoreRequest;
 use App\Http\Requests\SupplierUpdateRequest;
+use App\Models\Agent;
 use App\Models\Supplier;
 use App\Models\User;
 use Carbon\Carbon;
@@ -72,7 +73,8 @@ class AdminController extends Controller
 
     }
 
-    public function exportFull(Request $request) {
+    public function exportFull(Request $request)
+    {
         $validate = $request->validate([
             "startDate" => "required",
             "endDate" => "required",
@@ -80,18 +82,22 @@ class AdminController extends Controller
 
         $admin = $request->botUser;
 
+        $agent = $admin->role < 3 ? Agent::query()
+            ->where("user_id", $admin->id)->first() : null;
+
         $fromDate = Carbon::parse($validate["startDate"]);
         $toDate = Carbon::parse($validate["endDate"]);
 
         \App\Facades\BotMethods::bot()
             ->sendMessage($admin->telegram_chat_id,
-            "Внимание! Готовим отчет по зарплатам, это займет какое-то время!"
+                "Внимание! Готовим отчет по зарплатам, это займет какое-то время!"
             );
 
         $content =
             Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
                 $fromDate ?? Carbon::now()->startOfMonth(),
                 $toDate ?? Carbon::now()->endOfMonth(),
+                $agent
             ), \Maatwebsite\Excel\Excel::XLSX);
 
         $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
@@ -99,6 +105,9 @@ class AdminController extends Controller
             ->sendDocument($admin->telegram_chat_id,
                 "Отчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
                 \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
+
+        if ($admin->role < 3)
+            return response()->noContent();
 
         \App\Facades\BotMethods::bot()
             ->sendMessage($admin->telegram_chat_id,

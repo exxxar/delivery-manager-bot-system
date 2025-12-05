@@ -32,9 +32,6 @@ import Pagination from "@/Components/Pagination.vue";
                         <template v-if="forSelect">
                             <li><a class="dropdown-item" href="#" @click.prevent="selectCustomer(customer)">Выбрать клиента</a>
                             </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
                         </template>
                         <li><a class="dropdown-item" href="#" @click.prevent="openEdit(customer)">Редактировать</a></li>
                         <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(customer)">Удалить</a></li>

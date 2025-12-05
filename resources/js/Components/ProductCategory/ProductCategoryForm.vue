@@ -38,6 +38,8 @@
 
 <script>
 import axios from 'axios'
+import {useProductCategoriesStore} from "@/stores/product-categories";
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     name: 'ProductCategoryForm',
@@ -49,6 +51,8 @@ export default {
     },
     data() {
         return {
+            alertStore: useAlertStore(),
+            productCategoryStore: useProductCategoriesStore(),
             form: {
                 name: '',
                 description: ''
@@ -66,16 +70,23 @@ export default {
         async submitForm() {
             try {
                 if (this.isEdit) {
-                    await axios.put(`/api/product_categories/${this.form.id}`, this.form)
-                    alert('Категория обновлена!')
+                    await this.productCategoryStore.update(this.form.id, this.form).then(()=>{
+                        this.alertStore.show("Категория успешно обновлена", "success")
+                    })
+
                 } else {
-                    await axios.post('/api/product_categories', this.form)
-                    alert('Категория добавлена!')
+                    await this.productCategoryStore.create(this.form).then(()=>{
+                        this.alertStore.show("Категория успешно создана", "success")
+                    })
+
                 }
                 this.$emit('saved') // событие для родителя
+
             } catch (error) {
                 console.error('Ошибка сохранения категории:', error)
             }
+
+
         }
     }
 }

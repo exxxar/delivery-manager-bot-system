@@ -18,30 +18,42 @@ import BackBtn from "@/Components/BackBtn.vue";
         <template v-if="tab==='product'">
             <button
                 @click="tab='menu'"
-                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <ProductForm v-if="selectedProduct" :initial-data="selectedProduct"></ProductForm>
             <p class="alert alert-info" v-else>
                 Продукт не выбран
             </p>
+
         </template>
         <template v-if="tab==='products'">
             <button
                 @click="tab='menu'"
-                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров</h4>
             <ProductList></ProductList>
+
+            <nav class="navbar fixed-bottom p-3">
+                <button
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#createProductModal"
+                    class="btn w-100 p-3 btn-primary"
+                >
+                    Добавить товар
+                </button>
+            </nav>
         </template>
         <template v-if="tab==='products-by-supplier'">
             <button
                 @click="tab='menu'"
-                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров по поставщику</h4>
             <ProductListBySupplier v-on:edit-product="openEditProduct"></ProductListBySupplier>
         </template>
         <template v-if="tab==='products-by-categories'">
             <button
                 @click="tab='menu'"
-                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров по категориям</h4>
             <ProductListByCategory v-on:edit-product="openEditProduct"></ProductListByCategory>
 
@@ -50,7 +62,7 @@ import BackBtn from "@/Components/BackBtn.vue";
         <template v-if="tab==='categories'">
             <button
                 @click="tab='menu'"
-                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Категории товара</h4>
             <ProductCategoryList></ProductCategoryList>
 
@@ -69,9 +81,25 @@ import BackBtn from "@/Components/BackBtn.vue";
         <template v-if="tab==='import-products'">
             <button
                 @click="tab='menu'"
-                class="btn btn-outline-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <ImportProducts></ImportProducts>
         </template>
+    </div>
+
+
+    <!-- Модалка редактирования -->
+    <div class="modal fade" id="createProductModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавление товара</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ProductForm @saved="fetchProducts"/>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Модалка создания -->
@@ -109,7 +137,26 @@ export default {
             this.selectMenu("product")
             this.selectedProduct = product
         },
+        fetchProducts(){
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCategoryModal'))
+
+            if (modal)
+                modal.hide()
+
+
+            this.loading = true
+            this.$nextTick(() => {
+                this.loading = false
+            })
+        },
         fetchData() {
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCategoryModal'))
+
+            if (modal)
+                modal.hide()
+
+
             this.loading = true
             this.$nextTick(() => {
                 this.loading = false

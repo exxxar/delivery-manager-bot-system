@@ -15,10 +15,10 @@ import Pagination from "@/Components/Pagination.vue";
 
     <ul class="list-group">
         <li
-            @click="selectAgent(agent)"
+
             v-for="agent in filteredAgents" :key="agent.id"
             class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
+            <div  @click="selectAgent(agent)">
                 <div class="fw-bold">{{ agent.name }}</div>
                 <small class="text-muted">{{ agent.phone }} | {{ agent.email }}</small>
             </div>
@@ -31,18 +31,20 @@ import Pagination from "@/Components/Pagination.vue";
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <template v-if="forSelect">
-                        <li><a class="dropdown-item" href="#" @click.prevent="selectAgent(agent)">Выбрать агента</a>
+                        <li><a class="dropdown-item" href="#" @click.prevent="selectAgent(agent)">Выбрать</a>
+                        </li>
+                    </template>
+
+                    <template v-if="!forSelect">
+                        <li><a class="dropdown-item" href="#" @click.prevent="openAgentInfo(agent)">Просмотр</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openEditAgent(agent)">Редактировать</a>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
+                        <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(agent)">Удалить</a></li>
                     </template>
 
-                    <li><a class="dropdown-item" href="#" @click.prevent="openAgentInfo(agent)">Просмотр агента</a></li>
-                    <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(agent)">Удалить
-                        агента</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openEditAgent(agent)">Редактировать агента</a>
-                    </li>
                 </ul>
             </div>
         </li>
@@ -148,7 +150,7 @@ export default {
         selectAgent(agent) {
             if (!this.forSelect)
                 return
-            this.$emit("select-agent", agent)
+            this.$emit("select", agent)
         },
 
         openAgentInfo(agent) {

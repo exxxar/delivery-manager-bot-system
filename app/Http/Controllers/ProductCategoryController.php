@@ -49,6 +49,19 @@ class ProductCategoryController extends Controller
         return response()->json(null, 204);
     }
 
+    public function removeAll(Request $request){
+        $request->validate([
+            "ids"=>"required"
+        ]);
+
+        $ids = $request->ids ?? [];
+
+        foreach ($ids as $id)
+            ProductCategory::destroy($id);
+
+        return response()->json(null, 204);
+    }
+
 
     /**
      * @throws HttpException

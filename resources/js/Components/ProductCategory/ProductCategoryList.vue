@@ -6,64 +6,74 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 <template>
 
 
-        <ul class="list-group">
-            <li
-                v-for="category in productCategoryStore.items"
-                :key="category.id"
-                class="list-group-item d-flex justify-content-between align-items-center"
-            >
-                <div>
-                    <div class="fw-bold">{{ category.name }}</div>
-                    <small class="text-muted">{{ category.description }}</small>
-                </div>
+    <div class="d-flex">
+        <a href="javascript:void(0)"
+           @click="selectAll"
+           class="small">Выделить все</a>
+        <template v-if="selection.length>0">
+            <a href="javascript:void(0)"
+               @click="removeAll"
+               class="small text-danger mx-2">Удалить выделенное</a>
+        </template>
 
-                <!-- Dropdown меню -->
-                <div class="dropdown">
-                    <button class="btn btn-sm" type="button"
-                            data-bs-toggle="dropdown">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                @click.prevent="openViewModal(category)"
-                            >Просмотреть</a>
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="#"
-                                @click.prevent="openEditModal(category)"
-                            >Редактировать</a>
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item text-danger"
-                                href="#"
-                                @click.prevent="openDeleteModal(category)"
-                            >Удалить</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-        </ul>
-
-        <Pagination
-            :pagination="productCategoryStore.pagination"
-            @page-changed="fetchDataByUrl"
-        />
-
-        <!-- Сообщение если список пуст -->
-        <div
-            v-if="productCategoryStore.items.length === 0"
-            class="alert alert-info mt-3"
+    </div>
+    <ul class="list-group">
+        <li
+            v-for="category in productCategoryStore.items"
+            :key="category.id"
+            v-bind:class="{'border-primary': selection.indexOf(category.id)!==-1}"
+            class="list-group-item d-flex justify-content-between align-items-center"
         >
-            Категорий пока нет.
-        </div>
+            <div @click="toggleSelection(category.id)">
+                <div class="fw-bold">{{ category.name }}</div>
+                <small class="text-muted">{{ category.description }}</small>
+            </div>
 
+            <!-- Dropdown меню -->
+            <div class="dropdown">
+                <button class="btn btn-sm" type="button"
+                        data-bs-toggle="dropdown">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a
+                            class="dropdown-item"
+                            href="#"
+                            @click.prevent="openViewModal(category)"
+                        >Просмотреть</a>
+                    </li>
+                    <li>
+                        <a
+                            class="dropdown-item"
+                            href="#"
+                            @click.prevent="openEditModal(category)"
+                        >Редактировать</a>
+                    </li>
+                    <li>
+                        <a
+                            class="dropdown-item text-danger"
+                            href="#"
+                            @click.prevent="openDeleteModal(category)"
+                        >Удалить</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+    </ul>
 
+    <Pagination
+        :pagination="productCategoryStore.pagination"
+        @page-changed="fetchDataByUrl"
+    />
+
+    <!-- Сообщение если список пуст -->
+    <div
+        v-if="productCategoryStore.items.length === 0"
+        class="alert alert-info mt-3"
+    >
+        Категорий пока нет.
+    </div>
 
 
     <!-- Модалка просмотра -->
@@ -97,37 +107,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
                     <!-- Заглушка под форму -->
                     <ProductCategoryForm
                         v-if="selectedCategory"
-                        :initial-data="selectedCategory" @saved="fetchData" />
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка удаления -->
-    <div class="modal fade" id="deleteCategoryModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Удаление категории</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>
-                        Вы уверены, что хотите удалить категорию
-                        <strong>{{ selectedCategory?.name }}</strong>?
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                    >Отмена</button>
-                    <button
-                        type="button"
-                        class="btn btn-danger"
-                        @click="confirmDelete"
-                    >Удалить</button>
+                        :initial-data="selectedCategory" @saved="fetchData"/>
                 </div>
             </div>
         </div>
@@ -137,21 +117,61 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 </template>
 
 <script>
-import { useProductCategoriesStore } from "@/stores/product-categories";
+import {useProductCategoriesStore} from "@/stores/product-categories";
+import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 
 export default {
     name: "ProductCategoryList",
     data() {
         return {
+            modalStore: useModalStore(),
             productCategoryStore: useProductCategoriesStore(),
-            selectedCategory: null
+            selectedCategory: null,
+            selection: []
         };
     },
     created() {
         this.fetchData();
     },
     methods: {
+        removeAll() {
+            this.modalStore.open(
+                `Вы уверены, что хотите удалить все выбранные элементы?`,
+                () => {
+                    this.productCategoryStore.removeAll(this.selection)
+                    this.selection = []
+                },
+                () => {
+                    this.modalStore.close()
+                    this.selection = []
+                }
+            )
+
+
+        },
+        toggleSelection(id) {
+            let index = this.selection.findIndex(i => i === id)
+            if (index === -1)
+                this.selection.push(id)
+            else
+                this.selection.splice(index, 1)
+        },
+        selectAll() {
+            if (this.selection.length === 0)
+                this.productCategoryStore.items.forEach(i => {
+                    if (this.selection.indexOf(i.id) === -1)
+                        this.selection.push(i.id)
+                })
+            else
+                this.selection = []
+        },
         async fetchData(page = 1) {
+
+            const editModal = bootstrap.Modal.getInstance(document.getElementById("editCategoryModal"));
+
+            if (editModal)
+                editModal.hide()
+
             await this.productCategoryStore.fetchAllByPage(page);
         },
         async fetchDataByUrl(url) {
@@ -163,7 +183,7 @@ export default {
         },
         openEditModal(category) {
             this.selectedCategory = null
-            this.$nextTick(()=>{
+            this.$nextTick(() => {
                 this.selectedCategory = category;
                 new bootstrap.Modal(document.getElementById("editCategoryModal")).show();
             })
@@ -171,16 +191,20 @@ export default {
         },
         openDeleteModal(category) {
             this.selectedCategory = category;
-            new bootstrap.Modal(document.getElementById("deleteCategoryModal")).show();
+            this.modalStore.open(
+                `Вы уверены, что хотите удалить ${this.selectedCategory.name}?`,
+                () => {
+                    this.productCategoryStore.remove(this.selectedCategory.id)
+                    this.selection = []
+                    this.fetchData()
+                },
+                () => {
+                    this.modalStore.close()
+                    this.selection = []
+                })
         },
-        async confirmDelete() {
-            if (!this.selectedCategory) return;
-            await this.productCategoryStore.delete(this.selectedCategory.id);
-            this.fetchData();
-            bootstrap.Modal.getInstance(
-                document.getElementById("deleteCategoryModal")
-            ).hide();
-        }
+
+
     }
 };
 </script>

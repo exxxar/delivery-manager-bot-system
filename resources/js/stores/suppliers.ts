@@ -20,11 +20,43 @@ export const useSuppliersStore = defineStore('suppliers', {
         items: [] as Supplier[],
         loading: false,
         error: null as string | null,
+        sort: { field: 'id', direction: 'asc' } as { field: string; direction: 'asc' | 'desc' }
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+        setFilters(filters: Record<string, any>) {
+            this.filters = filters
+        },
+
+        setSort(field: string, direction: 'asc' | 'desc') {
+            this.sort = { field, direction }
+        },
+        async fetchFiltered(page = 1, size = 30) {
+            const params = new URLSearchParams()
+
+            // фильтры
+            // @ts-ignore
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    params.append(key, String(value))
+                }
+            })
+
+            // сортировка
+            params.append('sort_field', this.sort.field)
+            params.append('sort_direction', this.sort.direction)
+
+            // пагинация
+            params.append('page', String(page))
+            params.append('suze', String(size))
+
+            const { data } = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
+            this.items = data.data
+            this.pagination = data
+            return true
+        },
         // @ts-ignore
         async fetchAll() {
             this.loading = true
@@ -77,7 +109,15 @@ export const useSuppliersStore = defineStore('suppliers', {
             this.items.push(data)
             return data as Supplier
         },
-
+        // @ts-ignore
+        async removeAll(ids: number[]) {
+            await makeAxiosFactory(`${path}/remove-all`, 'POST', {
+                ids: ids
+            })
+            ids.forEach(id => {
+                this.items = this.items.filter(c => c.id !== id)
+            })
+        },
         async update(id: number, payload: Partial<Supplier>) {
             const { data } = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)
             const idx = this.items.findIndex(x => x.id === id)

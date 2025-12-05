@@ -2,6 +2,8 @@
 import SaleForm from "@/Components/Sales/SaleForm.vue";
 import Pagination from "@/Components/Pagination.vue";
 import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
+import TaskCard from "@/Components/Sales/TaskCard.vue";
+
 </script>
 <template>
 
@@ -9,31 +11,49 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
     <!-- Быстрый поиск -->
     <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
 
-    <!-- Кнопка фильтра -->
-    <div class="mb-2">
-        <button class="btn btn-secondary" @click="openFilter">Фильтр</button>
-
-        <!-- Dropdown сортировки -->
-        <div class="dropdown d-inline-block ms-2">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Сортировка: {{ salesStore.sort.field }} ({{ salesStore.sort.direction }})
-            </button>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" @click="changeSort('title')">Название</a></li>
-                <li><a class="dropdown-item" @click="changeSort('status')">Статус</a></li>
-                <li><a class="dropdown-item" @click="changeSort('sale_date')">Дата продажи</a></li>
-                <li><a class="dropdown-item" @click="changeSort('total_price')">Сумма</a></li>
-            </ul>
-        </div>
-    </div>
+    <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
 
     <ul class="list-group">
         <li v-for="sale in filteredSales" :key="sale.id"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div>
-                <div class="fw-bold">{{ sale.title }}</div>
-                <div class="fw-bold" style="font-size:14px;">Дата задания {{ sale.due_date }}</div>
-                <small class="text-muted">Статус: {{ saleStatuses[sale.status] }}</small>
+                <p class="fw-bold mb-2"><span class="badge bg-primary" v-if="field_visible?.id||false">#{{
+                        sale.id
+                    }}</span> {{ sale.title }} </p>
+                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
+                    {{ sale.due_date }}</p>
+                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.sale_date||false">Дата продажи
+                    {{ sale.sale_date }}</p>
+                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.planned_delivery_date||false">
+                    Планируемая дата доставки {{ sale.planned_delivery_date }}</p>
+                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.actual_delivery_date||false">
+                    Фактическая дата доставки {{ sale.actual_delivery_date }}</p>
+                <small class="text-muted" v-if="field_visible?.status||false">Статус:
+                    <span
+                        class="badge"
+                        v-bind:class="{
+                            'bg-warning':sale.status==='pending',
+                            'bg-info':sale.status==='assigned',
+                            'bg-primary':sale.status==='delivered',
+                            'bg-success':sale.status==='completed',
+                            'bg-danger':sale.status==='rejected',
+                        }">{{ saleStatuses[sale.status] }}</span>
+                </small>
+                <p class="mb-2" v-if="field_visible?.description||false">{{ sale.description }}</p>
+                <p class="mb-2" v-if="field_visible?.quantity||false">Доставляемое число товара <span
+                    class="fw-bold">{{ sale.quantity }}</span> ед.</p>
+                <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
+                    class="fw-bold">{{ sale.total_price }}</span> руб.</p>
+                <p class="mb-2" v-if="field_visible?.agent_id||false">Агент <span
+                    class="fw-bold">{{ sale.agent?.name || sale.agent_id || '-' }}</span></p>
+                <p class="mb-2" v-if="field_visible?.customer_id||false">Клиент <span
+                    class="fw-bold">{{ sale.customer?.name || sale.customer_id || '-' }}</span></p>
+                <p class="mb-2" v-if="field_visible?.supplier_id||false">Поставщик <span
+                    class="fw-bold">{{ sale.supplier?.name || sale.supplier_id || '-' }}</span></p>
+                <p class="mb-2" v-if="field_visible?.created_by_id||false">Администратор <span
+                    class="fw-bold">{{ sale.creator?.name || sale.created_by_id || '-' }}</span></p>
+                <p class="mb-2" v-if="field_visible?.product_id||false">Товар <span
+                    class="fw-bold">{{ sale.product?.name || sale.product_id || '-' }}</span></p>
             </div>
 
             <!-- Dropdown -->
@@ -50,14 +70,25 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
                             <hr class="dropdown-divider">
                         </li>
                     </template>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openEdit(sale)">Редактировать</a></li>
-                    <li><a class="dropdown-item text-danger" href="#"
-                           @click.prevent="confirmDelete(sale)">Удалить</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openView(sale)">Просмотреть</a></li>
-                    <li><a class="dropdown-item text-success" href="#" @click.prevent="openConfirmDeal(sale)">Подтвердить
-                        сделку</a></li>
-                    <li><a class="dropdown-item text-warning" href="#" @click.prevent="cancelDeal(sale)">Отменить
-                        сделку</a></li>
+                    <template v-if="!forSelect">
+                        <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">Просмотреть</a>
+                        </li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">Редактировать</a>
+                        </li>
+                        <li v-if="sale.status!=='completed'"><a class="dropdown-item text-success"
+                                                                href="javascript:void(0)"
+
+                                                                @click.prevent="openConfirmDeal(sale)">Подтвердить
+                            сделку</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                               @click.prevent="confirmDelete(sale)">Удалить</a></li>
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                               @click.prevent="cancelDeal(sale)">Отменить
+                            сделку</a></li>
+                    </template>
                 </ul>
             </div>
         </li>
@@ -76,22 +107,6 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
     </div>
 
 
-
-
-    <!-- Модалка редактирования -->
-    <div class="modal fade" id="newSaleModal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Создание задания</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <SaleForm @saved="fetchData"/>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSaleModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
@@ -107,7 +122,6 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
     </div>
 
 
-
     <!-- Модалка просмотра -->
     <div class="modal fade" id="viewSaleModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -116,7 +130,9 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-
+                    <TaskCard
+                        v-if="selectedSale"
+                        :task="selectedSale"></TaskCard>
                 </div>
             </div>
         </div>
@@ -131,42 +147,28 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="confirmDeal">
-                        <div class="form-floating mb-3">
+                        <div class="form-floating mb-2">
                             <input v-model="dealForm.sale_date" type="date" class="form-control" id="sale_date"
                                    required>
                             <label for="sale_date">Дата сделки</label>
                         </div>
-                        <div class="form-floating mb-3">
+                        <div class="form-floating mb-2">
                             <input v-model="dealForm.quantity" type="number" class="form-control" id="quantity"
                                    placeholder="Количество" required>
                             <label for="quantity">Количество</label>
                         </div>
-                        <div class="form-floating mb-3">
+                        <div class="form-floating mb-2">
                             <input v-model="dealForm.total_price" type="number" step="0.01" class="form-control"
                                    id="total_price" placeholder="Сумма" required>
                             <label for="total_price">Сумма сделки</label>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Подтвердить</button>
+                        <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модалка фильтрации -->
-    <div class="modal fade" id="saleFilterModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Фильтры</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <SaleFilterForm @apply-filters="applyFilters"/>
-                </div>
-            </div>
-        </div>
-    </div>
 
 </template>
 
@@ -180,9 +182,10 @@ import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 
 export default {
     name: 'SaleList',
-    props: ["forSelect","adminId", "agentId", "productId", "customerId", "supplierId"],
+    props: ["forSelect", "adminId", "agentId", "productId", "customerId", "supplierId"],
     data() {
         return {
+            field_visible: null,
             sales: [],
             search: '',
             userStore: useUsersStore(),
@@ -228,22 +231,32 @@ export default {
     methods: {
         async fetchData(page = 1) {
             await this.salesStore.fetchAllByPage(page)
+
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editSaleModal'))
+            if (editModal)
+                editModal.hide()
+
+            const confirmDealModal = bootstrap.Modal.getInstance(document.getElementById('confirmDealModal'))
+            if (confirmDealModal)
+                confirmDealModal.hide()
         },
         async fetchDataByUrl(url) {
             await this.salesStore.fetchByUrl(url)
         },
-        addSale() {
-            new bootstrap.Modal(document.getElementById('newSaleModal')).show()
-        },
+
         openEdit(sale) {
-            this.selectedSale = sale
-            new bootstrap.Modal(document.getElementById('editSaleModal')).show()
+            this.selectedSale = null
+            this.$nextTick(() => {
+                this.selectedSale = sale
+                new bootstrap.Modal(document.getElementById('editSaleModal')).show()
+            })
+
         },
         confirmDelete(sale) {
             this.selectedSale = sale
             this.modalStore.open(
                 `Вы уверены, что хотите удалить ${this.selectedSale?.title}?`,
-                () =>  this.salesStore.deleteSale(this.selectedSale.id),
+                () => this.salesStore.deleteSale(this.selectedSale.id),
                 () => this.modalStore.close()
             )
         },
@@ -256,25 +269,29 @@ export default {
             }
         },
         openView(sale) {
-            this.selectedSale = sale
-            new bootstrap.Modal(document.getElementById('viewSaleModal')).show()
+            this.selectedSale = null
+            this.$nextTick(() => {
+                this.selectedSale = sale
+                new bootstrap.Modal(document.getElementById('viewSaleModal')).show()
+            })
         },
         openConfirmDeal(sale) {
-            this.modalStore.open(
-                `Подтвердить сделку ${this.selectedSale?.title}?`,
-                () =>  this.salesStore.confirmDeal(this.selectedSale),
-                () => this.modalStore.close()
-            )
+            this.selectedSale = null
+            this.$nextTick(() => {
+                this.selectedSale = sale
+                this.dealForm.quantity = sale.quantity
+                this.dealForm.id = sale.id
+                this.dealForm.total_price = sale.total_price
+                new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
+            })
 
-            new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
+
         },
         async confirmDeal() {
-            try {
-                await this.salesStore.confirmDeal()
-                bootstrap.Modal.getInstance(document.getElementById('confirmDealModal')).hide()
-            } catch (error) {
-                console.error('Ошибка подтверждения сделки:', error)
-            }
+            this.dealForm.id = this.selectedSale.id
+            await this.salesStore.confirmDeal(this.dealForm)
+            bootstrap.Modal.getInstance(document.getElementById('confirmDealModal')).hide()
+
         },
         async cancelDeal(sale) {
             try {
@@ -283,19 +300,28 @@ export default {
                 console.error('Ошибка отмены сделки:', error)
             }
         },
-        openFilter() {
-            new bootstrap.Modal(document.getElementById('saleFilterModal')).show()
-        },
+
         applyFilters(filters) {
+            this.field_visible = filters.field_visible
+            let size = filters.size || 30
+            let page = filters.page || 1
+            const only_my_tasks = filters.only_my_tasks || (this.user?.role || 0) < 3
+            delete filters.field_visible
+            delete filters.only_my_tasks
             this.salesStore.setFilters(filters)
-            this.salesStore.fetchFiltered()
+            if (only_my_tasks)
+                this.salesStore.selfSalesFiltered(page, size)
+            else
+                this.salesStore.fetchFiltered(page, size)
         },
-        changeSort(field) {
-            const current = this.salesStore.sort
-            const direction = current.field === field && current.direction === 'asc' ? 'desc' : 'asc'
-            this.salesStore.setSort(field, direction)
-            this.salesStore.fetchFiltered()
-        }
+
     }
 }
 </script>
+<style scoped>
+p {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+}
+</style>

@@ -27,11 +27,12 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                     <template v-if="forSelect">
                         <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', product)">Выбрать</a></li>
                     </template>
+                    <template v-if="!forSelect">
                     <li><a class="dropdown-item" href="#" @click.prevent="openView(product)">Просмотреть</a></li>
                     <li><a class="dropdown-item" href="#" @click.prevent="openEdit(product)">Редактировать</a></li>
                     <li><a class="dropdown-item text-danger" href="#"
                            @click.prevent="confirmDelete(product)">Удалить</a></li>
-
+                    </template>
                 </ul>
             </div>
         </li>
@@ -47,16 +48,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
         Товаров пока нет.
     </div>
 
-    <nav
-        class="navbar bg-transparent position-fixed bottom-0 start-0 w-100">
-        <div class="container-fluid">
-            <button
-                type="button"
-                class="btn btn-primary w-100 p-3">
-                Добавить товар
-            </button>
-        </div>
-    </nav>
+
 
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editProductModal" tabindex="-1">

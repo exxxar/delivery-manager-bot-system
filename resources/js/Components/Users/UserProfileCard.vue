@@ -15,10 +15,10 @@
 
                 <p class="text-muted mb-0">{{ user.fio_from_telegram || '—' }}</p>
 
-                <!-- Email -->
+<!--                &lt;!&ndash; Email &ndash;&gt;
                 <p class="mb-1">
                     {{ user.email }}
-                </p>
+                </p>-->
 
                 <!-- Telegram -->
                 <p class="mb-1" v-if="user.telegram_chat_id">

@@ -43,7 +43,7 @@ export const useSalesStore = defineStore('sales', {
                 this.loading = false
             }
         },
-        async selfSalesFiltered(page = 1) {
+        async selfSalesFiltered(page = 1, size = 30) {
             const params = new URLSearchParams()
 
             // фильтры
@@ -60,13 +60,14 @@ export const useSalesStore = defineStore('sales', {
 
             // пагинация
             params.append('page', String(page))
+            params.append('size', String(size))
 
             const { data } = await makeAxiosFactory(`${path}/self-sales?${params.toString()}`, 'GET')
             this.items = data.data
             this.pagination = data
             return true
         },
-        async fetchFiltered(page = 1) {
+        async fetchFiltered(page = 1, size = 30) {
             const params = new URLSearchParams()
 
             // фильтры
@@ -83,6 +84,7 @@ export const useSalesStore = defineStore('sales', {
 
             // пагинация
             params.append('page', String(page))
+            params.append('suze', String(size))
 
             const { data } = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
             this.items = data.data
@@ -133,10 +135,11 @@ export const useSalesStore = defineStore('sales', {
             return data as Sale
         },
         // 🔹 Подтверждение сделки
-        async confirmDeal(sale: any) {
+        async confirmDeal(sale: object) {
             try {
 
-                const { data } = await makeAxiosFactory(`${path}/${this.selectedSale.id}`, 'PUT', {
+                // @ts-ignore
+                const { data } = await makeAxiosFactory(`${path}/${sale.id}`, 'PUT', {
                     ...sale,
                     status: 'completed',
                 })
