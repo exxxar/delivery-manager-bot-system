@@ -50,17 +50,22 @@ class SaleController extends Controller
         if (isset($request->agent_id) && $botUser->role>=3) {
             $query->where('agent_id', $request->agent_id);
         }
-        else {
+
+        if ($botUser->role<3) {
             $agent = Agent::query()
                 ->where("user_id", $botUser->id)
                 ->first();
 
             $query
                 ->where(function ($q) use ($botUser, $agent) {
-                return $q->where("agent_id", $agent->id)
-                    ->orWhere("created_by_id", $botUser->id);
+                    if (is_null($agent))
+                        return $q->where("created_by_id", $botUser->id);
+                    else
+                        return $q->where("agent_id", $agent->id)
+                            ->orWhere("created_by_id", $botUser->id);
             });
         }
+
         if (isset($request->customer_id)) {
             $query->where('customer_id', $request->customer_id);
         }
