@@ -33,14 +33,14 @@ class AgentController extends Controller
             ->where("user_id", $botUser->id)
             ->first();
 
-        if (is_null($agent))
-            throw new HttpException(404, "Агент не найден");
-
 
         $query = Sale::query()
             ->where(function ($q) use ($botUser, $agent) {
-                return $q->where("agent_id", $agent->id)
-                    ->orWhere("created_by_id", $botUser->id);
+                if (is_null($agent))
+                    return $q->where("created_by_id", $botUser->id);
+                else
+                    return $q->where("agent_id", $agent->id)
+                        ->orWhere("created_by_id", $botUser->id);
             });
 
         // 🔹 Фильтры по тексту и статусу
