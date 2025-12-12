@@ -142,14 +142,13 @@ export const useUsersStore = defineStore('users', {
         },
         // @ts-ignore
         async remove(id: number) {
-            console.log("REMOVE", id)
+
             await makeAxiosFactory(`${path}/${id}`, 'DELETE')
             this.items = this.items.filter(u => u.id !== id)
         },
         // @ts-ignore
         async getTelegramLink(id: number) {
             await makeAxiosFactory(`${path}/${id}/tg`, 'GET')
-            this.items = this.items.filter(u => u.id !== id)
         },
 
 

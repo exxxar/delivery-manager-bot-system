@@ -273,7 +273,7 @@ class UserController extends Controller
 
         $tmpUserLink = $findUser->getUserTelegramLink();
 
-        $userInfo = $user->toTelegramText();
+        $userInfo = $findUser->toTelegramText();
 
         \App\Facades\BotMethods::bot()->sendMessage(
             $user->telegram_chat_id,

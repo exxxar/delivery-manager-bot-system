@@ -54,26 +54,26 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <template v-if="forSelect">
-                        <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', user)">Выбрать</a>
+                        <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="$emit('select', user)">Выбрать</a>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
                     </template>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openRoleSwitcher(user)">Сменить роль</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openEdit(user)">Редактировать</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openRoleSwitcher(user)">Сменить роль</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(user)">Редактировать</a></li>
 
-                    <li><a class="dropdown-item" href="#" @click.prevent="openView(user)">Просмотреть</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(user)">Просмотреть</a></li>
                     <hr class="dropdown-divider">
-                    <li><a class="dropdown-item" href="#" @click.prevent="getTelegramLink(user)">Получить ссылку на
+                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="getTelegramLink(user)">Получить ссылку на
                         телеграм</a></li>
                     <hr class="dropdown-divider">
-                    <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(user)">Удалить</a>
+                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmDelete(user)">Удалить</a>
                     </li>
-                    <li v-if="!user.blocked_at"><a class="dropdown-item text-danger" href="#"
+                    <li v-if="!user.blocked_at"><a class="dropdown-item text-danger" href="javascript:void(0)"
                                                    @click.prevent="confirmBlocked(user)">Заблокировать</a>
                     </li>
-                    <li v-if="user.blocked_at"><a class="dropdown-item text-danger" href="#"
+                    <li v-if="user.blocked_at"><a class="dropdown-item text-danger" href="javascript:void(0)"
                                                   @click.prevent="confirmUnBlocked(user)">Разблокировать</a>
                     </li>
                 </ul>
