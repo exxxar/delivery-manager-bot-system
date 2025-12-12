@@ -110,7 +110,7 @@ export default {
     watch: {},
     created() {
         this.userStore.fetchSelf().then(() => {
-            if (!this.userStore.self.registration_at)
+            if (!this.userStore.self.registration_at && this.userStore.self.role > 0)
                 new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
         })
     },
@@ -130,7 +130,7 @@ export default {
         this.tg.BackButton.hide()
     },
     methods: {
-        result(){
+        result() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('primaryUserModal'))
             if (modal)
                 modal.hide()
