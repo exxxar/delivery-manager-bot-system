@@ -47,7 +47,7 @@
                 :class="form.agent ? 'btn-success' : 'btn-danger'"
                 @click="tab = 'agents'"
             >
-                {{ form.agent ? form.agent.name : 'Выберите агента...' }}
+                {{ form.agent ? form.agent.name : 'Выберите младшего администратора...' }}
             </button>
 
             <p>Клиент</p>
@@ -83,7 +83,7 @@
 
     <!-- Заглушка для агентов -->
     <template v-if="tab === 'agents'">
-        <h4>Загрузка данных для агента...</h4>
+        <h4>Загрузка данных</h4>
         <!-- тут будет список агентов -->
         <button class="btn btn-secondary mt-3" @click="tab = 'form'">Назад к форме</button>
     </template>

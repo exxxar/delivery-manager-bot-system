@@ -27,7 +27,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                 <label for="region">Регион</label>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 p-3">Сохранить агента</button>
+            <button type="submit" class="btn btn-primary w-100 p-3">Сохранить</button>
         </form>
 
 

@@ -70,7 +70,7 @@
                                 <select v-model="filters.role" class="form-select" id="roleSelect">
                                     <option value="">Все</option>
                                     <option value="0">Пользователь</option>
-                                    <option value="1">Агент</option>
+                                    <option value="1">Младший администратор</option>
                                     <option value="2">Поставщик</option>
                                     <option value="3">Администратор</option>
                                     <option value="4">Суперадмин</option>

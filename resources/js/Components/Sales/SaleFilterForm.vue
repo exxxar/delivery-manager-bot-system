@@ -149,7 +149,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                         @change="selectedAgent = null"
                                         v-model="filters.agent_id"
                                         class="form-control" id="agentInput" placeholder="Агент"/>
-                                    <label for="agentInput">Агент</label>
+                                    <label for="agentInput">Младший админ</label>
                                 </div>
                                 <button
                                     type="button"
@@ -322,7 +322,7 @@ export default {
             salesStore:useSalesStore(),
             tab: 'filter',
             titleMap: {
-                agent: 'Выбор агента',
+                agent: 'Выбор младшего админа',
                 customer: 'Выбор клиента',
                 supplier: 'Выбор поставщика'
             },

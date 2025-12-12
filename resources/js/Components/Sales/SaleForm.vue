@@ -158,7 +158,7 @@ const today = new Date().toISOString().split('T')[0]
                     <div class="form-floating flex-grow-1">
                         <input type="text" class="form-control" id="agent" :value="agentName" placeholder="Агент"
                                readonly>
-                        <label for="agent">Агент</label>
+                        <label for="agent">Младший админ</label>
                     </div>
                     <button type="button" class="btn btn-outline-light text-primary" @click="tab='agent'">Выбрать
                     </button>

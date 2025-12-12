@@ -21,7 +21,7 @@
         <th style="font-weight: bold;">Факт. доставка</th>
         <th style="font-weight: bold;">Количество</th>
         <th style="font-weight: bold;">Сумма заказа</th>
-        <th style="font-weight: bold;">Агент</th>
+        <th style="font-weight: bold;">Младший администратор</th>
         <th style="font-weight: bold;">Клиент</th>
         <th style="font-weight: bold;">Поставщик</th>
         <th style="font-weight: bold;">Продукт</th>
@@ -45,7 +45,7 @@
                         break;
 
                     case 'assigned':
-                        echo "Назначено агенту";
+                        echo "Назначено младшему администратору";
                         break;
 
                     case 'delivered':

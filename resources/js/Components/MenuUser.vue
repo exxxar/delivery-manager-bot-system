@@ -35,7 +35,7 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Заявка на торгового агента</h5>
+                    <h5 class="modal-title">Заявка на младшего администратора</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">

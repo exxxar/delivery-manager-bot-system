@@ -35,7 +35,7 @@
 
         <div class="mt-3">
             <h6 class="fw-bold text-primary">Связанные элементы</h6>
-            <p><strong>Агент:</strong> {{ task.agent?.name || '—' }}</p>
+            <p><strong>Младший админ:</strong> {{ task.agent?.name || '—' }}</p>
             <p><strong>Покупатель:</strong> {{ task.customer?.name || '—' }}</p>
             <p><strong>Поставщик:</strong> {{ task.supplier?.name || '—' }}</p>
             <p><strong>Продукт:</strong> {{ task.product?.name || '—' }}</p>

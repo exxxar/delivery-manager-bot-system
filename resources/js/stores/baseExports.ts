@@ -16,7 +16,7 @@ export const useBaseExports = defineStore('exports', {
             return this._exportHelper(`${path}/birthdays`, 'Дни рождения выгружены')
         },
         async exportAgents() {
-            return this._exportHelper(`${path}/agents`, 'Агенты выгружены')
+            return this._exportHelper(`${path}/agents`, 'Младшие администраторы выгружены')
         },
         async exportAdmins() {
             return this._exportHelper(`${path}/admins`, 'Администраторы выгружены')

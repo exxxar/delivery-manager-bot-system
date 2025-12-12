@@ -24,8 +24,8 @@ export const useJobStore = defineStore('job', {
             return this.submitForm(
                 'agent-job',
                 formData,
-                'Заявка торгового агента отправлена',
-                'Ошибка отправки заявки агента'
+                'Заявка младшего администратора отправлена',
+                'Ошибка отправки заявки'
             )
         },
 

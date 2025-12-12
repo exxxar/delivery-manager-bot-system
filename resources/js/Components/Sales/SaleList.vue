@@ -61,7 +61,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                     class="fw-bold">{{ sale.quantity || 'не указана' }}</span> ед.</p>
                 <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
                     class="fw-bold">{{ sale.total_price }}</span> руб.</p>
-                <p class="mb-2" v-if="field_visible?.agent_id||false">Агент <span
+                <p class="mb-2" v-if="field_visible?.agent_id||false">Младший админ <span
                     class="fw-bold">{{ sale.agent?.name || sale.agent_id || '-' }}</span></p>
                 <p class="mb-2" v-if="field_visible?.customer_id||false">Клиент <span
                     class="fw-bold">{{ sale.customer?.name || sale.customer_id || '-' }}</span></p>

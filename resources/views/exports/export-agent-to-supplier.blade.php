@@ -13,7 +13,7 @@
 <!-- resources/views/reports/delivery_report.blade.php -->
 
 
-<h4 style="font-size: 18px;">Отчет по поставкам и агентам для поставщика {{$title ?? 'не указано'}}</h4>
+<h4 style="font-size: 18px;">Отчет по поставкам и младшим админам для поставщика {{$title ?? 'не указано'}}</h4>
 
 <!-- Таблица -->
 <table cellspacing="0" cellpadding="0" border="1">

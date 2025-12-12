@@ -37,7 +37,7 @@ export default {
         roleName(role) {
             switch (role) {
                 case 0: return 'Пользователь'
-                case 1: return 'Агент'
+                case 1: return 'Младший администратор'
                 case 2: return 'Поставщик'
                 case 3: return 'Администратор'
                 case 4: return 'Суперадмин'

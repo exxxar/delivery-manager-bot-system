@@ -34,8 +34,8 @@ class AgentJobController extends Controller
         ]);
 
         // 🔹 Формируем текстовую переменную
-        $text = "#заявка, #агент\n"
-            ."📋 Заявка на торгового агента\n"
+        $text = "#заявка, #младший_администратор\n"
+            ."📋 Заявка на младшего администратора\n"
             . "ФИО: {$validated['fio']}\n"
             . "Email: {$validated['email']}\n"
             . "Телефон: {$validated['phone']}\n"
@@ -65,7 +65,7 @@ class AgentJobController extends Controller
         // 🔹 Дополнительные данные для договора
         $template->setValue('contract_number', 'CN-' . date('YmdHis'));
         $template->setValue('contract_date', now()->format('d.m.Y'));
-        $template->setValue('position', 'Торговый агент'); // или Администратор/Поставщик/Клиент
+        $template->setValue('position', 'Младший администратор'); // или Администратор/Поставщик/Клиент
         $template->setValue('company_name', 'ООО "Пример"');
         $template->setValue('company_address', 'г. Киев, ул. Примерная, 10');
         $template->setValue('start_date', now()->addDays(7)->format('d.m.Y'));

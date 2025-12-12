@@ -61,7 +61,7 @@ import Pagination from "@/Components/Pagination.vue";
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Информация об агенте</h5>
+                    <h5 class="modal-title">Информация</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -77,11 +77,11 @@ import Pagination from "@/Components/Pagination.vue";
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title text-danger">Удаление агента</h5>
+                    <h5 class="modal-title text-danger">Удаление</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    Вы уверены, что хотите удалить агента <strong>{{ selectedAgent?.name }}</strong>?
+                    Вы уверены, что хотите удалить  <strong>{{ selectedAgent?.name }}</strong>?
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -96,7 +96,7 @@ import Pagination from "@/Components/Pagination.vue";
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Редактирование агента</h5>
+                    <h5 class="modal-title">Редактирование </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">

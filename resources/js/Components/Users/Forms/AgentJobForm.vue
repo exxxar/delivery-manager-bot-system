@@ -98,10 +98,10 @@
           class="form-control"
           id="reasonInput"
           v-model="form.reason"
-          placeholder="Почему хотите стать торговым агентом"
+          placeholder="Почему хотите стать младшим администратором"
           style="height: 100px"
       ></textarea>
-            <label for="reasonInput">Почему хотите стать торговым агентом</label>
+            <label for="reasonInput">Почему хотите стать младшим администратором</label>
         </div>
 
         <!-- Согласие на обработку данных -->
