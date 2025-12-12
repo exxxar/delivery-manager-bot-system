@@ -47,6 +47,7 @@
                 id="phoneInput"
                 v-model="form.phone"
                 placeholder="Телефон"
+                v-mask="'+7(###) ###-##-##'"
                 required
             />
             <label for="phoneInput">Телефон</label>

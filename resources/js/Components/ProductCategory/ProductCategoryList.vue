@@ -36,27 +36,35 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
                     <i class="fas fa-bars"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="#"
-                            @click.prevent="openViewModal(category)"
-                        >Просмотреть</a>
-                    </li>
-                    <li>
-                        <a
-                            class="dropdown-item"
-                            href="#"
-                            @click.prevent="openEditModal(category)"
-                        >Редактировать</a>
-                    </li>
-                    <li>
-                        <a
-                            class="dropdown-item text-danger"
-                            href="#"
-                            @click.prevent="openDeleteModal(category)"
-                        >Удалить</a>
-                    </li>
+                    <template v-if="forSelect">
+                        <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', category)">Выбрать</a>
+                        </li>
+
+                    </template>
+                    <template v-if="!forSelect">
+                        <li>
+                            <a
+                                class="dropdown-item"
+                                href="#"
+                                @click.prevent="openViewModal(category)"
+                            >Просмотреть</a>
+                        </li>
+                        <li>
+                            <a
+                                class="dropdown-item"
+                                href="#"
+                                @click.prevent="openEditModal(category)"
+                            >Редактировать</a>
+                        </li>
+                        <li>
+                            <a
+                                class="dropdown-item text-danger"
+                                href="#"
+                                @click.prevent="openDeleteModal(category)"
+                            >Удалить</a>
+                        </li>
+                    </template>
+
                 </ul>
             </div>
         </li>
@@ -122,6 +130,7 @@ import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 
 export default {
     name: "ProductCategoryList",
+    props:["forSelect"],
     data() {
         return {
             modalStore: useModalStore(),

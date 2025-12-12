@@ -123,6 +123,11 @@ export const useUsersStore = defineStore('users', {
             }
         },
 
+        async createPrimary(payload: object) {
+            const {data} = await makeAxiosFactory(`${path}/primary`, 'POST', payload)
+            this.items.push(data)
+            return data as User
+        },
         async create(payload: Omit<User, 'id'>) {
             const {data} = await makeAxiosFactory(`${path}`, 'POST', payload)
             this.items.push(data)

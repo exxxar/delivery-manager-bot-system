@@ -8,6 +8,8 @@ import {resolvePageComponent} from 'laravel-vite-plugin/inertia-helpers';
 import {ZiggyVue} from '../../vendor/tightenco/ziggy';
 import router from './router'
 import {useAlertStore} from './stores/utillites/useAlertStore'
+import {i18n} from "./i18n";
+import VueTheMask from "vue-the-mask";
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -24,8 +26,9 @@ createInertiaApp({
         return app
             .use(plugin)
             .use(ZiggyVue)
+            .use(VueTheMask)
+            .use(i18n)
             .use(router)
-
             .mount(el);
     },
     progress: {

@@ -20,7 +20,7 @@ export const useSuppliersStore = defineStore('suppliers', {
         items: [] as Supplier[],
         loading: false,
         error: null as string | null,
-        sort: { field: 'id', direction: 'asc' } as { field: string; direction: 'asc' | 'desc' }
+        sort: { field: 'id', direction: 'desc' } as { field: string; direction: 'asc' | 'desc' }
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),

@@ -20,10 +20,60 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $size = $request->size ?? 10;
-        $products = Product::query()
-            ->with(["category","supplier"])
-            ->paginate($size);
+        $query = Product::query()
+            ->with(["category","supplier"]);
+
+        // 🔹 Фильтры по тексту
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+        if ($request->filled('description')) {
+            $query->where('description', 'like', '%' . $request->description . '%');
+        }
+
+        // 🔹 Фильтры по числовым значениям
+        if ($request->filled('price_min') || $request->filled('price_max')) {
+            $query->whereBetween('price', [
+                    $request->price_min ?? 0,
+                    $request->price_max ?? PHP_INT_MAX
+            ]);
+        }
+        if ($request->filled('count_min') || $request->filled('count_max')) {
+            $query->whereBetween('count', [
+                    $request->count_min ?? 0,
+                    $request->count_max ?? PHP_INT_MAX
+            ]);
+        }
+
+        // 🔹 Фильтры по связям
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+        if ($request->filled('product_category_id')) {
+            $query->where('product_category_id', $request->product_category_id);
+        }
+
+        // 🔹 Фильтр по дате (created_at / updated_at)
+        if ($request->filled('date_type') && ($request->filled('date_from') || $request->filled('date_to'))) {
+            $query->whereBetween($request->date_type, [
+                    $request->date_from ?? '1900-01-01',
+                    $request->date_to ?? now()->toDateString()
+            ]);
+        }
+
+        // 🔹 Сортировка
+        $sortField = $request->get('sort_field', 'id');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        if (in_array($sortField, [
+                'id', 'name', 'description', 'price', 'count',
+                'supplier_id', 'product_category_id', 'created_at', 'updated_at'
+            ]) && in_array($sortDirection, ['asc', 'desc'])) {
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        // 🔹 Пагинация
+        $perPage = $request->get('per_page', $request->size ?? 10);
+        $products = $query->paginate($perPage);
 
         return response()->json($products);
     }

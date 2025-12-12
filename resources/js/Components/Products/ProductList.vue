@@ -7,7 +7,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
 
 
     <template v-if="!forSelect">
-        <ProductFilter></ProductFilter>
+        <ProductFilter v-on:apply-filters="applyFilters"></ProductFilter>
     </template>
     <ul class="list-group">
         <li v-for="product in productStore.items" :key="product.id"
@@ -28,10 +28,10 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                         <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', product)">Выбрать</a></li>
                     </template>
                     <template v-if="!forSelect">
-                    <li><a class="dropdown-item" href="#" @click.prevent="openView(product)">Просмотреть</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openEdit(product)">Редактировать</a></li>
-                    <li><a class="dropdown-item text-danger" href="#"
-                           @click.prevent="confirmDelete(product)">Удалить</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openView(product)">Просмотреть</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openEdit(product)">Редактировать</a></li>
+                        <li><a class="dropdown-item text-danger" href="#"
+                               @click.prevent="confirmDelete(product)">Удалить</a></li>
                     </template>
                 </ul>
             </div>
@@ -47,7 +47,6 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
     <div v-if="productStore.items.length === 0" class="alert alert-info mt-3">
         Товаров пока нет.
     </div>
-
 
 
     <!-- Модалка редактирования -->
@@ -108,6 +107,16 @@ export default {
         this.fetchData()
     },
     methods: {
+        async applyFilters(filters) {
+            this.field_visible = filters.field_visible
+            let size = filters.size || 30
+            let page = filters.page || 1
+            delete filters.field_visible
+
+            this.productStore.setFilters(filters.filters)
+            this.productStore.setSort(filters.sort.field, filters.sort.direction)
+            await this.productStore.fetchFilteredProducts(page, size)
+        },
         async fetchData(page = 1) {
             await this.productStore.fetchAllByPage(page)
         },
@@ -133,7 +142,7 @@ export default {
             )
         },
         async deleteProduct() {
-            this.productStore.remove(this.selectedProduct.id)
+            await this.productStore.remove(this.selectedProduct.id)
             bootstrap.Modal.getInstance(document.getElementById('deleteProductModal')).hide()
 
         },

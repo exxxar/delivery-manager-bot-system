@@ -3,6 +3,7 @@
 namespace App\Classes;
 
 use App\Enums\RoleEnum;
+use App\Models\Agent;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -56,12 +57,24 @@ class BotManager extends BotCore
                 'telegram_chat_id' => $telegram_chat_id,
                 'fio_from_telegram' => "$first_name $last_name" ?? null,
             ]);
-            $tmpUserLink = "\n<a href='tg://user?id=".$this->botUser->telegram_chat_id."'>Перейти к чату с пользователем</a>";
+
+            Agent::query()
+                ->updateOrCreate([
+                    'user_id' => $this->botUser->id,
+
+                ], [
+                    'name' => $this->botUser->fio_from_telegram ?? $this->botUser->name,
+                    'phone' => '',
+                    'email' => '',
+                    'region' => '',
+                ]);
+
+            $tmpUserLink = "\n<a href='tg://user?id=" . $this->botUser->telegram_chat_id . "'>Перейти к чату с пользователем</a>";
 
 
             $this->sendMessage(
-               env("TELEGRAM_ADMIN_CHANNEL"),
-               "Создан новый пользователь <b>$username</b>\n$tmpUserLink"
+                env("TELEGRAM_ADMIN_CHANNEL"),
+                "Создан новый пользователь <b>$username</b>\n$tmpUserLink"
             );
 
         } else {

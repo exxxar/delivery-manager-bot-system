@@ -20,6 +20,7 @@
  $sales_by_date_supplier = $revenue["sales_by_date_supplier"]?? null;
  $admins = $revenue["admins"]?? null;
 
+ $transfer = 0;
 @endphp
 <body>
 <h1>Отчёт по выручке</h1>
@@ -32,7 +33,7 @@
     <tr><th colspan="2">После налога</th><td>{{ number_format($summary['after_tax'], 2, ',', ' ') }}</td></tr>
     <tr><th colspan="2">Выручка</th><td>{{ number_format($summary['revenue_total'], 2, ',', ' ') }}</td></tr>
     <tr><th colspan="2">Выручка после налога</th><td>{{ number_format($summary['revenue_without_tax_total'], 2, ',', ' ') }}</td></tr>
-    <tr><th colspan="2">Переводы ({{ $summary['transfer_percent'] }}%) от общей суммы</th><td>{{ number_format($summary['transfer_from_total'], 2, ',', ' ') }}</td></tr>
+    <tr><th colspan="2">Переводы ({{ $summary['transfer_percent'] }}%) от суммы выручки</th><td>{{ number_format($summary['transfer_from_total'], 2, ',', ' ') }}</td></tr>
     <tr><th colspan="2">Переводы от суммы после налога</th><td>{{ number_format($summary['transfer_from_after_tax'], 2, ',', ' ') }}</td></tr>
 </table>
 
@@ -46,6 +47,7 @@
         <th style="width: 150px;font-weight: bold;">% поставщика</th>
         <th style="width: 150px;font-weight: bold;">Выручка (до налога)</th>
         <th style="width: 150px;font-weight: bold;">Выручка (после налога)</th>
+        <th style="width: 150px;font-weight: bold;">Перевод</th>
     </tr>
     </thead>
     <tbody>
@@ -57,8 +59,11 @@
             <td>{{ $sale['percent'] }}%</td>
             <td>{{ number_format($sale['revenue_total'], 2, ',', ' ') }}</td>
             <td>{{ number_format($sale['revenue_after_tax'], 2, ',', ' ') }}</td>
+            <td>{{ number_format($sale['transfer'], 2, ',', ' ') }}</td>
         </tr>
-
+        @php
+            $transfer+=$sale['transfer'];
+        @endphp
     @endforeach
    {{-- <tr>
         <td>Итого</td>
@@ -75,6 +80,7 @@
         <td></td>
         <td>{{ number_format($summary['revenue_total'] , 2, ',', ' ') }}</td>
         <td>{{ number_format($summary['revenue_without_tax_total'] , 2, ',', ' ') }}</td>
+        <td>{{ number_format($transfer, 2, ',', ' ') }}</td>
     </tr>
     </tbody>
 </table>
@@ -96,6 +102,7 @@
             <td>{{ $admin['percent'] }}%</td>
             <td>{{ number_format($admin['income_total'], 2, ',', ' ') }}</td>
             <td>{{ number_format($admin['income_after_tax'], 2, ',', ' ') }}</td>
+
         </tr>
     @endforeach
     </tbody>

@@ -80,6 +80,8 @@ class AdminController extends Controller
             "endDate" => "required",
         ]);
 
+        $resultType = $request->result_type ?? 0;
+
         $admin = $request->botUser;
 
         $agent = $admin->role < 3 ? Agent::query()
@@ -97,7 +99,8 @@ class AdminController extends Controller
             Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
                 $fromDate ?? Carbon::now()->startOfMonth(),
                 $toDate ?? Carbon::now()->endOfMonth(),
-                $agent
+                $agent,
+                $resultType
             ), \Maatwebsite\Excel\Excel::XLSX);
 
         $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";

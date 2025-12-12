@@ -15,12 +15,14 @@ class SummaryAgentReport implements WithMultipleSheets
     protected $fromDate;
     protected $toDate;
     protected $agentId;
+    protected $resultType;
 
-    public function __construct($fromDate = null, $toDate = null, $agentId = null)
+    public function __construct($fromDate = null, $toDate = null, $agentId = null, $resultType)
     {
         $this->fromDate = $fromDate;
         $this->toDate = $toDate;
         $this->agentId = $agentId;
+        $this->resultType = $resultType;
     }
 
     /**
@@ -30,7 +32,7 @@ class SummaryAgentReport implements WithMultipleSheets
      */
     public function sheets(): array
     {
-
+        set_time_limit(300);
         $agents = is_null($this->agentId ?? null) ? Agent::query()->get() : Agent::query()
             ->where("id", $this->agentId)->get();
 
@@ -40,13 +42,13 @@ class SummaryAgentReport implements WithMultipleSheets
             $data = BusinessLogicFacade::method()
                 ->getAdminsMonthlyByAgentRevenue($agent, $this->fromDate, $this->toDate);
             $tmpData[] = $data;
-            $tmp[] = new RevenueExportSheet($agent->name, $data);
+            $tmp[] = new RevenueExportSheet($agent->name, $data, $this->resultType);
 
         }
 
 
-        $tmp[] = new SupplierSheet();
-        $tmp[] = new ProductsSheet();
+        $tmp[] = new SupplierSheet($this->resultType);
+        $tmp[] = new ProductsSheet($this->resultType);
         $tmp[] = new SummarySheet($tmpData);
 
 

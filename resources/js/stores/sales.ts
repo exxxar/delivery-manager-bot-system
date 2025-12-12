@@ -1,5 +1,6 @@
-import { defineStore } from 'pinia'
-import { makeAxiosFactory } from './utillites/makeAxiosFactory'
+import {defineStore} from 'pinia'
+import {makeAxiosFactory} from './utillites/makeAxiosFactory'
+import axios from "axios/index";
 
 export interface Sale {
     id: number
@@ -10,6 +11,8 @@ export interface Sale {
     sale_date?: string
     quantity?: number
     total_price?: number
+    payment_type?: number
+    payment_document_name?: string
     agent_id?: number
     customer_id?: number
     supplier_id?: number
@@ -23,8 +26,9 @@ export const useSalesStore = defineStore('sales', {
     state: () => ({
         items: [] as Sale[],
         loading: false,
+        filters: null,
         error: null as string | null,
-        sort: { field: 'id', direction: 'asc' } as { field: string; direction: 'asc' | 'desc' }
+        sort: {field: 'id', direction: 'desc'} as { field: string; direction: 'asc' | 'desc' }
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
@@ -35,7 +39,7 @@ export const useSalesStore = defineStore('sales', {
             this.loading = true
             this.error = null
             try {
-                const { data } = await makeAxiosFactory(`${path}`, 'GET')
+                const {data} = await makeAxiosFactory(`${path}`, 'GET')
                 this.items = data
             } catch (e: any) {
                 this.error = e?.message || 'Failed to load sales'
@@ -62,7 +66,7 @@ export const useSalesStore = defineStore('sales', {
             params.append('page', String(page))
             params.append('size', String(size))
 
-            const { data } = await makeAxiosFactory(`${path}/self-sales?${params.toString()}`, 'GET')
+            const {data} = await makeAxiosFactory(`${path}/self-sales?${params.toString()}`, 'GET')
             this.items = data.data
             this.pagination = data
             return true
@@ -86,7 +90,7 @@ export const useSalesStore = defineStore('sales', {
             params.append('page', String(page))
             params.append('suze', String(size))
 
-            const { data } = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
+            const {data} = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
             this.items = data.data
             this.pagination = data
             return true
@@ -97,24 +101,24 @@ export const useSalesStore = defineStore('sales', {
         },
 
         setSort(field: string, direction: 'asc' | 'desc') {
-            this.sort = { field, direction }
+            this.sort = {field, direction}
         },
         // @ts-ignore
         async fetchAllByPage(page = 1) {
-            const { data } = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
+            const {data} = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
             this.items = data.data
             this.pagination = data
         },
         // @ts-ignore
         async fetchByUrl(url: string) {
-            const { data } = await makeAxiosFactory(url, 'GET')
+            const {data} = await makeAxiosFactory(url, 'GET')
             this.items = data.data
             this.pagination = data
         },
 
         async fetchOne(id: number) {
             try {
-                const { data } = await makeAxiosFactory(`${path}/${id}`, 'GET')
+                const {data} = await makeAxiosFactory(`${path}/${id}`, 'GET')
                 return data as Sale
             } catch (e: any) {
                 this.error = e?.message || 'Failed to load sale'
@@ -122,24 +126,86 @@ export const useSalesStore = defineStore('sales', {
             }
         },
 
-        async create(payload: Omit<Sale, 'id'>) {
-            const { data } = await makeAxiosFactory(`${path}`, 'POST', payload)
+        async create(payload: object, file: null) {
+            const formData = new FormData()
+
+            Object.keys(payload)
+                .forEach(key => {
+                    const item = payload[key] || ''
+                    if (typeof item === 'object')
+                        formData.append(key, JSON.stringify(item))
+                    else
+                        formData.append(key, item)
+                });
+
+            if (file)
+                formData.append('file', file)
+
+            const {data} = await makeAxiosFactory(`${path}`, 'POST', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+
             this.items.push(data)
             return data as Sale
         },
 
-        async update(id: number, payload: object) {
-            const { data } = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)
+        async update(id: number, payload: object, file: null) {
+            const formData = new FormData()
+            Object.keys(payload)
+                .forEach(key => {
+                    const item = payload[key] || ''
+                    if (typeof item === 'object')
+                        formData.append(key, JSON.stringify(item))
+                    else
+                        formData.append(key, item)
+                });
+
+            if (file)
+                formData.append('file', file)
+
+            const {data} = await makeAxiosFactory(`${path}/${id}`, 'PUT', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+
             const idx = this.items.findIndex(x => x.id === id)
             if (idx !== -1) this.items[idx] = data
             return data as Sale
+        },
+        async confirmPayment(sale: object) {
+            try {
+                const formData = new FormData()
+                // @ts-ignore
+                formData.append("id", sale.id || null)
+                // @ts-ignore
+                formData.append("payment_type", sale.payment_type || 0)
+                // @ts-ignore
+                if (sale.file)
+                    // @ts-ignore
+                    formData.append('file', sale.file)
+
+                const {data} = await makeAxiosFactory(`${path}/confirm-payment`, 'POST', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
+
+                await this.fetchAllByPage(this.pagination?.current_page || 1)
+                return data
+
+            } catch (error: any) {
+                throw error
+            }
         },
         // 🔹 Подтверждение сделки
         async confirmDeal(sale: object) {
             try {
 
                 // @ts-ignore
-                const { data } = await makeAxiosFactory(`${path}/${sale.id}`, 'PUT', {
+                const {data} = await makeAxiosFactory(`${path}/${sale.id}`, 'PUT', {
                     ...sale,
                     status: 'completed',
                 })
@@ -165,7 +231,7 @@ export const useSalesStore = defineStore('sales', {
         },
         async cancelDeal(sale: any) {
             try {
-                const { data } = await makeAxiosFactory(`${path}/${sale.id}`, 'PUT', {
+                const {data} = await makeAxiosFactory(`${path}/${sale.id}`, 'PUT', {
                     ...sale,
                     status: 'rejected'
                 })

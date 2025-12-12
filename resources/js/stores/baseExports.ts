@@ -12,6 +12,9 @@ export const useBaseExports = defineStore('exports', {
         exportData: null as any
     }),
     actions: {
+        async exportBirthdaysList(){
+            return this._exportHelper(`${path}/birthdays`, 'Дни рождения выгружены')
+        },
         async exportAgents() {
             return this._exportHelper(`${path}/agents`, 'Агенты выгружены')
         },

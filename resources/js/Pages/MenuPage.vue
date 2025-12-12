@@ -4,6 +4,9 @@ import MenuUser from "@/Components/MenuUser.vue";
 import MenuAgent from "@/Components/MenuAgent.vue";
 import MenuSuperAdmin from "@/Components/MenuSuperAdmin.vue";
 import RoleSwitcher from "@/Components/Users/RoleSwitcher.vue";
+
+import { useI18n } from "vue-i18n";
+const { t } = useI18n();
 </script>
 
 <template>
@@ -18,6 +21,17 @@ import RoleSwitcher from "@/Components/Users/RoleSwitcher.vue";
         <MenuAgent v-if="user.role === 1"></MenuAgent>
 
         <template v-if="user.role === 4">
+<!--            <h1>{{ t("customer.title") }}</h1>
+            <p>{{ t("customer.name") }}: Иван</p>
+            <button>{{ t("common.save") }}</button>
+
+            <p>{{ t("common.hello", { name: "Алексей" }) }}</p>
+
+            &lt;!&ndash; Подстановка числа &ndash;&gt;
+            <p>{{ t("common.items", { count: 5 }) }}</p>
+
+            &lt;!&ndash; Несколько переменных &ndash;&gt;
+            <p>{{ t("common.order", { id: 123, date: "10.12.2025" }) }}</p>-->
             <MenuSuperAdmin></MenuSuperAdmin>
         </template>
 

@@ -19,9 +19,11 @@ return new class extends Migration {
             $table->integer('role')->default(0);
             $table->float('percent')->default(0);
             $table->boolean('is_work')->default(false);
+            $table->date('birthday')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->timestamp('blocked_at')->nullable();
+            $table->timestamp('registration_at')->nullable();
             $table->string("blocked_message")->nullable();
             $table->rememberToken();
             $table->softDeletes();

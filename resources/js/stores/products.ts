@@ -17,12 +17,21 @@ export const useProductsStore = defineStore('products', {
     state: () => ({
         items: [] as Product[],
         loading: false,
+        filters: null,
         error: null as string | null,
+        sort: { field: 'id', direction: 'desc' } as { field: string; direction: 'asc' | 'desc' }
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(p => p.id === id),
     },
     actions: {
+        setFilters(filters: Record<string, any>) {
+            this.filters = filters
+        },
+
+        setSort(field: string, direction: 'asc' | 'desc') {
+            this.sort = { field, direction }
+        },
         // @ts-ignore
         async fetchAll() {
             this.loading = true
@@ -57,7 +66,29 @@ export const useProductsStore = defineStore('products', {
                 throw e
             }
         },
+        async fetchFilteredProducts(page = 1, size = 30) {
+            const params = new URLSearchParams()
+            // фильтры
+            // @ts-ignore
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    params.append(key, String(value))
+                }
+            })
 
+            // сортировка
+            params.append('sort_field', this.sort.field)
+            params.append('sort_direction', this.sort.direction)
+
+            // пагинация
+            params.append('page', String(page))
+            params.append('suze', String(size))
+
+            const { data } = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
+            this.items = data.data
+            this.pagination = data
+            return true
+        },
         async create(payload: Omit<Product, 'id'>) {
             const { data } = await makeAxiosFactory(`${path}`, 'POST', payload)
             this.items.push(data)

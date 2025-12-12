@@ -7,13 +7,16 @@ use App\Exports\SalesExport;
 use App\Http\Requests\SaleStoreRequest;
 use App\Http\Requests\SaleUpdateRequest;
 use App\Models\Agent;
+use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Supplier;
 use Carbon\Carbon;
 use HttpException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Telegram\Bot\FileUpload\InputFile;
 
 class SaleController extends Controller
 {
@@ -34,24 +37,30 @@ class SaleController extends Controller
         if (isset($request->description)) {
             $query->where('description', 'like', '%' . $request->description . '%');
         }
+
+
         if (isset($request->status)) {
             $query->where('status', $request->status);
         }
 
+        if (isset($request->payment_type) && !is_null($request->payment_type ?? null)) {
+            $query->where('payment_type', $request->payment_type);
+        }
+
         // 🔹 Фильтр по типу даты и периоду
-        if ($request->date_type && ($request->date_from || $request->date_to)) {
-            $query->whereBetween($request->date_type, [
+        if ($request->date_from || $request->date_to) {
+            $query->whereBetween("due_date", [
                     $request->date_from ?? '1900-01-01',
                     $request->date_to ?? now()->toDateString()
             ]);
         }
 
         // 🔹 Фильтры по связям
-        if (isset($request->agent_id) && $botUser->role>=3) {
+        if (isset($request->agent_id) && $botUser->role >= 3) {
             $query->where('agent_id', $request->agent_id);
         }
 
-        if ($botUser->role<3) {
+        if ($botUser->role < 3) {
             $agent = Agent::query()
                 ->where("user_id", $botUser->id)
                 ->first();
@@ -63,7 +72,7 @@ class SaleController extends Controller
                     else
                         return $q->where("agent_id", $agent->id)
                             ->orWhere("created_by_id", $botUser->id);
-            });
+                });
         }
 
         if (isset($request->customer_id)) {
@@ -72,7 +81,7 @@ class SaleController extends Controller
         if (isset($request->supplier_id)) {
             $query->where('supplier_id', $request->supplier_id);
         }
-        if (isset($request->created_by_id) && $botUser->role>=3 ) {
+        if (isset($request->created_by_id) && $botUser->role >= 3) {
             $query->where('created_by_id', $request->created_by_id);
         }
 
@@ -105,7 +114,33 @@ class SaleController extends Controller
     public function store(Request $request)
     {
 
-        $sale = Sale::query()->create($request->all());
+        $data = $request->all();
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('uploads', $filename);
+            $data["payment_document_name"] = $filename;
+            $data["sale_date"] = Carbon::now();
+        }
+
+
+        $needAutomaticNaming = $data["need_automatic_naming"] == "true";
+        unset($data["need_automatic_naming"]);
+
+        if ($needAutomaticNaming) {
+            $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
+            $product = Product::query()->where("id", $data["product_id"])->first();
+
+            $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
+            $data["description"] = "Товар " . ($product->name ?? 'товара')
+                . ", поставщик " . ($supplier->name ?? 'поставщика')
+                . ", тип оплаты " . ($data["payment_type"] == 0 ? "наличными" : "безналичный расчет")
+                . ", кол-во " . ($data["quantity"] ?? 0) . "ед."
+                . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
+        }
+
+        $sale = Sale::query()->create($data);
 
         $saleInfo = $sale->toTelegramText();
 
@@ -131,6 +166,18 @@ class SaleController extends Controller
             "#создание_сделки\n$saleInfo"
         );
 
+        if (!is_null($sale->payment_document_name ?? null)) {
+
+            \App\Facades\BotMethods::bot()->sendDocument(
+                env("TELEGRAM_ADMIN_CHANNEL"),
+                "Чек к сделке №" . ($sale->id ?? '-'),
+                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                    $sale->payment_document_name
+                )
+            );
+        }
+
+
         return response()->json($sale, 201);
     }
 
@@ -140,16 +187,83 @@ class SaleController extends Controller
         return response()->json($sale);
     }
 
-    public function update(Request $request, $id)
+    public function confirmPayment(Request $request)
     {
-        $sale = Sale::findOrFail($id);
-        $sale->update($request->all());
+        $request->validate([
+            "id" => "required",
+            "payment_type" => "required"
+        ]);
+
+        $sale = Sale::findOrFail($request->id);
+
+        $hasFile = false;
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('uploads', $filename);
+            $sale->payment_document_name = $filename;
+
+            $hasFile = true;
+        }
+
+        $sale->status = 'pending';
+        $sale->payment_type = $request->payment_type ?? 0;
+        $sale->sale_date = Carbon::now();
+        $sale->save();
 
         $saleInfo = $sale->toTelegramText();
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
             "#обновление_данных_сделки\n$saleInfo"
         );
+
+        if ($hasFile) {
+            \App\Facades\BotMethods::bot()->sendDocument(
+                env("TELEGRAM_ADMIN_CHANNEL"),
+                "Чек к сделке №" . ($sale->id ?? '-'),
+                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                    $sale->payment_document_name
+                )
+            );
+
+        }
+        return response()->json($sale);
+
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = $request->all();
+
+        $hasFile = false;
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('uploads', $filename);
+            $data["payment_document_name"] = $filename;
+            $data["sale_date"] = Carbon::now();
+            $hasFile = true;
+        }
+
+        $sale = Sale::findOrFail($id);
+        $sale->update($data);
+
+        $saleInfo = $sale->toTelegramText();
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#обновление_данных_сделки\n$saleInfo"
+        );
+
+        if ($hasFile) {
+            \App\Facades\BotMethods::bot()->sendDocument(
+                env("TELEGRAM_ADMIN_CHANNEL"),
+                "Чек к сделке №" . ($sale->id ?? '-'),
+                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                    $sale->payment_document_name
+                )
+            );
+        }
+
         return response()->json($sale);
     }
 

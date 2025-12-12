@@ -12,12 +12,22 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 class SupplierSheet implements FromView, WithTitle
 {
 
+    protected $resultType;
+
+    public function __construct($resultType = 0)
+    {
+        $this->resultType = $resultType;
+    }
+
     public function view(): View
     {
         $suppliers = BusinessLogicFacade::method()
             ->getSuppliers();
 
-        return view('exports.suppliers', ['suppliers' => $suppliers]);
+        return view($this->resultType == 0?
+            'exports.suppliers-v2' :
+            'exports.suppliers',
+            ['suppliers' => $suppliers]);
     }
 
     public function title(): string

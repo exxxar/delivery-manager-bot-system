@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use Carbon\Carbon;
 
+
 class BusinessLogic
 {
     public function method(): static
@@ -149,8 +150,7 @@ class BusinessLogic
         $taxAmount = $totalSales * ($taxPercent / 100);
         $afterTax = $totalSales - $taxAmount;
 
-        $transferFromTotal = $totalSales * ($transferPercent / 100);
-        $transferFromAfterTax = $afterTax * ($transferPercent / 100);
+
         $revenueTotal = 0;
         $revenueWithoutTaxTotal = 0;
 
@@ -162,6 +162,9 @@ class BusinessLogic
             ->with('supplier')
             ->get()
             ->map(function ($sale) use ($taxPercent, &$revenueTotal, &$revenueWithoutTaxTotal) {
+
+                $transferPercent = env('TRANSFER_PERCENT', 8); // %
+
                 $percent = $sale->supplier->percent ?? 0;
                 $revenueLocal = $sale->total_price * ($percent / 1);
                 $taxAmount = $revenueLocal * ($taxPercent / 100);
@@ -175,6 +178,7 @@ class BusinessLogic
                     'supplier_name' => $sale->supplier->name ?? 'Unknown',
                     'sale_amount' => $sale->total_price,
                     'percent' => $percent,
+                    'transfer' => $revenueLocal* ($transferPercent / 100),
                     'revenue_total' => $revenueLocal,
                     'revenue_after_tax' => $revenueAfterTax,
                 ];
@@ -199,6 +203,10 @@ class BusinessLogic
             });
 
         $agentPercent = env("AGENT_PERCENT", 5);
+
+        $transferFromTotal = $revenueTotal * ($transferPercent / 100);
+        $transferFromAfterTax = $revenueWithoutTaxTotal * ($transferPercent / 100);
+
         return [
             'agent' => [
                 "id" => $agent->id,
@@ -383,5 +391,69 @@ class BusinessLogic
             ->get();
 
         return $suppliers;
+    }
+
+    public function birthdaysNext($fromDate, $toDate)
+    {
+        $start = $fromDate->format('m-d');;
+        $end = $toDate->format('m-d');;
+
+
+        // Функция фильтрации по диапазону (учитывает переход через Новый год)
+        $filterByRange = function ($query) use ($start, $end) {
+            if ($start <= $end) {
+                // Обычный диапазон
+                return $query->whereRaw("DATE_FORMAT(birthday, '%m-%d') BETWEEN ? AND ?", [$start, $end]);
+            } else {
+                // Диапазон пересекает Новый год
+                return $query->where(function ($q) use ($start, $end) {
+                    $q->whereRaw("DATE_FORMAT(birthday, '%m-%d') >= ?", [$start])
+                        ->orWhereRaw("DATE_FORMAT(birthday, '%m-%d') <= ?", [$end]);
+                });
+            }
+        };
+
+        // Пользователи
+        $users = $filterByRange(User::query())
+            ->get()
+            ->map(function ($u) {
+                $b = Carbon::parse($u->birthday);
+
+                return [
+                    'name' => $u->name,
+                    'date' => $b->format('Y-m-d'),
+                    'weekday' => Carbon::create(now()->year, $b->month, $b->day)
+                        ->locale('ru')
+                        ->dayName,
+                    'type' => 'пользователь',
+                ];
+            });
+
+        // Поставщики
+        $suppliers = $filterByRange(Supplier::query())
+            ->get()
+            ->map(function ($s) {
+                $b = Carbon::parse($s->birthday);
+
+                return [
+                    'name' => $s->name,
+                    'date' => $b->format('Y-m-d'),
+                    'weekday' => Carbon::create(now()->year, $b->month, $b->day)
+                        ->locale('ru')
+                        ->dayName,
+                    'type' => 'поставщик',
+
+                ];
+            });
+
+        // Объединяем и сортируем по MM-DD (игнорируя год)
+        return collect($users->toArray())
+            ->merge($suppliers->toArray())
+            ->sortBy(function ($item) {
+                return Carbon::parse($item['date'])->format('m-d');
+            })
+            ->values();
+
+
     }
 }

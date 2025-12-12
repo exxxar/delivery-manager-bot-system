@@ -9,6 +9,7 @@ import ProductPage from '../Pages/ProductPage.vue'
 import UserPage from '../Pages/UserPage.vue'
 // @ts-ignore
 import ExcelExportPage from '../Pages/ExcelExportPage.vue'
+import BirthdayPage from '../Pages/BirthdayPage.vue'
 // @ts-ignore
 import SalePage from '../Pages/SalePage.vue'
 import AdminTasksPage from '../Pages/AdminTasksPage.vue'
@@ -21,6 +22,11 @@ const routes = [
         path: '/blocked',
         name: 'BlockedPage',
         component: BlockedPage,
+    },
+    {
+        path: '/birth',
+        name: 'BirthdayPage',
+        component: BirthdayPage,
     },
     {
         path: '/',

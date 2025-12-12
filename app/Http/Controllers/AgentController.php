@@ -19,8 +19,50 @@ class AgentController extends Controller
 {
     public function index(Request $request)
     {
-        $size = $request->size ?? 10;
-        return response()->json(Agent::query()->paginate($size));
+        $query = Agent::query();
+
+        // 🔹 Фильтры по связям
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // 🔹 Фильтры по текстовым полям
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+        if ($request->filled('phone')) {
+            $query->where('phone', 'like', '%' . $request->phone . '%');
+        }
+        if ($request->filled('email')) {
+            $query->where('email', 'like', '%' . $request->email . '%');
+        }
+        if ($request->filled('region')) {
+            $query->where('region', 'like', '%' . $request->region . '%');
+        }
+
+        // 🔹 Фильтр по created_at / updated_at
+        if ($request->filled('date_type') && ($request->filled('date_from') || $request->filled('date_to'))) {
+            $query->whereBetween($request->date_type, [
+                    $request->date_from ?? '1900-01-01',
+                    $request->date_to ?? now()->toDateString()
+            ]);
+        }
+
+        // 🔹 Сортировка
+        $sortField = $request->get('sort_field', 'id');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        if (in_array($sortField, [
+                'id', 'user_id', 'name', 'phone', 'email',
+                'region', 'created_at', 'updated_at'
+            ]) && in_array($sortDirection, ['asc', 'desc'])) {
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        // 🔹 Пагинация
+        $perPage = $request->get('per_page', $request->size ?? 10);
+        $agents = $query->paginate($perPage);
+
+        return response()->json($agents);
     }
 
 

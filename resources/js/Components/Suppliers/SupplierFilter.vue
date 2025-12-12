@@ -1,13 +1,19 @@
 <template>
     <div class="d-flex mb-2">
         <!-- Кнопка вызова модалки -->
-        <button class="btn btn-primary" @click="openFilter">Фильтр</button>
+        <button
+            style="font-size:12px;"
+            class="btn btn-secondary" @click="openFilter">Фильтр</button>
 
         <!-- Dropdown сортировки -->
         <div class="dropdown d-inline-block ms-2">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                {{ sortableFields[sort.field] }}
-                ({{ sort.direction }})
+            <button
+                style="font-size:12px;"
+                class="btn btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                {{ sortableFields[sort.field].slice(0, 17) }}
+                <span v-if="sortableFields[sort.field].length>17">...</span>
+                (<span v-if="sort.direction==='asc'"><i class="fa-solid fa-arrow-down"></i></span>
+                <span v-if="sort.direction==='desc'"><i class="fa-solid fa-arrow-up"></i></span>)
             </button>
             <ul class="dropdown-menu">
                 <li v-for="(name, field) in sortableFields" :key="field">

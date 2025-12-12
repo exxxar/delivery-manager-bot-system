@@ -5,94 +5,90 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
 
 <template>
     <div class="container-fluid p-0">
-        <form @submit.prevent="submitForm">
+        <template v-if="tab==='main'">
+            <form @submit.prevent="submitForm">
 
-            <!-- Название -->
-            <div class="form-floating mb-2">
-                <input v-model="form.name" type="text" class="form-control" id="name" placeholder="Название" required>
-                <label for="name">Название продукта</label>
-            </div>
-
-            <!-- Описание -->
-            <div class="form-floating mb-2">
-                <textarea v-model="form.description" class="form-control" id="description" placeholder="Описание" style="height: 120px" required></textarea>
-                <label for="description">Описание</label>
-            </div>
-
-            <!-- Цена -->
-            <div class="form-floating mb-2">
-                <input v-model="form.price" type="number" step="0.01" class="form-control" id="price" placeholder="Цена" required>
-                <label for="price">Цена</label>
-            </div>
-
-            <!-- Количество -->
-            <div class="form-floating mb-2">
-                <input v-model="form.count" type="number" class="form-control" id="count" placeholder="Количество" required>
-                <label for="count">Количество</label>
-            </div>
-
-            <!-- Поставщик -->
-            <div class="input-group mb-2">
-                <div class="form-floating flex-grow-1">
-                    <input type="text" class="form-control" id="supplier" :value="supplierName" placeholder="Поставщик" readonly>
-                    <label for="supplier">Поставщик</label>
+                <!-- Название -->
+                <div class="form-floating mb-2">
+                    <input v-model="form.name" type="text" class="form-control" id="name" placeholder="Название" required>
+                    <label for="name">Название продукта</label>
                 </div>
-                <button type="button" class="btn btn-outline-secondary" @click="openSupplierModal">
-                    <i :class="form.supplier_id ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
-                </button>
-            </div>
 
-            <!-- Категория -->
-            <div class="input-group mb-2">
-                <div class="form-floating flex-grow-1">
-                    <input type="text" class="form-control" id="category" :value="categoryName" placeholder="Категория" readonly>
-                    <label for="category">Категория</label>
+                <!-- Описание -->
+                <div class="form-floating mb-2">
+                    <textarea v-model="form.description" class="form-control" id="description" placeholder="Описание" style="height: 120px" required></textarea>
+                    <label for="description">Описание</label>
                 </div>
-                <button type="button" class="btn btn-outline-secondary" @click="openCategoryModal">
-                    <i :class="form.product_category_id ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
-                </button>
-            </div>
 
-            <!-- Кнопка -->
-            <button type="submit" class="btn btn-primary w-100 p-3">
-                {{ isEdit ? 'Сохранить изменения' : 'Добавить продукт' }}
+                <!-- Цена -->
+                <div class="form-floating mb-2">
+                    <input v-model="form.price" type="number" step="0.01" class="form-control" id="price" placeholder="Цена" required>
+                    <label for="price">Цена</label>
+                </div>
+
+                <!-- Количество -->
+                <div class="form-floating mb-2">
+                    <input v-model="form.count" type="number" class="form-control" id="count" placeholder="Количество" required>
+                    <label for="count">Количество</label>
+                </div>
+
+                <!-- Поставщик -->
+                <div class="input-group mb-2">
+                    <div class="form-floating flex-grow-1">
+                        <input type="text" class="form-control" id="supplier" :value="supplierName" placeholder="Поставщик" readonly>
+                        <label for="supplier">Поставщик</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-light text-primary" @click="tab='supplier'">
+                        Выбрать
+                    </button>
+                </div>
+
+                <!-- Категория -->
+                <div class="input-group mb-2">
+                    <div class="form-floating flex-grow-1">
+                        <input type="text" class="form-control" id="category" :value="categoryName" placeholder="Категория" readonly>
+                        <label for="category">Категория</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-light text-primary" @click="tab='category'">
+                        Выбрать
+                    </button>
+                </div>
+
+                <!-- Кнопка -->
+                <button
+                    :disabled="!supplierName||!categoryName"
+                    type="submit" class="btn btn-primary w-100 p-3">
+                    {{ isEdit ? 'Сохранить изменения' : 'Добавить продукт' }}
+                </button>
+            </form>
+        </template>
+
+
+        <template v-if="tab==='supplier'">
+            <button
+                @click="tab='main'"
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:0px; z-index: 100;">Назад
             </button>
-        </form>
+            <SupplierList
+                :for-select="true"
+                @select="selectSupplier" />
+        </template>
 
-        <!-- Модалка выбора поставщика -->
-        <div class="modal fade" id="supplierModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Выбор поставщика</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <SupplierList @select="selectSupplier" />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Модалка выбора категории -->
-        <div class="modal fade" id="categoryModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Выбор категории</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <ProductCategoryList @select="selectCategory" />
-                    </div>
-                </div>
-            </div>
-        </div>
+        <template v-if="tab==='category'">
+            <button
+                @click="tab='main'"
+                class="btn btn-light text-secondary mb-3" style="position: sticky; top:0px; z-index: 100;">Назад
+            </button>
+            <ProductCategoryList
+                :for-select="true"
+                @select="selectCategory" />
+        </template>
     </div>
 </template>
 
 <script>
 import axios from 'axios'
+import {useProductsStore} from "@/stores/products";
 
 export default {
     name: 'ProductForm',
@@ -104,6 +100,9 @@ export default {
     },
     data() {
         return {
+            tab:'main',
+            productStore: useProductsStore(),
+
             form: {
                 name: '',
                 description: '',
@@ -126,30 +125,23 @@ export default {
         }
     },
     methods: {
-        openSupplierModal() {
-            new bootstrap.Modal(document.getElementById('supplierModal')).show()
-        },
-        openCategoryModal() {
-            new bootstrap.Modal(document.getElementById('categoryModal')).show()
-        },
+
         selectSupplier(supplier) {
             this.form.supplier_id = supplier.id
             this.supplierName = supplier.name
-            bootstrap.Modal.getInstance(document.getElementById('supplierModal')).hide()
+            this.tab = "main"
         },
         selectCategory(category) {
             this.form.product_category_id = category.id
             this.categoryName = category.name
-            bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide()
+            this.tab = "main"
         },
         async submitForm() {
             try {
                 if (this.isEdit) {
-                    await axios.put(`/api/products/${this.form.id}`, this.form)
-                    alert('Продукт обновлён!')
+                    await this.productStore.update(this.form.id, this.form)
                 } else {
-                    await axios.post('/api/products', this.form)
-                    alert('Продукт добавлен!')
+                    await this.productStore.create(this.form)
                 }
                 this.$emit('saved')
             } catch (error) {

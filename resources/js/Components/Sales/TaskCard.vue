@@ -18,10 +18,12 @@
                 <strong>Дата продажи:</strong> {{ formatDate(task.sale_date) }}
             </li>
             <li class="list-group-item">
-                <strong>Планируемая доставка:</strong> {{ formatDate(task.planned_delivery_date) }}
+                <strong>Фактическая доставка:</strong> {{ formatDate(task.actual_delivery_date) }}
             </li>
             <li class="list-group-item">
-                <strong>Фактическая доставка:</strong> {{ formatDate(task.actual_delivery_date) }}
+                <strong>Тип оплаты:</strong>
+                <span v-if="task.payment_type===0">Наличный расчет</span>
+                <span v-if="task.payment_type===1">Безналичный расчет</span>
             </li>
             <li class="list-group-item">
                 <strong>Количество:</strong> {{ task.quantity }}

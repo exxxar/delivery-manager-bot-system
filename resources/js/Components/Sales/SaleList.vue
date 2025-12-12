@@ -17,17 +17,34 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
         <li v-for="sale in filteredSales" :key="sale.id"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div>
-                <p class="fw-bold mb-2"><span class="badge bg-primary" v-if="field_visible?.id||false">#{{
-                        sale.id
-                    }}</span> {{ sale.title }} </p>
+                <p class="fw-bold mb-2">
+                    <span class="badge"
+                          v-bind:class="{'bg-warning':!sale.sale_date, 'bg-success':sale.sale_date}"
+                          v-if="sale.payment_type===0">
+                        <i class="fa-solid fa-money-bill" ></i>
+                        <i class="fa-solid fa-clock"
+                           style="margin-left:8px;"
+                           v-if="!sale.sale_date"></i>
+
+                    </span>
+                    <span class="badge bg-success"
+                          v-if="sale.payment_type===1"><i class="fa-solid fa-credit-card"></i></span>
+
+
+                    <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
+                            sale.id
+                        }}</span> {{ sale.title }} </p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
-                    {{ sale.due_date }}</p>
+                    {{ sale.due_date || 'не указана' }}</p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.sale_date||false">Дата продажи
-                    {{ sale.sale_date }}</p>
-                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.planned_delivery_date||false">
-                    Планируемая дата доставки {{ sale.planned_delivery_date }}</p>
+                    {{ sale.sale_date || 'не указана' }}</p>
+                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.payment_type||false">
+                    Тип оплаты
+                    <span v-if="sale.payment_type===0">Наличный расчет</span>
+                    <span v-if="sale.payment_type===1">Безналичный расчет</span>
+                </p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.actual_delivery_date||false">
-                    Фактическая дата доставки {{ sale.actual_delivery_date }}</p>
+                    Фактическая дата доставки {{ sale.actual_delivery_date || 'не указана' }}</p>
                 <small class="text-muted" v-if="field_visible?.status||false">Статус:
                     <span
                         class="badge"
@@ -41,7 +58,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                 </small>
                 <p class="mb-2" v-if="field_visible?.description||false">{{ sale.description }}</p>
                 <p class="mb-2" v-if="field_visible?.quantity||false">Доставляемое число товара <span
-                    class="fw-bold">{{ sale.quantity }}</span> ед.</p>
+                    class="fw-bold">{{ sale.quantity || 'не указана' }}</span> ед.</p>
                 <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
                     class="fw-bold">{{ sale.total_price }}</span> руб.</p>
                 <p class="mb-2" v-if="field_visible?.agent_id||false">Агент <span
@@ -66,9 +83,6 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                     <template v-if="forSelect">
                         <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a>
                         </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
                     </template>
                     <template v-if="!forSelect">
                         <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">Просмотреть</a>
@@ -79,7 +93,12 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                                                                 href="javascript:void(0)"
 
                                                                 @click.prevent="openConfirmDeal(sale)">Подтвердить
-                            сделку</a></li>
+                            доставку</a></li>
+                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
+                                                                             href="javascript:void(0)"
+
+                                                                             @click.prevent="openConfirmPayment(sale)">Подтвердить
+                            оплату</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
@@ -150,7 +169,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         <div class="form-floating mb-2">
                             <input v-model="dealForm.sale_date" type="date" class="form-control" id="sale_date"
                                    required>
-                            <label for="sale_date">Дата сделки</label>
+                            <label for="sale_date">Дата</label>
                         </div>
                         <div class="form-floating mb-2">
                             <input v-model="dealForm.quantity" type="number" class="form-control" id="quantity"
@@ -170,6 +189,52 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
     </div>
 
 
+    <!-- Модалка подтверждения сделки -->
+    <div class="modal fade" id="paymentConfirmForm" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Подтверждение оплаты</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="confirmPayment">
+                        <div class="form-floating mb-2">
+                            <select class="form-select"
+                                    v-model="paymentConfirmForm.payment_type"
+                                    id="payment-type" aria-label="Floating label select example">
+                                <option :value="'0'">Наличный расчет</option>
+                                <option :value="'1'">Безналичный расчет</option>
+                            </select>
+                            <label for="payment-type">Тип оплаты</label>
+                        </div>
+
+                        <template v-if="paymentConfirmForm.payment_type==='1'">
+                            <div class="card mb-2 rounded-0">
+                                <div class="card-body">
+                                    <h6>Фотография чека</h6>
+                                    <div class="form-floating ">
+
+                                        <input
+                                            type="file"
+                                            class="form-control"
+                                            @change="onFileChange"
+                                            accept=".jpg,.png,.pdf"
+                                            required
+                                        />
+                                        <label for="payment-type">Прикрепить</label>
+                                    </div>
+
+                                </div>
+                            </div>
+
+
+                        </template>
+                        <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -200,6 +265,10 @@ export default {
                 rejected: "Отклонено",
                 delivered: "Доставляется"
             },
+            paymentConfirmForm: {
+                file: null,
+                payment_type: 0,
+            },
             dealForm: {
                 sale_date: new Date().toISOString().split('T')[0],
                 quantity: 0,
@@ -229,6 +298,9 @@ export default {
             this.salesStore.selfSalesFiltered()
     },
     methods: {
+        onFileChange(e) {
+            this.paymentConfirmForm.file = e.target.files[0]
+        },
         async fetchData(page = 1) {
             await this.salesStore.fetchAllByPage(page)
 
@@ -275,6 +347,14 @@ export default {
                 new bootstrap.Modal(document.getElementById('viewSaleModal')).show()
             })
         },
+        openConfirmPayment(sale) {
+            this.selectedSale = null
+            this.$nextTick(() => {
+                this.selectedSale = sale
+                this.paymentConfirmForm.payment_type = sale.payment_type
+                new bootstrap.Modal(document.getElementById('paymentConfirmForm')).show()
+            })
+        },
         openConfirmDeal(sale) {
             this.selectedSale = null
             this.$nextTick(() => {
@@ -285,6 +365,12 @@ export default {
                 new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
             })
 
+
+        },
+        async confirmPayment() {
+            this.paymentConfirmForm.id = this.selectedSale.id
+            await this.salesStore.confirmPayment(this.paymentConfirmForm)
+            bootstrap.Modal.getInstance(document.getElementById('paymentConfirmForm')).hide()
 
         },
         async confirmDeal() {

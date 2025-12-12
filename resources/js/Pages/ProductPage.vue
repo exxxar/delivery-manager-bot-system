@@ -35,8 +35,7 @@ import BackBtn from "@/Components/BackBtn.vue";
             <nav class="navbar fixed-bottom p-3">
                 <button
                     type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#createProductModal"
+                    @click="openProductModal"
                     class="btn w-100 p-3 btn-primary"
                 >
                     Добавить товар
@@ -96,7 +95,9 @@ import BackBtn from "@/Components/BackBtn.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ProductForm @saved="fetchProducts"/>
+                    <ProductForm
+                        v-if="!loading"
+                        @saved="fetchProducts"/>
                 </div>
             </div>
         </div>
@@ -130,6 +131,13 @@ export default {
 
     },
     methods: {
+        openProductModal(){
+            this.loading = true
+            this.$nextTick(()=>{
+                this.loading = false
+                new bootstrap.Modal(document.getElementById('createProductModal')).show()
+            })
+        },
         selectMenu(item) {
             this.tab = item
         },
@@ -138,7 +146,7 @@ export default {
             this.selectedProduct = product
         },
         fetchProducts(){
-            const modal = bootstrap.Modal.getInstance(document.getElementById('createCategoryModal'))
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createProductModal'))
 
             if (modal)
                 modal.hide()

@@ -13,15 +13,23 @@ class RevenueExportSheet implements FromView, WithTitle
 
     protected $data;
 
-    public function __construct($title, $data)
+    protected $resultType;
+
+    public function __construct($title, $data, $resultType = 0)
     {
         $this->title = $title;
+
         $this->data = $data;
+
+        $this->resultType = $resultType;
     }
 
     public function view(): View
     {
-        return view('exports.admin.revenue', ['revenue' => $this->data, "title"=>$this->title]);
+        return view($this->resultType == 0 ?
+            'exports.admin.revenue-v2' :
+            'exports.admin.revenue',
+            ['revenue' => $this->data, "title" => $this->title]);
     }
 
     public function title(): string

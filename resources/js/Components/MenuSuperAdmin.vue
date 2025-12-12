@@ -3,41 +3,52 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </script>
 <template>
 
-        <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню отчетов">
+    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню отчетов">
 
-            <!-- Кнопка вызова модалки -->
-            <button
-                type="button"
-                class="btn btn-outline-primary p-3" data-bs-toggle="modal" :data-bs-target="'#reportModal'">
-                Сформировать отчет
-            </button>
+        <!-- Кнопка вызова модалки -->
+        <button
+            type="button"
+            class="btn btn-outline-primary p-3" data-bs-toggle="modal" :data-bs-target="'#reportModal'">
+            Сформировать отчет
+        </button>
 
-            <button type="button"
-                    @click="goTo('SalePage')"
-                    class="btn btn-outline-primary p-3">Список продаж</button>
-            <button type="button"
-                    @click="goTo('AdminPage')"
-                    class="btn btn-outline-primary p-3">Список админов</button>
-            <button type="button"
-                    @click="goTo('UserPage')"
-                    class="btn btn-outline-primary p-3">Список пользователей</button>
-            <button type="button"
-                    @click="goTo('SupplierPage')"
-                    class="btn btn-outline-primary p-3">Список поставщиков</button>
-            <button type="button"
-                    @click="goTo('AgentPage')"
-                    class="btn btn-outline-primary p-3">Список торговых представителей (агентов)</button>
-            <button type="button"
-                    @click="goTo('ProductPage')"
-                    class="btn btn-outline-primary p-3">Работа с товаром</button>
-
-        </div>
-
-        <hr class="my-3">
         <button type="button"
-                @click="goTo('ExcelExportPage')"
-                class="btn btn-outline-success p-3 w-100">Выгрузка данных в эксель</button>
+                @click="goTo('SalePage')"
+                class="btn btn-outline-primary p-3">Список продаж
+        </button>
+        <button type="button"
+                @click="goTo('UserPage')"
+                class="btn btn-outline-primary p-3">Список пользователей
+        </button>
+        <button type="button"
+                @click="goTo('SupplierPage')"
+                class="btn btn-outline-primary p-3">Список поставщиков
+        </button>
+        <button type="button"
+                @click="goTo('AgentPage')"
+                class="btn btn-outline-primary p-3">Список младших админов
+        </button>
+        <button type="button"
+                @click="goTo('AdminPage')"
+                class="btn btn-outline-primary p-3">Список админов
+        </button>
 
+        <button type="button"
+                @click="goTo('ProductPage')"
+                class="btn btn-outline-primary p-3">Работа с товаром
+        </button>
+
+    </div>
+
+    <hr class="my-3">
+    <button type="button"
+            @click="goTo('ExcelExportPage')"
+            class="btn btn-outline-success p-3 w-100 mb-2">Выгрузка данных в эксель
+    </button>
+    <button type="button"
+            @click="goTo('BirthdayPage')"
+            class="btn btn-outline-warning p-3 w-100">Дни рождения
+    </button>
 
 
     <!-- Модалка -->
@@ -60,14 +71,14 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 import {useBaseExports} from "@/stores/baseExports";
 
 export default {
-    data(){
-      return {
-          reportStore:useBaseExports()
-      }
+    data() {
+        return {
+            reportStore: useBaseExports()
+        }
     },
-    methods:{
+    methods: {
         goTo(name) {
-            this.$router.push({ name: name })
+            this.$router.push({name: name})
         },
         handleReport(payload) {
 

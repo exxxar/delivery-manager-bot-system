@@ -2,13 +2,19 @@
     <div>
         <div class="d-flex mb-2">
             <!-- Кнопка вызова модалки -->
-            <button class="btn btn-primary" @click="openFilter">Фильтр</button>
+            <button
+                style="font-size:12px;"
+                class="btn btn-secondary" @click="openFilter">Фильтр</button>
 
             <!-- Dropdown сортировки -->
             <div class="dropdown d-inline-block ms-2">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    {{ sortableFields[sort.field] }}
-                    ({{ sort.direction }})
+                <button
+                    style="font-size:12px;"
+                    class="btn btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                    {{ sortableFields[sort.field].slice(0, 17) }}
+                    <span v-if="sortableFields[sort.field].length>17">...</span>
+                    (<span v-if="sort.direction==='asc'"><i class="fa-solid fa-arrow-down"></i></span>
+                    <span v-if="sort.direction==='desc'"><i class="fa-solid fa-arrow-up"></i></span>)
                 </button>
                 <ul class="dropdown-menu">
                     <li v-for="(name, field) in sortableFields" :key="field">
@@ -22,9 +28,8 @@
 
         <!-- Модалка фильтрации -->
         <div class="modal fade" id="productFilterModal" tabindex="-1">
-            <div class="modal-dialog ">
-                <div class="modal-content">
-                    <form @submit.prevent="applyFilters">
+            <div class="modal-dialog modal-fullscreen">
+                <form class="modal-content"  @submit.prevent="applyFilters">
                         <div class="modal-header">
                             <h5 class="modal-title">Фильтры товаров</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -78,12 +83,16 @@
                                     {{ label }}
                                 </label>
                             </div>
+
+                            <button type="button"
+                                    @click="clearFilters"
+                                    class="btn btn-outline-light text-secondary mb-2 w-100 p-3">Очистить фильтры
+                            </button>
                         </div>
                         <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Применить</button>
+                            <button type="submit" class="btn btn-primary w-100 p-3">Применить</button>
                         </div>
-                    </form>
-                </div>
+                </form>
             </div>
         </div>
     </div>
@@ -128,6 +137,26 @@ export default {
         }
     },
     methods: {
+        clearFilters() {
+            const filters = {
+                name: '',
+                description: '',
+                price: '',
+                count: '',
+                supplier_id: '',
+                product_category_id: ''
+            }
+
+            this.size = 20
+            this.page = 1
+
+            let tmpVisibleFields = [ 'name', 'price']
+            for (const field in this.sortableFields) {
+                this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
+            }
+
+            this.filters = filters
+        },
         openFilter() {
             new bootstrap.Modal(document.getElementById('productFilterModal')).show()
         },
@@ -138,15 +167,10 @@ export default {
                 this.sort.field = field
                 this.sort.direction = 'asc'
             }
-            this.$emit('apply-filters', { filters: this.filters, sort: this.sort })
+            this.$emit('apply-filters', { filters:this.filters, sort: this.sort, field_visible: this.field_visible })
         },
         applyFilters() {
-            const payload = {
-                filters: this.filters,
-                sort: this.sort,
-                field_visible: this.field_visible
-            }
-            this.$emit('apply-filters', payload)
+            this.$emit('apply-filters', { filters:this.filters, sort: this.sort, field_visible: this.field_visible })
             bootstrap.Modal.getInstance(document.getElementById('productFilterModal')).hide()
         }
     }

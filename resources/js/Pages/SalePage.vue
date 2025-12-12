@@ -31,7 +31,9 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <SaleForm @saved="fetchData"/>
+                    <SaleForm
+                        v-if="!loading"
+                        @saved="fetchData"/>
                 </div>
             </div>
         </div>
@@ -39,9 +41,19 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
 </template>
 <script>
 export default {
+    data(){
+      return {
+          loading:false,
+      }
+    },
     methods:{
         addSale() {
-            new bootstrap.Modal(document.getElementById('newSaleModal')).show()
+            this.loading = true
+            this.$nextTick(()=>{
+                this.loading = false
+                new bootstrap.Modal(document.getElementById('newSaleModal')).show()
+            })
+
         },
         async fetchData() {
             bootstrap.Modal.getInstance(document.getElementById('newSaleModal')).hide()

@@ -11,14 +11,19 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
 
     <!-- Кнопка фильтра -->
     <div class="mb-2">
-        <button class="btn btn-secondary" @click="openFilter">Фильтр</button>
+        <button
+            style="font-size:12px;"
+            class="btn btn-secondary" @click="openFilter">Фильтр</button>
 
         <!-- Dropdown сортировки -->
         <div class="dropdown d-inline-block ms-2">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <button
+                style="font-size:12px;"
+                class="btn btn-outline-secondary" type="button" data-bs-toggle="dropdown">
                 {{ sortableFields[salesStore.sort.field].slice(0, 17) }}
                 <span v-if="sortableFields[salesStore.sort.field].length>17">...</span>
-                ({{ salesStore.sort.direction }})
+                (<span v-if="salesStore.sort.direction==='asc'"><i class="fa-solid fa-arrow-down"></i></span>
+                <span v-if="salesStore.sort.direction==='desc'"><i class="fa-solid fa-arrow-up"></i></span>)
             </button>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" @click="changeSort('title')">Название</a></li>
@@ -78,6 +83,19 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                        id="descInput" placeholder="Описание"/>
                                 <label for="descInput">Описание</label>
                             </div>
+
+                        <div class="form-floating mb-2">
+                            <select
+                                id="itemsPerPage"
+                                class="form-select"
+                                v-model="filters.payment_type"
+                            >
+                                <option :value="null">Любой тип оплаты</option>
+                                <option value="0">Наличная оплата</option>
+                                <option value="1">Безналичная оплата</option>
+                            </select>
+                            <label for="itemsPerPage">Тип оплаты</label>
+                        </div>
 
                             <!-- Статус -->
                             <div class="form-floating mb-2">
@@ -319,7 +337,7 @@ export default {
                 status: 'Статус',
                 due_date: "Дата назначения встречи",
                 sale_date: 'Дата продажи',
-                planned_delivery_date: 'Планируемая дата доставки',
+                payment_type: 'Тип оплаты',
                 actual_delivery_date: 'Фактическая дата доставки',
                 quantity: 'Доставляемое число товара',
                 total_price: 'Сумма заказа',
@@ -332,6 +350,7 @@ export default {
             filters: {
                 number:'',
                 title: '',
+                payment_type: null,
                 description: '',
                 status: '',
                 date_type: null,

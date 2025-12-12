@@ -72,9 +72,9 @@
             @php
                 $itemSumFull +=$itemSum[$agent->id];
             @endphp
-            <td style="width:200px;text-align: center;">{{  $itemSum[$agent->id] }}</td>
+            <td style="width:200px;text-align: center;font-weight: bold;">{{  $itemSum[$agent->id] }}</td>
         @endforeach
-        <td style="font-weight: bold;">{{$itemSumFull}} \ {{$yearSum}}</td>
+        <td style="font-weight: bold;"> {{$yearSum}}</td>
     </tr>
 </table>
 
@@ -82,10 +82,14 @@
     <tbody>
     <tr>
         <td></td>
-        <td style="font-weight: bold; font-size: 12px;">Итого, руб</td>
+        <td style="font-weight: bold; font-size: 12px;">Общая сумма, руб</td>
         <td style="font-weight: bold; font-size: 12px;">{{number_format($total_sum,2,'.','')}}</td>
     </tr>
-
+    <tr>
+        <td></td>
+        <td style="font-weight: bold; font-size: 12px;">8%</td>
+        <td style="font-weight: bold; font-size: 12px;color:red;">{{number_format($total_sum*(env("TAX_PERCENT")/100),2,'.','')}}</td>
+    </tr>
 
     </tbody>
 </table>

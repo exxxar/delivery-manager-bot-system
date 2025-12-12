@@ -48,6 +48,14 @@ export async function makeAxiosFactory(
 
         return response;
     } catch (error: any) {
+        // Проверка на 419 ошибку
+        if (error?.response?.status === 419) {
+            alertStore.show("Сессия истекла, страница будет перезагружена", "warning");
+            window.location.reload();
+            // @ts-ignore
+            return Promise.reject("Сессия истекла");
+        }
+
         // Ошибка
         alertStore.show(`Ошибка: ${error?.message || "Неизвестная ошибка"}`);
         // @ts-ignore

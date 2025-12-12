@@ -10,7 +10,7 @@
                 @change="changeRole"
             >
                 <option :value="0">Пользователь</option>
-                <option :value="1">Агент</option>
+                <option :value="1">Младший админ</option>
                 <option :value="3">Администратор</option>
                 <option :value="4">Суперадмин</option>
             </select>

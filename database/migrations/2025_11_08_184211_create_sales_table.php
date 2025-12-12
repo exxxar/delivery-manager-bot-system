@@ -22,10 +22,11 @@ return new class extends Migration
             $table->enum('status', ["pending","assigned","delivered","completed",'rejected']); // статус задачи
             $table->date('due_date')->nullable(); // дата назначения встречи
             $table->date('sale_date')->nullable(); //дата продажи
-            $table->date('planned_delivery_date')->nullable(); //планируемая дата доставки
             $table->date('actual_delivery_date')->nullable(); //реальная фактическая дата доставки
             $table->integer('quantity')->default(0); //доставляемое число товара
             $table->decimal('total_price')->default(0); //сумма заказа
+            $table->smallInteger('payment_type')->default(0); //способ оплаты
+            $table->string('payment_document_name')->nullable(); //скриншот платежного документа
             $table->foreignId('agent_id')->nullable()->constrained('agents'); //агент, который взял в работу
             $table->foreignId('customer_id')->nullable()->constrained("customers"); //покупатель, которому доставляется (может не быть)
             $table->foreignId('supplier_id')->nullable()->constrained("suppliers"); //поставщик, чей товар доставляется

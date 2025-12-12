@@ -51,7 +51,7 @@ export default {
                 status: 'Статус',
                 due_date: 'Дата встречи',
                 sale_date: 'Дата продажи',
-                planned_delivery_date: 'Планируемая доставка',
+                payment_tye: 'Тип оплаты',
                 actual_delivery_date: 'Фактическая доставка',
                 quantity: 'Количество',
                 total_price: 'Цена',

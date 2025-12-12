@@ -10,7 +10,7 @@
                 @click="exportAgents"
                 :disabled="jobStore.loading"
             >
-                Выгрузить агентов
+                Выгрузить младших админов
             </button>
 
             <button
@@ -52,15 +52,6 @@
             <button
                 type="button"
                 class="btn btn-outline-primary p-3"
-                @click="exportClients"
-                :disabled="jobStore.loading"
-            >
-                Выгрузить покупателей
-            </button>
-
-            <button
-                type="button"
-                class="btn btn-outline-primary p-3"
                 @click="exportSuppliers"
                 :disabled="jobStore.loading"
             >
@@ -70,10 +61,28 @@
             <button
                 type="button"
                 class="btn btn-outline-primary p-3"
+                @click="exportClients"
+                :disabled="jobStore.loading"
+            >
+                Выгрузить клиентов
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-outline-primary p-3"
                 @click="exportSalesHistory"
                 :disabled="jobStore.loading"
             >
                 Выгрузить историю продаж
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-outline-primary p-3"
+                @click="exportBirthdaysList"
+                :disabled="jobStore.loading"
+            >
+                Выгрузить дни рождения
             </button>
         </div>
 
@@ -99,6 +108,7 @@ export default {
         const exportClients = () => jobStore.exportClients()
         const exportSuppliers = () => jobStore.exportSuppliers()
         const exportSalesHistory = () => jobStore.exportSalesHistory()
+        const exportBirthdaysList = () => jobStore.exportBirthdaysList()
 
         return {
             jobStore,
@@ -109,7 +119,8 @@ export default {
             exportCategories,
             exportClients,
             exportSuppliers,
-            exportSalesHistory
+            exportSalesHistory,
+            exportBirthdaysList
         }
     }
 }

@@ -25,56 +25,16 @@
             <label for="endDate">Дата окончания периода</label>
         </div>
 
-<!--        <div class="form-check form-switch ">
-            <input
-                class="form-check-input"
-                type="checkbox"
-                v-model="need_more_options"
-                :id="'need_more_options'"
-            />
-            <label class="form-check-label" :for="`need_more_options`">
-                Дополнительные параметры отчета
-            </label>
-        </div>-->
+        <div class="form-floating mb-2">
+            <select
+                v-model="report.result_type"
+                class="form-select" id="floatingSelect" aria-label="Floating label select example">
 
-        <template v-if="!isSimple&&need_more_options">
-
-            <!-- Тип отчёта -->
-            <div class="form-floating mb-2">
-                <select
-                    class="form-select"
-                    id="reportType"
-                    v-model="report.type"
-                    required
-                >
-                    <option value="">Выберите тип отчёта</option>
-                    <option value="admins">Администраторы</option>
-                    <option value="sales">Продажи</option>
-                    <option value="users">Пользователи</option>
-                    <option value="suppliers">Поставщики</option>
-                    <option value="agents">Агенты</option>
-                </select>
-                <label for="reportType">Тип отчёта</label>
-            </div>
-
-            <!-- Тип отчёта -->
-            <div class="form-floating mb-2">
-                <select
-                    class="form-select"
-                    id="reportType"
-                    v-model="report.restriction"
-                    required
-                >
-                    <option :value="null">Выберите тип ограничения</option>
-                    <option value="without-agent">Без агента</option>
-                    <option value="without-supplier">Без поставщика</option>
-                    <option value="without-admin">Без администратора</option>
-                    <option value="without-product">Без товара</option>
-                </select>
-                <label for="reportType">Ограничения</label>
-            </div>
-
-        </template>
+                <option value="0">Классический отчет</option>
+                <option value="1">Расширенный отчет</option>
+            </select>
+            <label for="floatingSelect">Как вывести результат</label>
+        </div>
 
         <button
             :disabled="adminsStore.loading"
@@ -98,7 +58,7 @@ export default {
             need_more_options: false,
             adminsStore: useAdminsStore(),
             report: {
-
+                result_type:0,
                 startDate: '',
                 endDate: '',
                 type: this.type || '',

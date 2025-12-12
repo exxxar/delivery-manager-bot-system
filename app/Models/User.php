@@ -29,9 +29,11 @@ class User extends Authenticatable
         "role",
         "percent",
         "is_work",
+        "birthday",
         "email_verified_at",
         "password",
         "blocked_at",
+        "registration_at",
         "blocked_message",
         'created_at',
         'updated_at',
@@ -45,6 +47,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+
     ];
 
     /**
@@ -56,9 +59,17 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'is_work' => 'boolean',
         'password' => 'hashed',
+        'birthday' => 'date',
     ];
 
     protected $with = ['agent'];
+
+    protected $appends = ["phone"];
+
+    public function getPhoneAttribute()
+    {
+        return $this->agent->phone ?? '';
+    }
 
     public function getUserTelegramLink(): string
     {
@@ -75,8 +86,6 @@ class User extends Authenticatable
             'Суперадмин',
         ];
 
-        Log::info("roles".print_r($roles,true ));
-        Log::info("role".print_r($this->role,true ));
         return $roles[$this->role] ?? 'Неизвестная роль';
     }
 
@@ -86,11 +95,13 @@ class User extends Authenticatable
             'Имя' => $this->name,
             'Email' => $this->email,
             'ФИО из Telegram' => $this->fio_from_telegram,
+            'Дата рождения' => $this->birthday ?? '-',
             'ID чата Telegram' => $this->telegram_chat_id,
             'Роль' => $this->getRoleName(),
             'Процент' => $this->percent,
             'Работает' => $this->is_work ? 'Да' : 'Нет',
             'Email подтверждён' => $this->email_verified_at,
+            'Дата заполнения профиля' => $this->registration_at ?? 'не заполнен',
             'Дата блокировки' => $this->blocked_at ?? 'не заблокирован',
             'Сообщение блокировки' => $this->blocked_message,
             'Создан' => $this->created_at,

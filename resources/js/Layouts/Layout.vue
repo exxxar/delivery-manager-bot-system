@@ -4,6 +4,8 @@ import {Head} from '@inertiajs/vue3'
 import GlobalAlert from "@/Components/GlobalAlert.vue";
 import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
 import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
+
+import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
 </script>
 <template>
 
@@ -75,10 +77,28 @@ import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
         </div>
     </div>
 
+    <!-- Модалка редактирования -->
+    <div class="modal fade" id="primaryUserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Первичная заполнение информации</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <PrimaryForm
+                        v-if="userStore.self"
+                        v-on:callback="result"
+                        :initial-data="userStore.self"></PrimaryForm>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </template>
 <script>
 import {useUsersStore} from "@/stores/users";
+
 export default {
     data() {
         return {
@@ -89,7 +109,10 @@ export default {
     },
     watch: {},
     created() {
-        this.userStore.fetchSelf()
+        this.userStore.fetchSelf().then(() => {
+            if (!this.userStore.self.registration_at)
+                new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
+        })
     },
     computed: {
         tg() {
@@ -107,6 +130,11 @@ export default {
         this.tg.BackButton.hide()
     },
     methods: {
+        result(){
+            const modal = bootstrap.Modal.getInstance(document.getElementById('primaryUserModal'))
+            if (modal)
+                modal.hide()
+        },
         goTo(name) {
             this.$router.push({name: name})
         },

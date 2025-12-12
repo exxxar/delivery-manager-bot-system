@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Enums\RoleEnum;
 use App\Exports\UsersExport;
 use App\Models\Agent;
+use App\Models\Supplier;
 use App\Models\User;
 use Carbon\Carbon;
 use HttpException;
@@ -160,6 +161,41 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $user->percent = $request->input('percent');
         $user->save();
+        return response()->json($user);
+    }
+
+    public function primary(Request $request)
+    {
+
+        $user = $request->botUser;
+
+        $data = $request->all();
+
+        $region = $data["region"] ?? null;
+        $phone = $data["phone"] ?? null;
+        $email = $data["email"] ?? null;
+
+        if (!is_null($phone))
+            unset($data["phone"]);
+
+        if (!is_null($region))
+            unset($data["region"]);
+
+        $data["registration_at"] = Carbon::now();
+        $user->update($data);
+
+        Agent::query()
+            ->updateOrCreate([
+                'user_id' => $user->id,
+
+            ], [
+                'name' => $user->fio_from_telegram ?? $user->name,
+                'phone' => $phone,
+                'email' => $email,
+                'region' => $region ?? '',
+            ]);
+
+
         return response()->json($user);
     }
 
