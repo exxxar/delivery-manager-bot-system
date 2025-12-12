@@ -3,7 +3,7 @@ import AgentInfo from "@/Components/Agents/AgentInfo.vue";
 </script>
 <template>
     <div class="container-fluid p-3">
-        <h4 class="mb-3">Список агентов</h4>
+        <h4 class="mb-3">Список</h4>
 
         <div class="table-responsive">
             <table class="table table-striped table-hover align-middle">

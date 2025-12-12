@@ -36,7 +36,7 @@
                         case 0:
                             echo "Пользователь"; break;
                         case 1:
-                            echo "Агент"; break;
+                            echo "Младший администратор"; break;
                         case 2:
                             echo "Поставщик"; break;
                         case 3:

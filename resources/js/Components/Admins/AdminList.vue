@@ -98,7 +98,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                         <div class="form-floating mb-2">
                             <select v-model="selectedAdmin.role" class="form-select" id="role" required>
                                 <option :value="0">Пользователь</option>
-                                <option :value="1">Агент</option>
+                                <option :value="1">Младший администратор</option>
                                 <option :value="2">Поставщик</option>
                                 <option :value="3">Администратор</option>
                             </select>
