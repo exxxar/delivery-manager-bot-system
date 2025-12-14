@@ -17,6 +17,10 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
                 data-bs-toggle="modal" :data-bs-target="'#reportModal'"
                 class="btn btn-outline-primary p-3">Сформировать отчет</button>
         <button type="button"
+                @click="goTo('ProductPage')"
+                class="btn btn-outline-primary p-3">Работа с товаром
+        </button>
+        <button type="button"
                 @click="goTo('SupplierPage')"
                 class="btn btn-outline-primary p-3">Список поставщиков</button>
     </div>
