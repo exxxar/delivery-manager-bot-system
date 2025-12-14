@@ -187,6 +187,25 @@ class SaleController extends Controller
         return response()->json($sale);
     }
 
+    public function getPaymentDocument(Request $request, $id)
+    {
+        $sale = Sale::findOrFail($id);
+
+        $user = $request->botUser;
+
+        if (!is_null($sale->payment_document_name ?? null)) {
+            \App\Facades\BotMethods::bot()->sendDocument(
+                $user->telegram_chat_id,
+                "Чек к сделке №" . ($sale->id ?? '-'),
+                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                    $sale->payment_document_name
+                )
+            );
+
+        }
+        return response()->noContent();
+    }
+
     public function confirmPayment(Request $request)
     {
         $request->validate([

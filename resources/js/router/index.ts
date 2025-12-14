@@ -1,21 +1,22 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
-// @ts-ignore
-import MenuPage from '../Pages/MenuPage.vue'
-import AgentPage from '../Pages/AgentPage.vue'
-import HelpPage from '../Pages/HelpPage.vue'
-import AdminPage from '../Pages/AdminPage.vue'
-import SupplierPage from '../Pages/SupplierPage.vue'
-import ProductPage from '../Pages/ProductPage.vue'
-import UserPage from '../Pages/UserPage.vue'
-// @ts-ignore
-import ExcelExportPage from '../Pages/ExcelExportPage.vue'
-import BirthdayPage from '../Pages/BirthdayPage.vue'
-// @ts-ignore
-import SalePage from '../Pages/SalePage.vue'
-import AdminTasksPage from '../Pages/AdminTasksPage.vue'
-import AgentTaskPage from '../Pages/AgentTaskPage.vue'
-import ProductCategoryPage from '../Pages/ProductCategoryPage.vue'
-import BlockedPage from '../Pages/BlockedPage.vue'
+
+import { defineAsyncComponent } from 'vue'
+
+const MenuPage = defineAsyncComponent(() => import('../Pages/MenuPage.vue'))
+const AgentPage = defineAsyncComponent(() => import('../Pages/AgentPage.vue'))
+const HelpPage = defineAsyncComponent(() => import('../Pages/HelpPage.vue'))
+const AdminPage = defineAsyncComponent(() => import('../Pages/AdminPage.vue'))
+const SupplierPage = defineAsyncComponent(() => import('../Pages/SupplierPage.vue'))
+const ProductPage = defineAsyncComponent(() => import('../Pages/ProductPage.vue'))
+const UserPage = defineAsyncComponent(() => import('../Pages/UserPage.vue'))
+const ExcelExportPage = defineAsyncComponent(() => import('../Pages/ExcelExportPage.vue'))
+const BirthdayPage = defineAsyncComponent(() => import('../Pages/BirthdayPage.vue'))
+const SalePage = defineAsyncComponent(() => import('../Pages/SalePage.vue'))
+const AdminTasksPage = defineAsyncComponent(() => import('../Pages/AdminTasksPage.vue'))
+const AgentTaskPage = defineAsyncComponent(() => import('../Pages/AgentTaskPage.vue'))
+const ProductCategoryPage = defineAsyncComponent(() => import('../Pages/ProductCategoryPage.vue'))
+const BlockedPage = defineAsyncComponent(() => import('../Pages/BlockedPage.vue'))
+
 
 const routes = [
     {

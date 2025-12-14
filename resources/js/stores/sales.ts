@@ -115,7 +115,15 @@ export const useSalesStore = defineStore('sales', {
             this.items = data.data
             this.pagination = data
         },
-
+        async sendPaymentDocumentToTg(id: number) {
+            try {
+                const {data} = await makeAxiosFactory(`${path}/payment-document/${id}`, 'GET')
+                return true
+            } catch (e: any) {
+                this.error = e?.message || 'Failed to load sale'
+                throw e
+            }
+        },
         async fetchOne(id: number) {
             try {
                 const {data} = await makeAxiosFactory(`${path}/${id}`, 'GET')

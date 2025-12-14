@@ -371,7 +371,7 @@ Route::prefix("bot-api")
             });
 
         Route::prefix('suppliers')
-            ->middleware(["tg.role:admin"])
+            ->middleware(["tg.role:agent"])
             ->group(function () {
                 Route::get('/with-products', [SupplierController::class, 'indexWithProducts']);
                 Route::get('/fetch-next-products/{supplierId}/products', [SupplierController::class, 'nextProducts']);
@@ -391,7 +391,7 @@ Route::prefix("bot-api")
                  });
 
         Route::prefix('products')
-            ->middleware(["tg.role:admin"])
+            ->middleware(["tg.role:agent"])
             ->group(function () {
                 // Список всех продуктов
                 Route::get('/', [ProductController::class, 'index']);
@@ -407,7 +407,7 @@ Route::prefix("bot-api")
             });
 
         Route::prefix('product-categories')
-            ->middleware(["tg.role:admin"])
+            ->middleware(["tg.role:agent"])
             ->group(function () {
                 Route::get('/with-products', [ProductCategoryController::class, 'indexWithProducts']);
                 Route::get('/fetch-next-products/{categoryId}/products', [ProductCategoryController::class, 'nextProducts']);
@@ -452,6 +452,7 @@ Route::prefix("bot-api")
                 Route::post('/', [SaleController::class, 'store']);
                 Route::post('/confirm-payment', [SaleController::class, 'confirmPayment']);
                 Route::get('/self-sales', [AgentController::class, 'selfSales']);
+                Route::get('/payment-document/{id}', [SaleController::class, 'getPaymentDocument']);
                 // Получить конкретную продажу по ID
                 Route::get('/{id}', [SaleController::class, 'show']);
                 // Обновить данные продажи

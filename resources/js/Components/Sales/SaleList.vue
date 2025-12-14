@@ -21,7 +21,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                     <span class="badge"
                           v-bind:class="{'bg-warning':!sale.sale_date, 'bg-success':sale.sale_date}"
                           v-if="sale.payment_type===0">
-                        <i class="fa-solid fa-money-bill" ></i>
+                        <i class="fa-solid fa-money-bill"></i>
                         <i class="fa-solid fa-clock"
                            style="margin-left:8px;"
                            v-if="!sale.sale_date"></i>
@@ -99,6 +99,16 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
 
                                                                              @click.prevent="openConfirmPayment(sale)">Подтвердить
                             оплату</a></li>
+
+                        <template v-if="sale.payment_document_name">
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-success"
+                                   href="javascript:void(0)"
+                                   @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a></li>
+                        </template>
+
                         <li>
                             <hr class="dropdown-divider">
                         </li>
@@ -298,6 +308,9 @@ export default {
             this.salesStore.selfSalesFiltered()
     },
     methods: {
+        async sendPaymentDocumentToTg(id) {
+            await this.salesStore.sendPaymentDocumentToTg(id)
+        },
         onFileChange(e) {
             this.paymentConfirmForm.file = e.target.files[0]
         },

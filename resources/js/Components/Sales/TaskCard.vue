@@ -41,6 +41,13 @@
             <p><strong>Продукт:</strong> {{ task.product?.name || '—' }}</p>
             <p><strong>Создан администратором:</strong> {{ task.created_by?.name || '—' }}</p>
         </div>
+
+        <template v-if="task.payment_document_name">
+            <button
+                @click="sendPaymentDocumentToTg"
+                class="btn btn-info p-3 w-100" type="button">Документ чека
+            </button>
+        </template>
     </div>
     <div class="text-muted small">
         Создано: {{ formatDate(task.created_at) }} |
@@ -49,6 +56,8 @@
 </template>
 
 <script>
+import {useSalesStore} from "@/stores/sales";
+
 export default {
     name: 'TaskCard',
     props: {
@@ -59,6 +68,7 @@ export default {
     },
     data() {
         return {
+            salesStore: useSalesStore(),
             statusLabels: {
                 pending: 'В ожидании',
                 assigned: 'Назначено',
@@ -73,14 +83,23 @@ export default {
             if (!date) return '—'
             return new Date(date).toLocaleDateString()
         },
+        async sendPaymentDocumentToTg() {
+            await this.salesStore.sendPaymentDocumentToTg(this.task.id)
+        },
         statusClass(status) {
             switch (status) {
-                case 'pending': return 'bg-secondary'
-                case 'assigned': return 'bg-info'
-                case 'delivered': return 'bg-primary'
-                case 'completed': return 'bg-success'
-                case 'rejected': return 'bg-danger'
-                default: return 'bg-dark'
+                case 'pending':
+                    return 'bg-secondary'
+                case 'assigned':
+                    return 'bg-info'
+                case 'delivered':
+                    return 'bg-primary'
+                case 'completed':
+                    return 'bg-success'
+                case 'rejected':
+                    return 'bg-danger'
+                default:
+                    return 'bg-dark'
             }
         }
     }
