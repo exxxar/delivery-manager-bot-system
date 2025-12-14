@@ -259,9 +259,22 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    /**
+     * @throws HttpException
+     */
     public function exportAdmins(Request $request)
     {
+        $user = $request->botUser ?? null;
 
+        if (is_null($user))
+            throw new HttpException("Пользователь не авторизован", 403);
+
+        $fileName = "export-admins-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
+        $data = Excel::raw(new \App\Exports\AdminsExport(), \Maatwebsite\Excel\Excel::XLSX);
+        \App\Facades\BotMethods::bot()
+            ->sendDocument($user->telegram_chat_id, "Экспорт списка администраторов",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+        return response()->noContent();
     }
 
     public function getTelegramLink(Request $request, $id)
