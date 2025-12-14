@@ -168,10 +168,11 @@ class SaleController extends Controller
 
         if (!is_null($sale->payment_document_name ?? null)) {
 
+            $slash = env("APP_DEBUG") ? "\\":"/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 env("TELEGRAM_ADMIN_CHANNEL"),
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
@@ -194,10 +195,11 @@ class SaleController extends Controller
         $user = $request->botUser;
 
         if (!is_null($sale->payment_document_name ?? null)) {
+            $slash = env("APP_DEBUG") ? "\\":"/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 $user->telegram_chat_id,
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
@@ -237,10 +239,11 @@ class SaleController extends Controller
         );
 
         if ($hasFile) {
+            $slash = env("APP_DEBUG") ? "\\":"/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 env("TELEGRAM_ADMIN_CHANNEL"),
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
@@ -274,10 +277,11 @@ class SaleController extends Controller
         );
 
         if ($hasFile) {
+            $slash = env("APP_DEBUG") ? "\\":"/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 env("TELEGRAM_ADMIN_CHANNEL"),
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app\uploads\\") . $sale->payment_document_name,
+                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
