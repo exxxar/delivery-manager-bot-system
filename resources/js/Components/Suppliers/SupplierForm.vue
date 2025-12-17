@@ -64,7 +64,7 @@ export default {
                 description: '',
                 address: '',
                 phone: '',
-                percent: 0,
+                percent: 8,
                 birthday: '',
                 email: ''
             }
