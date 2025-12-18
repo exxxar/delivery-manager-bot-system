@@ -17,12 +17,12 @@ import Pagination from "@/Components/Pagination.vue";
                 <li
                     v-for="product in category.products"
                     :key="product.id"
-                    class="list-group-item d-flex justify-content-between align-items-center"
+                    class="list-group-item"
                 >
-                    <span
+                    <p
                         @click.prevent="openView(product)"
-                        class="small">{{ product.name }}</span>
-                    <span class="badge bg-success">{{ product.price }} ₽</span>
+                        class="small mb-0">{{ product.name }}</p>
+                    <p class="badge bg-success mb-0" v-if="product.supplier?.name">{{ product.supplier.name }}</p>
                 </li>
             </ul>
             <div class="mt-2 text-center" v-if="category.products?.length<category.products_count">
