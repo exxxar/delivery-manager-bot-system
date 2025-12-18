@@ -30,7 +30,7 @@ import BackBtn from "@/Components/BackBtn.vue";
                 @click="tab='menu'"
                 class="btn btn-light text-secondary mb-3" style="position: sticky; top:80px; z-index: 100;">Назад</button>
             <h4 class="mb-3">Список товаров</h4>
-            <ProductList></ProductList>
+            <ProductList v-if="!loading"></ProductList>
 
             <nav class="navbar fixed-bottom p-3">
                 <button

@@ -13,8 +13,40 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
         <li v-for="product in productStore.items" :key="product.id"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div @click.prevent="$emit('select', product)">
-                <div class="fw-bold">{{ product.name }}</div>
-                <small class="text-muted">{{ product.price }} ₽</small>
+                <div class="fw-bold">
+                    <span
+                        v-if="field_visible?.id||false"
+                        class="badge bg-primary">#{{ product.id }}</span>
+                    {{ product.name }}</div>
+                <p class="text-muted small mb-0"
+                   v-if="field_visible?.description||false">
+
+                    {{ product.description }}
+                </p>
+                <p class="text-muted small mb-0 fst-italic">
+                    <i class="fa-solid fa-tags text-primary"></i>
+
+                    {{ product.category.name }}
+                </p>
+                <p class="text-muted small mb-0">
+                    <i class="fa-solid fa-truck text-primary"></i>
+                    {{ product.supplier.name }}
+                </p>
+
+                <p class="text-muted small mb-0"
+                   v-if="field_visible?.price||false">
+
+                    {{ product.price }} руб
+                </p>
+
+                <p class="text-muted small mb-0"
+                   v-if="field_visible?.count||false">
+
+                    {{ product.count }} ед.
+                </p>
+
+
+
             </div>
 
             <!-- Dropdown -->
@@ -97,6 +129,7 @@ export default {
     props: ["forSelect"],
     data() {
         return {
+            field_visible:null,
             productStore: useProductsStore(),
             modalStore: useModalStore(),
             products: [],

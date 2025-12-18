@@ -20,18 +20,6 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                     <label for="description">Описание</label>
                 </div>
 
-                <!-- Цена -->
-                <div class="form-floating mb-2">
-                    <input v-model="form.price" type="number" step="0.01" class="form-control" id="price" placeholder="Цена" required>
-                    <label for="price">Цена</label>
-                </div>
-
-                <!-- Количество -->
-                <div class="form-floating mb-2">
-                    <input v-model="form.count" type="number" class="form-control" id="count" placeholder="Количество" required>
-                    <label for="count">Количество</label>
-                </div>
-
                 <!-- Поставщик -->
                 <div class="input-group mb-2">
                     <div class="form-floating flex-grow-1">
@@ -53,6 +41,33 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                         Выбрать
                     </button>
                 </div>
+
+                <div class="form-check form-switch mb-2">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        v-model="need_numeric_params"
+                        id="need_numeric_params"
+                    />
+                    <label class="form-check-label" for="need_numeric_params">
+                        Нужны параметры цены и кол-ва
+                    </label>
+                </div>
+
+                <template v-if="need_numeric_params">
+                    <!-- Цена -->
+                    <div class="form-floating mb-2">
+                        <input v-model="form.price" type="number" step="0.01" class="form-control" id="price" placeholder="Цена" required>
+                        <label for="price">Цена</label>
+                    </div>
+
+                    <!-- Количество -->
+                    <div class="form-floating mb-2">
+                        <input v-model="form.count" type="number" class="form-control" id="count" placeholder="Количество" required>
+                        <label for="count">Количество</label>
+                    </div>
+                </template>
+
 
                 <!-- Кнопка -->
                 <button
@@ -102,7 +117,7 @@ export default {
         return {
             tab:'main',
             productStore: useProductsStore(),
-
+            need_numeric_params: false,
             form: {
                 name: '',
                 description: '',

@@ -117,21 +117,16 @@ export default {
                 direction: 'asc'
             },
             sortableFields: {
-                id: "ID",
-                name: "Название",
+                id: "№",
                 description: "Описание",
                 price: "Цена",
                 count: "Количество",
-                supplier_id: "Поставщик",
-                product_category_id: "Категория",
-                created_at: "Дата создания",
-                updated_at: "Дата обновления"
             }
         }
     },
     created() {
         // по умолчанию показываем name и price
-        const defaultVisible = ['name', 'price']
+        const defaultVisible = [ 'category_name','supplier_name']
         for (const field in this.sortableFields) {
             this.field_visible[field] = defaultVisible.includes(field)
         }
@@ -150,7 +145,7 @@ export default {
             this.size = 20
             this.page = 1
 
-            let tmpVisibleFields = [ 'name', 'price']
+            let tmpVisibleFields = ['category_name','supplier_name']
             for (const field in this.sortableFields) {
                 this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
             }

@@ -24,7 +24,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
             v-bind:class="{'border-primary': selection.indexOf(category.id)!==-1}"
             class="list-group-item d-flex justify-content-between align-items-center"
         >
-            <div @click="toggleSelection(category.id)">
+            <div @click="toggleSelection(category)">
                 <div class="fw-bold">{{ category.name }}</div>
                 <small class="text-muted">{{ category.description }}</small>
             </div>
@@ -158,10 +158,16 @@ export default {
 
 
         },
-        toggleSelection(id) {
-            let index = this.selection.findIndex(i => i === id)
+        toggleSelection(category) {
+            if (this.forSelect)
+            {
+                this.$emit('select', category)
+                return
+            }
+
+            let index = this.selection.findIndex(i => i === category.id)
             if (index === -1)
-                this.selection.push(id)
+                this.selection.push(category.id)
             else
                 this.selection.splice(index, 1)
         },
