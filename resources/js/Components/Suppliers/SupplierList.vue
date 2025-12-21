@@ -149,7 +149,8 @@ export default {
             let size = filters.size || 30
             let page = filters.page || 1
             delete filters.field_visible
-            this.suppliersStore.setFilters(filters)
+            this.suppliersStore.setFilters(filters.filters)
+            this.suppliersStore.setSort(filters.sort.field, filters.sort.direction)
             this.suppliersStore.fetchFiltered(page, size)
         },
         removeAll() {

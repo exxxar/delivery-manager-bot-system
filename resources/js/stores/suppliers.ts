@@ -20,13 +20,15 @@ export const useSuppliersStore = defineStore('suppliers', {
         items: [] as Supplier[],
         loading: false,
         error: null as string | null,
-        sort: { field: 'id', direction: 'desc' } as { field: string; direction: 'asc' | 'desc' }
+        sort: { field: 'id', direction: 'desc' } as { field: string; direction: 'asc' | 'desc' },
+        pagination:null,
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
         setFilters(filters: Record<string, any>) {
+            // @ts-ignore
             this.filters = filters
         },
 
@@ -50,7 +52,7 @@ export const useSuppliersStore = defineStore('suppliers', {
 
             // пагинация
             params.append('page', String(page))
-            params.append('suze', String(size))
+            params.append('size', String(size))
 
             const { data } = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
             this.items = data.data
@@ -102,6 +104,7 @@ export const useSuppliersStore = defineStore('suppliers', {
         async loadMoreSupplierProducts(supplierId, page) {
             const { data } = await makeAxiosFactory(`/fetch-next-products/${supplierId}/products?page=${page}`, 'GET')
             const supplier = this.items.find(s => s.id === supplierId)
+            // @ts-ignore
             supplier.products.push(...data.data)
         },
         async create(payload: Omit<Supplier, 'id'>) {
