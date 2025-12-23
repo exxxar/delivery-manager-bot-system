@@ -125,6 +125,19 @@ class SupplierController extends Controller
         return response()->noContent();
     }
 
+    public function removeAll(Request $request){
+        $request->validate([
+            "ids"=>"required"
+        ]);
+
+        $ids = $request->ids ?? [];
+
+        foreach ($ids as $id)
+            Supplier::destroy($id);
+
+        return response()->json(null, 204);
+    }
+
     public function indexWithProducts(Request $request){
 
         $size = $request->size ?? 10;

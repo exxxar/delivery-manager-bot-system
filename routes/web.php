@@ -375,6 +375,7 @@ Route::prefix("bot-api")
             ->group(function () {
                 Route::get('/with-products', [SupplierController::class, 'indexWithProducts']);
                 Route::get('/fetch-next-products/{supplierId}/products', [SupplierController::class, 'nextProducts']);
+                Route::post('/remove-all', [SupplierController::class, 'removeAll']);
 
                 // Список всех поставщиков
                 Route::get('/', [SupplierController::class, 'index']);

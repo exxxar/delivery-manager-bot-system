@@ -19,29 +19,31 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                 <div class="fw-bold">
                     <span v-if="field_visible?.name||true">{{ user.name }}</span>
                     <span v-if="field_visible?.id||false">(#{{ user.id }})</span></div>
-                <p class="text-muted small" v-if="field_visible?.email||true">Почта {{ user.email }}</p>
-                <p class="text-muted small" v-if="field_visible?.telegram_chat_id||false">
+                <p class="text-muted small mb-0" v-if="field_visible?.role||true">Роль <span class="text-primary fw-bold">{{ roles.at(user.role || 0) }}</span></p>
+                <p class="text-muted small mb-0" v-if="field_visible?.email||false">Почта {{ user.email }}</p>
+                <p class="text-muted small mb-0" v-if="field_visible?.phone||true">Телефон {{ user.phone || '-' }}</p>
+                <p class="text-muted small mb-0" v-if="field_visible?.telegram_chat_id||false">
                     ТГ id <a href="javascript:void(0)" @click.prevent="getTelegramLink(user)">{{
                         user.telegram_chat_id || 'Не указано'
                     }} </a>
                 </p>
-                <p class="text-muted small" v-if="field_visible?.role||false">
+                <p class="text-muted small mb-0" v-if="field_visible?.role||false">
                     {{ roles[user.role || 0] || 'неизвестная роль' }}
                 </p>
-                <p class="text-muted small" v-if="field_visible?.percent||false">Процент за работу {{
+                <p class="text-muted small mb-0" v-if="field_visible?.percent||false">Процент за работу {{
                         user.percent
                     }}%</p>
-                <p class="text-muted small" v-if="field_visible?.is_work||false">Статус работы
+                <p class="text-muted small mb-0" v-if="field_visible?.is_work||false">Статус работы
                     {{ user.is_work ? 'работает' : 'не работает' }}</p>
-                <p class="text-muted small" v-if="field_visible?.email_verified_at||false">Дата верификации почты {{
+                <p class="text-muted small mb-0" v-if="field_visible?.email_verified_at||false">Дата верификации почты {{
                         user.email_verified_at
                     }}</p>
-                <p class="text-muted small" v-if="field_visible?.blocked_at||false">Дата блокировки {{
+                <p class="text-muted small mb-0" v-if="field_visible?.blocked_at||false">Дата блокировки {{
                         user.blocked_at
                     }}</p>
-                <p class="text-muted small" v-if="field_visible?.created_at||false">Дата создания пользователя
+                <p class="text-muted small mb-0" v-if="field_visible?.created_at||false">Дата создания пользователя
                     {{ user.created_at }}</p>
-                <p class="text-muted small" v-if="field_visible?.updated_at||false">Дата последнего обновления данных
+                <p class="text-muted small mb-0" v-if="field_visible?.updated_at||false">Дата последнего обновления данных
                     пользователя {{ user.updated_at }}</p>
 
             </div>
@@ -60,15 +62,20 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                             <hr class="dropdown-divider">
                         </li>
                     </template>
-                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openRoleSwitcher(user)">Сменить роль</a></li>
-                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(user)">Редактировать</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openRoleSwitcher(user)">Сменить
+                        роль</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)"
+                           @click.prevent="openEdit(user)">Редактировать</a></li>
 
-                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(user)">Просмотреть</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)"
+                           @click.prevent="openView(user)">Просмотреть</a></li>
                     <hr class="dropdown-divider">
-                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="getTelegramLink(user)">Получить ссылку на
+                    <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="getTelegramLink(user)">Получить
+                        ссылку на
                         телеграм</a></li>
                     <hr class="dropdown-divider">
-                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmDelete(user)">Удалить</a>
+                    <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                           @click.prevent="confirmDelete(user)">Удалить</a>
                     </li>
                     <li v-if="!user.blocked_at"><a class="dropdown-item text-danger" href="javascript:void(0)"
                                                    @click.prevent="confirmBlocked(user)">Заблокировать</a>
@@ -188,7 +195,8 @@ export default {
                 'Пользователь',
                 'Младший администратор',
                 'Поставщик',
-                'Администратор'
+                'Администратор',
+                'Суперадмин'
             ],
             modalStore: useModalStore(),
             usersStore: useUsersStore(),

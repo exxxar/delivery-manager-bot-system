@@ -192,7 +192,7 @@ export default {
             else
                 this.selection = []
         },
-        async fetchData(page = 1) {
+        async fetchData(page = 0) {
             await this.suppliersStore.fetchAllByPage(page)
         },
         async fetchDataByUrl(url) {
