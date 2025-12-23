@@ -90,7 +90,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ProductForm v-if="selectedProduct" :initialData="selectedProduct" @saved="fetchData"/>
+                    <ProductForm v-if="selectedProduct" :initialData="selectedProduct" @saved="finishEdit"/>
                 </div>
             </div>
         </div>
@@ -140,6 +140,12 @@ export default {
         this.fetchData()
     },
     methods: {
+        finishEdit(){
+            this.fetchData()
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
+            if (modal)
+                modal.hide()
+        },
         async applyFilters(filters) {
             this.field_visible = filters.field_visible
             let size = filters.size || 30
