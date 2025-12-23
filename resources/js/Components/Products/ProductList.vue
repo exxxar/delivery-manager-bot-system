@@ -90,7 +90,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ProductForm v-if="selectedProduct" :initialData="selectedProduct" @saved="fetchProducts"/>
+                    <ProductForm v-if="selectedProduct" :initialData="selectedProduct" @saved="fetchData"/>
                 </div>
             </div>
         </div>
