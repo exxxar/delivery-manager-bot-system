@@ -22,7 +22,7 @@ import Pagination from "@/Components/Pagination.vue";
                     <p
                         @click.prevent="openView(product)"
                         class="small mb-0">{{ product.name }}</p>
-                    <p class="badge bg-success mb-0" v-if="product.supplier?.name">{{ product.supplier.name }}</p>
+                    <p class="badge bg-success mb-0" v-if="product.supplier?.name">{{ product.supplier?.name || '-' }}</p>
                 </li>
             </ul>
             <div class="mt-2 text-center" v-if="category.products?.length<category.products_count">

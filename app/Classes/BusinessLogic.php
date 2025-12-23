@@ -52,7 +52,7 @@ class BusinessLogic
 
         foreach ($orders as $order) {
             // Получаем поставщика и месяц продажи
-            $supplier = $order->supplier->name;
+            $supplier = $order->supplier->name ?? 'Неизвестный поставщик';
             $month = Carbon::parse($order->sale_date)->formatLocalized('%B');
 
             // Индекс месяца (нужно перевести в числовой формат)
@@ -175,7 +175,7 @@ class BusinessLogic
                 return [
                     'date' => $sale->sale_date,
                     'supplier_id' => $sale->supplier_id,
-                    'supplier_name' => $sale->supplier->name ?? 'Unknown',
+                    'supplier_name' => $sale->supplier->name ?? 'Неизвестный поставщик',
                     'sale_amount' => $sale->total_price,
                     'percent' => $percent,
                     'transfer' => $revenueLocal* ($transferPercent / 100),
@@ -301,7 +301,7 @@ class BusinessLogic
 
         return [
             "id" => $supplier->id,
-            "title" => $supplier->name,
+            "title" => $supplier->name ?? 'Неизвестный поставщик',
             'agents' => $agents,
             "total_sum" => array_sum(array_column($supplierReport, 'total')),
             "period" => $supplierReport,
@@ -332,7 +332,7 @@ class BusinessLogic
             // Собираем данные для строки отчета
             $result[] = [
                 'sale_date' => Carbon::parse($sale->sale_date)->format('d.m.Y'), // дата продажи
-                'supplier_name' => $supplier->name,               // название поставщика
+                'supplier_name' => $supplier->name ?? 'Неизвестный поставщик',               // название поставщика
                 'total_price' => $sale->total_price,              // сумма продажи
                 'percent' => $supplier->percent,              // процент с продажи
                 'commission' => $supplier->percent * $sale->total_price, // выручка (комиссия)
