@@ -26,11 +26,11 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                 <p class="text-muted small mb-0 fst-italic">
                     <i class="fa-solid fa-tags text-primary"></i>
 
-                    {{ product.category.name }}
+                    {{ product.category?.name || '-' }}
                 </p>
                 <p class="text-muted small mb-0">
                     <i class="fa-solid fa-truck text-primary"></i>
-                    {{ product.supplier.name }}
+                    {{ product.supplier?.name || '-' }}
                 </p>
 
                 <p class="text-muted small mb-0"
