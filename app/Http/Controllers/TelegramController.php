@@ -98,7 +98,7 @@ class TelegramController extends Controller
 
         foreach ($transformedRolesWithOriginals as $originalRole => $encryptedRole) {
             $link = "https://t.me/".env("TELEGRAM_BOT_DOMAIN")."?start=$encryptedRole";
-            $htmlMessage .= "<b>Роль [{$originalRole}]:</b> <code>{$link}</code>\n";
+            $htmlMessage .= "<b>Роль [$originalRole]:</b> <code>$link</code>\n";
         }
 
         BotManager::bot()
