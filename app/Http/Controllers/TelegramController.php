@@ -94,7 +94,7 @@ class TelegramController extends Controller
             $transformedRolesWithOriginals[$originalRole] = $encryptedRole;
         }
 
-        $htmlMessage = '<b>Список уникальных ролей и соответствующих им шифров:</b><br/><br/>';
+        $htmlMessage = '<b>Список уникальных ролей и соответствующих им шифров:</b>\n\n';
 
         foreach ($transformedRolesWithOriginals as $originalRole => $encryptedRole) {
             $link = "https://t.me/".env("TELEGRAM_BOT_DOMAIN")."?start=$encryptedRole";
