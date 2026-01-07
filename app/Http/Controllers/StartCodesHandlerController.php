@@ -51,7 +51,6 @@ class StartCodesHandlerController extends Controller
 
         $rolesTitles = ["Пользователь","Администратор","Поставщик", "Старший администратор", "Суперадмин"];
 
-
         BotManager::bot()->reply("Вам назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>");
     }
 

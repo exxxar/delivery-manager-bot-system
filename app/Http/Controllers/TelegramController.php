@@ -87,18 +87,20 @@ class TelegramController extends Controller
             ->distinct()
             ->pluck('role');
 
+        $rolesTitles = ["Пользователь","Администратор","Поставщик", "Старший администратор", "Суперадмин"];
+
         $transformedRolesWithOriginals = [];
 
-        foreach ($uniqueRoles as $originalRole) {
-            $encryptedRole = base64_encode(md5($originalRole)); // Шифруем каждую роль
-            $transformedRolesWithOriginals[$originalRole] = $encryptedRole;
+        foreach(RoleEnum::cases() as $role) {
+            $encryptedRole = base64_encode(md5($role->value)); // Шифруем каждую роль
+            $transformedRolesWithOriginals[$role->value] = $encryptedRole;
         }
 
-        $htmlMessage = '<b>Список уникальных ролей и соответствующих им шифров:</b>\n\n';
+        $htmlMessage = "<b>Список уникальных ролей и соответствующих им шифров:</b>\n\n";
 
         foreach ($transformedRolesWithOriginals as $originalRole => $encryptedRole) {
             $link = "https://t.me/".env("TELEGRAM_BOT_DOMAIN")."?start=$encryptedRole";
-            $htmlMessage .= "<b>Роль [$originalRole]:</b> <code>$link</code>\n";
+            $htmlMessage .= "<b>Роль [".$rolesTitles[$originalRole]."]:</b> <code>$link</code>\n\n";
         }
 
         BotManager::bot()
