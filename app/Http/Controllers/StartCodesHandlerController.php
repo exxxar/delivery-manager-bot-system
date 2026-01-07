@@ -39,6 +39,7 @@ class StartCodesHandlerController extends Controller
         $selectedRole = null;
         foreach ($uniqueRoles as $originalRole) {
             $encryptedRole = md5($originalRole); // Шифруем каждую роль
+            BotManager::bot()->reply("роль $originalRole $encryptedRole $roleMd5");
             if ($encryptedRole == $roleMd5){
                 $selectedRole = $originalRole;
                 break;
@@ -46,7 +47,7 @@ class StartCodesHandlerController extends Controller
         }
 
         $botUser = BotManager::bot()->currentBotUser();
-        $botUser->role = $selectedRole;
+        $botUser->role = $selectedRole ?? 0;
         $botUser->save();
 
         $rolesTitles = ["Пользователь","Администратор","Поставщик", "Старший администратор", "Суперадмин"];
