@@ -80,13 +80,24 @@ class TelegramController extends Controller
             ->reply($message);
     }
 
-    public function generateAuthLinks(...$data){
+    public function generateAuthLinks(...$data)
+    {
 
-        $rolesTitles = ["Пользователь","Администратор","Поставщик", "Старший администратор", "Суперадмин"];
+        $botUser = BotManager::bot()
+            ->currentBotUser();
+
+        if ($botUser->role != RoleEnum::SUPERADMIN->value) {
+            BotManager::bot()
+                ->reply("Данный метод для вас недоступен!");
+            return;
+        }
+
+
+        $rolesTitles = ["Пользователь", "Администратор", "Поставщик", "Старший администратор", "Суперадмин"];
 
         $transformedRolesWithOriginals = [];
 
-        foreach(RoleEnum::cases() as $role) {
+        foreach (RoleEnum::cases() as $role) {
             $encryptedRole = base64_encode(md5($role->value)); // Шифруем каждую роль
             $transformedRolesWithOriginals[$role->value] = $encryptedRole;
         }
@@ -94,8 +105,8 @@ class TelegramController extends Controller
         $htmlMessage = "<b>Список уникальных ролей и соответствующих им шифров:</b>\n\n";
 
         foreach ($transformedRolesWithOriginals as $originalRole => $encryptedRole) {
-            $link = "https://t.me/".env("TELEGRAM_BOT_DOMAIN")."?start=$encryptedRole";
-            $htmlMessage .= "<b>Роль [".$rolesTitles[$originalRole]."]:</b> <code>$link</code>\n\n";
+            $link = "https://t.me/" . env("TELEGRAM_BOT_DOMAIN") . "?start=$encryptedRole";
+            $htmlMessage .= "<b>Роль [" . $rolesTitles[$originalRole] . "]:</b> <code>$link</code>\n\n";
         }
 
         BotManager::bot()

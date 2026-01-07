@@ -36,7 +36,7 @@ class StartCodesHandlerController extends Controller
 
         foreach(RoleEnum::cases() as $role) {
             $encryptedRole = md5($role->value); // Шифруем каждую роль
-            BotManager::bot()->reply("роль $role->value $encryptedRole $roleMd5");
+
             if ($encryptedRole == $roleMd5){
                 $selectedRole = $role->value;
                 break;
@@ -45,10 +45,17 @@ class StartCodesHandlerController extends Controller
 
 
         $botUser = BotManager::bot()->currentBotUser();
-        $botUser->role = $selectedRole ?? 0;
-        $botUser->save();
 
         $rolesTitles = ["Пользователь","Администратор","Поставщик", "Старший администратор", "Суперадмин"];
+
+        if ($botUser->role != RoleEnum::USER->value)
+        {
+            BotManager::bot()
+                ->reply("У вас уже установлена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>. Ваша роль изменена не будет!");
+            return;
+        }
+        $botUser->role = $selectedRole ?? 0;
+        $botUser->save();
 
         BotManager::bot()->reply("Вам назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>");
     }
