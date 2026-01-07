@@ -82,11 +82,6 @@ class TelegramController extends Controller
 
     public function generateAuthLinks(...$data){
 
-        $uniqueRoles = User::query()
-            ->select('role')
-            ->distinct()
-            ->pluck('role');
-
         $rolesTitles = ["Пользователь","Администратор","Поставщик", "Старший администратор", "Суперадмин"];
 
         $transformedRolesWithOriginals = [];

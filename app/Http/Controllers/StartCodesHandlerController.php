@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatusEnum;
+use App\Enums\RoleEnum;
 use App\Facades\BotManager;
 use App\Facades\BotMethods;
 use App\Facades\BusinessLogic;
@@ -31,20 +32,17 @@ class StartCodesHandlerController extends Controller
     public function roleInviteAction(...$data){
         $roleMd5 = $data[1] ?? null;
 
-        $uniqueRoles = User::query()
-            ->select('role')
-            ->distinct()
-            ->pluck('role');
-
         $selectedRole = null;
-        foreach ($uniqueRoles as $originalRole) {
-            $encryptedRole = md5($originalRole); // Шифруем каждую роль
-            BotManager::bot()->reply("роль $originalRole $encryptedRole $roleMd5");
+
+        foreach(RoleEnum::cases() as $role) {
+            $encryptedRole = md5($role->value); // Шифруем каждую роль
+            BotManager::bot()->reply("роль $role->value $encryptedRole $roleMd5");
             if ($encryptedRole == $roleMd5){
-                $selectedRole = $originalRole;
+                $selectedRole = $role->value;
                 break;
             }
         }
+
 
         $botUser = BotManager::bot()->currentBotUser();
         $botUser->role = $selectedRole ?? 0;
