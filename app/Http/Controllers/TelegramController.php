@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RoleEnum;
 use App\Facades\BotManager;
 use App\Facades\BotMethods;
+use App\Facades\StartCodesService;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,7 @@ class TelegramController extends Controller
             $user = User::query()
                 ->find($request->botUser->id);
             $user->base_role = $user->role;
-            Log::info("ENV DEBUG FALSE". print_r($user->toArray(),true));
+            Log::info("ENV DEBUG FALSE" . print_r($user->toArray(), true));
         }
 
 
@@ -79,6 +80,31 @@ class TelegramController extends Controller
             ->reply($message);
     }
 
+    public function generateAuthLinks(...$data){
+
+        $uniqueRoles = User::query()
+            ->select('role')
+            ->distinct()
+            ->pluck('role');
+
+        $transformedRolesWithOriginals = [];
+
+        foreach ($uniqueRoles as $originalRole) {
+            $encryptedRole = base64_encode(md5($originalRole)); // Шифруем каждую роль
+            $transformedRolesWithOriginals[$originalRole] = $encryptedRole;
+        }
+
+        $htmlMessage = '<b>Список уникальных ролей и соответствующих им шифров:</b><br/><br/>';
+
+        foreach ($transformedRolesWithOriginals as $originalRole => $encryptedRole) {
+            $link = "https://t.me/".env("TELEGRAM_BOT_DOMAIN")."?start=$encryptedRole";
+            $htmlMessage .= "<b>Роль [{$originalRole}]:</b> <code>{$link}</code>\n";
+        }
+
+        BotManager::bot()
+            ->reply($htmlMessage);
+    }
+
     public function aboutCommand(...$data)
     {
         BotManager::bot()
@@ -102,7 +128,8 @@ class TelegramController extends Controller
             );
     }
 
-    public function helpCommand(...$data) {
+    public function helpCommand(...$data)
+    {
         BotManager::bot()->reply("Как пользоваться ботом");
     }
 
@@ -135,5 +162,15 @@ class TelegramController extends Controller
         ];
         \App\Facades\BotManager::bot()
             ->replyInlineKeyboard("Система управления доставками", $keyboard);
+    }
+
+    public function startWithParam(...$data)
+    {
+        $startCommand = $data[3] ?? null;
+        StartCodesService::bot()
+            ->handler($startCommand);
+
+        if (is_null($startCommand))
+            BotManager::bot()->pushCommand("/start");
     }
 }
