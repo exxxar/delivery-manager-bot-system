@@ -145,9 +145,9 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
                         <div class="form-floating mb-2">
                             <select v-model="selectedUser.role" class="form-select" id="role" required>
                                 <option :value="0">Пользователь</option>
-                                <option :value="1">Младший администратор</option>
+                                <option :value="1">Администратор</option>
                                 <option :value="2">Поставщик</option>
-                                <option :value="3">Администратор</option>
+                                <option :value="3">Старший администратор</option>
                                 <option :value="4">Суперадмин</option>
                             </select>
                             <label for="role">Роль</label>
@@ -193,9 +193,9 @@ export default {
         return {
             roles: [
                 'Пользователь',
-                'Младший администратор',
-                'Поставщик',
                 'Администратор',
+                'Поставщик',
+                'Старший администратор',
                 'Суперадмин'
             ],
             modalStore: useModalStore(),

@@ -4,10 +4,12 @@ import {makeAxiosFactory} from "./utillites/makeAxiosFactory"
 export interface Agent {
     id: number
     user_id?: number
+    mentor_id?: number
     name: string
     phone?: string
     email?: string
     region?: string
+    in_learning?: boolean
 }
 
 const path: string = "/bot-api/agents"

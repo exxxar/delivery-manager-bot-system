@@ -18,6 +18,8 @@
         <li class="list-group-item">
             <strong>Процент:</strong> {{ user.percent }}%
         </li>
+
+
     </ul>
 
     <button class="btn btn-primary w-100 p-3" @click="$emit('edit', user)">Редактировать</button>
@@ -37,9 +39,9 @@ export default {
         roleName(role) {
             switch (role) {
                 case 0: return 'Пользователь'
-                case 1: return 'Младший администратор'
+                case 1: return 'Администратор'
                 case 2: return 'Поставщик'
-                case 3: return 'Администратор'
+                case 3: return 'Старший администратор'
                 case 4: return 'Суперадмин'
                 default: return 'Неизвестно'
             }

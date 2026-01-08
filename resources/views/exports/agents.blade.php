@@ -36,11 +36,11 @@
                         case 0:
                             echo "Пользователь"; break;
                         case 1:
-                            echo "Младший администратор"; break;
+                            echo "Администратор"; break;
                         case 2:
                             echo "Поставщик"; break;
                         case 3:
-                            echo "Администратор"; break;
+                            echo "Старший администратор"; break;
                         case 4:
                             echo "Суперадмин"; break;
                     }

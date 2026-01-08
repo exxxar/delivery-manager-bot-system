@@ -25,7 +25,6 @@ class TelegramController extends Controller
             $user = User::query()
                 ->find($request->botUser->id);
             $user->base_role = $user->role;
-            Log::info("ENV DEBUG FALSE" . print_r($user->toArray(), true));
         }
 
 
@@ -162,6 +161,11 @@ class TelegramController extends Controller
     {
 
         $keyboard = [
+            [
+                ["text" => "🎓Инструкция", "web_app" => [
+                    "url" => "https://telegra.ph/Instrukciya-dlya-Administratora-01-08"]
+                ],
+            ],
             [
                 ["text" => "💎Войти в систему", "web_app" => [
                     "url" => env("APP_URL") . "/bot#/"]

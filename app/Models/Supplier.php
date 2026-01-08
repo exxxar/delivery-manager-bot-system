@@ -20,6 +20,7 @@ class Supplier extends Model
         'address',
         'description',
         'phone',
+        'work_phone',
         'percent',
         'birthday',
         'email',

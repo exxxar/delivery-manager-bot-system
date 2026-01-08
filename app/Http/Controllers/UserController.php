@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
 use App\Exports\UsersExport;
+use App\Facades\BotManager;
+use App\Facades\BotMethods;
 use App\Models\Agent;
 use App\Models\Supplier;
 use App\Models\User;
@@ -71,6 +73,35 @@ class UserController extends Controller
     {
         $user = User::create($request->all());
         return response()->json($user, 201);
+    }
+
+    public function requestRole(Request $request)
+    {
+        $user = $request->botUser;
+
+        $tmpUserLink = $user->getUserTelegramLink();
+
+        $userInfo = $user->toTelegramText();
+
+        $link = "https://t.me/" . env("TELEGRAM_BOT_DOMAIN") . "?start="
+            . base64_encode($user->telegram_chat_id . "role");
+
+        BotMethods::bot()->sendMessage(
+            $user->telegram_chat_id,
+            "Запрос на предоставление доступа успешно отправлен!");
+        sleep(1);
+        BotMethods::bot()->sendInlineKeyboard(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#запрос_на_предоставление_роли\n<b>Пользователь запрашивает предоставление прав Администратора</b>\n$userInfo\n$tmpUserLink", [
+            [
+                [
+                    "text" => "Выдать роль Администратора",
+                    "url" => "$link"
+                ]
+            ]
+        ]);
+
+
     }
 
     public function show($id)

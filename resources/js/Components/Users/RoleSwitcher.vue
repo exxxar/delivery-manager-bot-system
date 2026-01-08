@@ -10,8 +10,8 @@
                 @change="changeRole"
             >
                 <option :value="0">Пользователь</option>
-                <option :value="1">Младший админ</option>
-                <option :value="3">Администратор</option>
+                <option :value="1">Администратор</option>
+                <option :value="3">Старший администратор</option>
                 <option :value="4">Суперадмин</option>
             </select>
 
@@ -39,9 +39,9 @@ export default {
             selectedRole: useUsersStore().self.role || 0,
             roles: {
                 0: 'Пользователь',
-                1: 'Младший администратор',
+                1: 'Администратор',
                 2: 'Поставщик',
-                3: 'Администратор',
+                3: 'Старший администратор',
                 4: 'Суперадмин'
             },
         }

@@ -10,6 +10,7 @@ export interface User {
     telegram_chat_id?: string
     role: number
     percent: number
+    mentor_percent: number
     is_work: boolean
     email_verified_at?: string
     blocked_at?: string
@@ -103,12 +104,14 @@ export const useUsersStore = defineStore('users', {
         async fetchAllByPage(page = 1) {
             const {data} = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
             this.items = data.data
+            // @ts-ignore
             this.pagination = data
         },
         // @ts-ignore
         async fetchByUrl(url: string) {
             const {data} = await makeAxiosFactory(url, 'GET')
             this.items = data.data
+            // @ts-ignore
             this.pagination = data
         },
 
@@ -141,6 +144,10 @@ export const useUsersStore = defineStore('users', {
             return data as User
         },
         // @ts-ignore
+        async selfRoleRequest() {
+            await makeAxiosFactory(`${path}/request-role`, 'GET')
+        },
+        // @ts-ignore
         async remove(id: number) {
 
             await makeAxiosFactory(`${path}/${id}`, 'DELETE')
@@ -171,8 +178,6 @@ export const useUsersStore = defineStore('users', {
 
         async updateWorkStatus(id: number, is_work: boolean) {
             const alertStore = useAlertStore()
-
-
             const {data} = await makeAxiosFactory(`${path}/${id}/work-status`, 'POST', {
                 is_work:is_work
             })

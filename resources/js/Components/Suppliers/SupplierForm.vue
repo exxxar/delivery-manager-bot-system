@@ -19,14 +19,25 @@
         </div>
 
         <div class="form-floating mb-2">
-            <input v-model="form.phone" type="tel" class="form-control" id="phone" placeholder="Телефон" required>
+            <input v-model="form.phone"
+                   v-mask="'+7(###) ###-##-##'"
+                   type="text" class="form-control" id="phone" placeholder="Телефон" required>
             <label for="phone">Телефон</label>
         </div>
 
         <div class="form-floating mb-2">
+            <input v-model="form.work_phone"
+                   v-mask="'+7(###) ###-##-##'"
+                   type="text" class="form-control" id="work_phone" placeholder="Телефон" required>
+            <label for="work_phone">Рабочий телефон</label>
+        </div>
+
+
+
+        <div class="form-floating mb-2">
             <input v-model="form.percent" type="number" step="0.01" class="form-control" id="percent"
                    placeholder="Процент">
-            <label for="percent">Процент</label>
+            <label for="percent">Процент, %</label>
         </div>
 
         <div class="form-floating mb-2">
@@ -64,6 +75,7 @@ export default {
                 description: '',
                 address: '',
                 phone: '',
+                work_phone: '',
                 percent: 8,
                 birthday: '',
                 email: ''

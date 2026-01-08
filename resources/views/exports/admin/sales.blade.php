@@ -21,11 +21,11 @@
         <th style="font-weight: bold;">Факт. доставка</th>
         <th style="font-weight: bold;">Количество</th>
         <th style="font-weight: bold;">Сумма заказа</th>
-        <th style="font-weight: bold;">Младший администратор</th>
+        <th style="font-weight: bold;">Администратор</th>
         <th style="font-weight: bold;">Клиент</th>
         <th style="font-weight: bold;">Поставщик</th>
         <th style="font-weight: bold;">Продукт</th>
-        <th style="font-weight: bold;">Создан админом</th>
+        <th style="font-weight: bold;">Создан старшим администратором</th>
         <th style="font-weight: bold;">Создано</th>
         <th style="font-weight: bold;">Обновлено</th>
     </tr>

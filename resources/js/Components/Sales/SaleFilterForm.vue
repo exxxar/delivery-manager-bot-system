@@ -149,7 +149,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                         @change="selectedAgent = null"
                                         v-model="filters.agent_id"
                                         class="form-control" id="agentInput" placeholder="Агент"/>
-                                    <label for="agentInput">Младший админ</label>
+                                    <label for="agentInput">Администратор</label>
                                 </div>
                                 <button
                                     type="button"

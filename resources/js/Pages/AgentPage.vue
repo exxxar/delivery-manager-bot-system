@@ -5,7 +5,7 @@ import BackBtn from "@/Components/BackBtn.vue";
 <template>
     <div class="container-fluid p-3">
         <BackBtn/>
-        <h4 class="mb-3">Список торговых представителей</h4>
+        <h4 class="mb-3">Список администраторов</h4>
 
         <AgentList></AgentList>
 
@@ -16,7 +16,7 @@ import BackBtn from "@/Components/BackBtn.vue";
                 data-bs-target="#createCategoryModal"
                 class="btn w-100 p-3 btn-primary"
             >
-                Добавить торгового представителя
+                Добавить администратора
             </button>
         </nav>
     </div>

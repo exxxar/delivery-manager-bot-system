@@ -25,9 +25,9 @@
         <div class="form-floating mb-2">
             <select v-model="form.role" class="form-select" id="role" required>
                 <option :value="0">Пользователь</option>
-                <option :value="1">Младший администратор</option>
+                <option :value="1">Администратор</option>
                 <option :value="2">Поставщик</option>
-                <option :value="3">Администратор</option>
+                <option :value="3">Старший администратор</option>
                 <option :value="4">Суперадмин</option>
             </select>
             <label for="role">Роль</label>
@@ -39,6 +39,14 @@
                    placeholder="Процент">
             <label for="percent">Процент</label>
         </div>
+
+        <div class="form-floating mb-2">
+            <input v-model="form.mentor_percent" type="number" step="0.01" class="form-control" id="mentor_percent"
+                   placeholder="Процент">
+            <label for="mentor_percent">Процент наставника</label>
+        </div>
+
+
 
         <!--            &lt;!&ndash; Пароль &ndash;&gt;
                     <div class="form-floating mb-2">
@@ -75,6 +83,7 @@ export default {
                 telegram_chat_id: '',
                 role: 0,
                 percent: 0,
+                mentor_percent: 0,
                 password: ''
             },
             isEdit: false

@@ -3,10 +3,10 @@ export default {
     current_role_title:'Текущая роль: {role}',
     roles:{
         user:'Пользователь',
-        agent:'Младший администратор',
+        agent:'Администратор',
         supplier:'Поставщик',
         customer: 'Клиент',
-        admin:'Администратор',
+        admin:'Старший администратор',
         super: 'Суперадмин'
     },
     menu: {

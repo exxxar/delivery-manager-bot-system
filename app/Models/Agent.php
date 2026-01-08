@@ -18,10 +18,14 @@ class Agent extends Model
      */
     protected $fillable = [
         'user_id',
+        'mentor_id',
         'name',
+        'in_learning',
         'phone',
         'email',
         'region',
+        'start_learning_date',
+        'end_learning_date',
         'created_at',
         'updated_at',
     ];
@@ -31,16 +35,20 @@ class Agent extends Model
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'id' => 'integer',
-            'user_id' => 'integer',
-        ];
-    }
+    protected $casts = [
+        'id' => 'integer',
+        'user_id' => 'integer',
+        'mentor_id' => 'integer',
+        'in_learning' => 'boolean'
+    ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function mentor(): BelongsTo
+    {
+        return $this->belongsTo(User::class,'mentor_id','id');
     }
 }

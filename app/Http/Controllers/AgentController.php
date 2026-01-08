@@ -19,7 +19,8 @@ class AgentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Agent::query();
+        $query = Agent::query()
+            ->with(["mentor"]);
 
         // 🔹 Фильтры по связям
         if ($request->filled('user_id')) {
@@ -160,7 +161,23 @@ class AgentController extends Controller
     public function update(Request $request, $id)
     {
         $agent = Agent::findOrFail($id);
-        $agent->update($request->all());
+
+        $data = $request->all();
+
+        $inLearning = ($data["in_learning"] ?? false) == "true";
+
+
+        if ($agent->in_learning && !$inLearning) {
+           $data["start_learning_date"] = Carbon::now();
+        }
+
+        if (!$agent->in_learning && $inLearning) {
+            $data["start_learning_date"] = Carbon::now();
+            $data["end_learning_date"] = null;
+        }
+
+        $agent->update($data);
+
         return response()->json($agent);
     }
 

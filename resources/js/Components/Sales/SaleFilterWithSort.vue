@@ -55,7 +55,7 @@ export default {
                 actual_delivery_date: 'Фактическая доставка',
                 quantity: 'Количество',
                 total_price: 'Цена',
-                agent_id: 'Младший администратор',
+                agent_id: 'Администратор',
                 customer_id: 'Клиент',
                 supplier_id: 'Поставщик',
                 created_by_id: 'Администратор',

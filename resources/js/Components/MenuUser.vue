@@ -7,12 +7,28 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
 <template>
 
-        <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
-            <button type="button" data-bs-toggle="modal" data-bs-target="#adminJobModal" class="btn btn-outline-primary p-3">Стать администратором</button>
-            <button type="button" data-bs-toggle="modal" data-bs-target="#agentJobModal" class="btn btn-outline-primary p-3">Стать младшим администратором</button>
-            <button type="button" data-bs-toggle="modal" data-bs-target="#supplierJobModal" class="btn btn-outline-primary p-3">Стать поставщиком</button>
-            <button type="button" data-bs-toggle="modal" data-bs-target="#clientJobModal" class="btn btn-outline-primary p-3">Стать клиентом (сотрудничество)</button>
-        </div>
+    <button
+        @click="requestInvite"
+        :disabled="spent_time>0"
+        type="button" class="btn btn-primary p-3 mb-2 w-100">
+        <span v-if="spent_time>0">{{ spent_time }} сек.</span>
+        <span v-else>Я уже являюсь сотрудником</span>
+    </button>
+
+    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#adminJobModal"
+                class="btn btn-outline-primary p-3">Стать администратором
+        </button>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#agentJobModal"
+                class="btn btn-outline-primary p-3">Стать младшим администратором
+        </button>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#supplierJobModal"
+                class="btn btn-outline-primary p-3">Стать поставщиком
+        </button>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#clientJobModal"
+                class="btn btn-outline-primary p-3">Стать клиентом (сотрудничество)
+        </button>
+    </div>
 
 
     <!-- Модалка: Администратор -->
@@ -78,13 +94,39 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
 </template>
 <script>
+import {startTimer, checkTimer, getSpentTimeCounter} from "../utilites/commonMethods.js";
+import {useUsersStore} from "@/stores/users";
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
+
 export default {
-        methods:{
-            hideModal(modalId){
-                const modalEl = document.getElementById(modalId)
-                const modalInstance = bootstrap.Modal.getInstance(modalEl)
-                modalInstance.hide()
-            }
+    data() {
+        return {
+            spent_time: 0,
+            userStore: useUsersStore(),
+            alertStore: useAlertStore(),
         }
+    },
+    mounted() {
+        checkTimer();
+
+        window.addEventListener("trigger-spent-timer", (event) => { // (1)
+            this.spent_time = event.detail
+        });
+    },
+    methods: {
+        hideModal(modalId) {
+            const modalEl = document.getElementById(modalId)
+            const modalInstance = bootstrap.Modal.getInstance(modalEl)
+            modalInstance.hide()
+        },
+        requestInvite() {
+            startTimer(10);
+            this.userStore.selfRoleRequest().then(() => {
+                this.alertStore.show("Запрос успешно отправлен", "success");
+            }).catch(() => {
+                this.alertStore.show("Ошибка отправки запроса", "error");
+            })
+        }
+    }
 }
 </script>

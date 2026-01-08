@@ -7,6 +7,7 @@ export interface Supplier {
     description?: string
     address?: string
     phone?: string
+    work_phone?: string
     percent?: number
     birthday?: string
     email?: string

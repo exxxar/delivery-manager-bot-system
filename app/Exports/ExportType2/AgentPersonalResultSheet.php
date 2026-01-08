@@ -31,13 +31,13 @@ class AgentPersonalResultSheet implements FromView, WithTitle
 
         return view('exports.export-personal-agent-result', [
             'sales' => $sales,
-            'title'=>$this->agent->name ?? 'Младший администратор'
+            'title'=>$this->agent->name ?? 'Администратор'
 
         ]);
     }
 
     public function title(): string
     {
-        return $this->agent->name ?? 'Младший администратор';
+        return $this->agent->name ?? 'Администратор';
     }
 }

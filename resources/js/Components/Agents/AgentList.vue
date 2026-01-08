@@ -1,6 +1,7 @@
 <script setup>
 import AgentInfo from "@/Components/Agents/AgentInfo.vue";
 import Pagination from "@/Components/Pagination.vue";
+import UserForm from "@/Components/Users/UserForm.vue";
 </script>
 
 <template>
@@ -9,7 +10,7 @@ import Pagination from "@/Components/Pagination.vue";
     <div class="form-floating mb-3">
         <input type="search"
                v-model="search"
-               class="form-control" id="searchInput" placeholder="Поиск..." />
+               class="form-control" id="searchInput" placeholder="Поиск..."/>
         <label for="searchInput">Поиск</label>
     </div>
 
@@ -18,8 +19,23 @@ import Pagination from "@/Components/Pagination.vue";
 
             v-for="agent in filteredAgents" :key="agent.id"
             class="list-group-item d-flex justify-content-between align-items-center">
-            <div  @click="selectAgent(agent)">
-                <div class="fw-bold">{{ agent.name }}</div>
+            <div @click="selectAgent(agent)">
+                <div class="fw-bold">
+                    <span v-if="agent.in_learning" class="badge bg-success">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </span>
+                    {{ agent.name }}
+                    <span v-if="agent.in_learning&&!forSelect" class="small text-success">
+                        <template v-if="agent.mentor">
+                           <a
+                               @click="openEdit(agent.mentor)"
+                               href="javascript:void(0)">({{ agent.mentor?.name || '-' }})</a>
+                        </template>
+                        <template v-else>
+                            Наставник не указан
+                        </template>
+                    </span>
+                </div>
                 <small class="text-muted">{{ agent.phone }} | {{ agent.email }}</small>
             </div>
 
@@ -42,7 +58,8 @@ import Pagination from "@/Components/Pagination.vue";
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(agent)">Удалить</a></li>
+                        <li><a class="dropdown-item text-danger" href="#"
+                               @click.prevent="confirmDelete(agent)">Удалить</a></li>
                     </template>
 
                 </ul>
@@ -81,7 +98,7 @@ import Pagination from "@/Components/Pagination.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    Вы уверены, что хотите удалить  <strong>{{ selectedAgent?.name }}</strong>?
+                    Вы уверены, что хотите удалить <strong>{{ selectedAgent?.name }}</strong>?
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -100,12 +117,26 @@ import Pagination from "@/Components/Pagination.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <AgentForm v-if="selectedAgent" :initialData="selectedAgent" @saved="fetchSuppliers"/>
+                    <AgentForm v-if="selectedAgent" :initialData="selectedAgent"/>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Модалка редактирования -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование администратора</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <UserForm v-if="selectedAdmin" :initialData="selectedAdmin" @saved="fetchData"/>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -120,12 +151,13 @@ export default {
     props: ["forSelect"],
     data() {
         return {
-            search:'',
+            search: '',
+            selectedAdmin: null,
             agentStore: useAgentsStore(),
             selectedAgent: null
         }
     },
-    computed:{
+    computed: {
         filteredAgents() {
             if (!this.search) return this.agentStore.items || []
             const q = this.search.toLowerCase()
@@ -141,6 +173,14 @@ export default {
 
     },
     methods: {
+        openEdit(user) {
+            this.selectedAdmin = null
+            this.$nextTick(() => {
+                this.selectedAdmin = user
+                new bootstrap.Modal(document.getElementById('editUserModal')).show()
+            })
+
+        },
         async fetchAgents(page = 1) {
             await this.agentStore.fetchAllByPage(page)
         },
@@ -174,8 +214,11 @@ export default {
             }
         },
         openEditAgent(agent) {
-            this.selectedAgent = agent
-            new bootstrap.Modal(document.getElementById('editAgentModal')).show()
+            this.selectedAgent = null
+            this.$nextTick(() => {
+                this.selectedAgent = agent
+                new bootstrap.Modal(document.getElementById('editAgentModal')).show()
+            })
         }
     }
 }

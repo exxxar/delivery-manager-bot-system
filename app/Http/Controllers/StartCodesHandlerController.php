@@ -29,6 +29,33 @@ use Telegram\Bot\FileUpload\InputFile;
 class StartCodesHandlerController extends Controller
 {
 
+    public function acceptRoleChange(...$data){
+
+        $adminBotUser = BotManager::bot()->currentBotUser();
+
+        if ($adminBotUser->role != RoleEnum::SUPERADMIN->value)
+        {
+            BotManager::bot()
+                ->reply("Недостаточно прав для этого действия!");
+            return;
+        }
+
+        $telegramChatId = $data[1] ?? null;
+
+        $user = User::query()->where("telegram_chat_id", $telegramChatId)->first();
+
+        if (is_null($user)){
+            BotManager::bot()
+                ->reply("Пользователь не найден!");
+            return;
+        }
+
+        $user->role = RoleEnum::AGENT->value;
+        $user->save();
+
+        BotManager::bot()->reply("Вы успешно изменили роль пользователю:\n".$user->toTelegramText());
+
+    }
     public function roleInviteAction(...$data){
         $roleMd5 = $data[1] ?? null;
 
@@ -58,6 +85,10 @@ class StartCodesHandlerController extends Controller
         $botUser->save();
 
         BotManager::bot()->reply("Вам назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>");
+        sleep(1);
+        BotManager::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "Пользователю назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>\n".$botUser->toTelegramText());
     }
 
 

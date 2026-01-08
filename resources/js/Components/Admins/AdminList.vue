@@ -11,8 +11,14 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
         <li v-for="user in adminsStore.items" :key="user.id"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div>
-                <div class="fw-bold"><span class="badge bg-primary">{{ user.percent }}%</span> {{ user.name }}</div>
-                <small class="text-muted mb-2">{{ user.email }}</small>
+                <div
+                    @click="selectAdmin(user)"
+                    class="fw-bold">
+                    <span class="badge bg-primary">{{ user.percent }}%</span> {{ user.name }}
+                    <p class="text-muted mb-0 small">{{ user.phone || 'Телефон не указан' }}</p>
+                    <p class="text-muted mb-2 small">{{ user.email }}</p>
+                </div>
+
                 <div
                     class="form-check form-switch ">
                     <input
@@ -35,16 +41,23 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                     <i class="fas fa-bars"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <button
-                            type="button"
-                            @click="selectedAdmin = user"
-                            class="dropdown-item" data-bs-toggle="modal" :data-bs-target="'#reportModal'">
-                            Сформировать отчет
-                        </button>
-                    </li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openRoleSwitcher(user)">Сменить роль</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="openEdit(user)">Редактировать</a></li>
+                    <template v-if="forSelect">
+                        <li><a class="dropdown-item" href="#" @click.prevent="selectAdmin(user)">Выбрать</a>
+                        </li>
+                    </template>
+                    <template v-if="!forSelect">
+                        <li>
+                            <button
+                                type="button"
+                                @click="selectedAdmin = user"
+                                class="dropdown-item" data-bs-toggle="modal" :data-bs-target="'#reportModal'">
+                                Сформировать отчет
+                            </button>
+                        </li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openRoleSwitcher(user)">Сменить роль</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openEdit(user)">Редактировать</a></li>
+                    </template>
+
                 </ul>
             </div>
         </li>
@@ -98,9 +111,9 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                         <div class="form-floating mb-2">
                             <select v-model="selectedAdmin.role" class="form-select" id="role" required>
                                 <option :value="0">Пользователь</option>
-                                <option :value="1">Младший администратор</option>
+                                <option :value="1">Администратор</option>
                                 <option :value="2">Поставщик</option>
-                                <option :value="3">Администратор</option>
+                                <option :value="3">Старший администратор</option>
                             </select>
                             <label for="role">Роль</label>
                         </div>
@@ -140,7 +153,7 @@ import {useUsersStore} from "@/stores/users";
 
 export default {
     name: 'AdminList',
-
+    props: ["forSelect"],
     data() {
         return {
             adminsStore: useAdminsStore(),
@@ -154,7 +167,11 @@ export default {
     },
 
     methods: {
-
+        selectAdmin(admin) {
+            if (!this.forSelect)
+                return
+            this.$emit("select", admin)
+        },
         openRoleSwitcher(user) {
             this.selectedAdmin = user
             new bootstrap.Modal(document.getElementById('roleSwitcherUserModal')).show()

@@ -96,7 +96,7 @@ class Sale extends Model
             "<b>Количество:</b> {$this->quantity}\n" .
             "<b>Сумма заказа:</b> {$this->total_price}\n" .
             "<b>Тип оплаты:</b> {$paymentType}\n" .
-            "<b>Младший админ:</b> " . ($this->agent?->name ?? '-') . "\n" .
+            "<b>Админ:</b> " . ($this->agent?->name ?? '-') . "\n" .
             "<b>Клиент:</b> " . ($this->customer?->name ?? '-') . "\n" .
             "<b>Поставщик:</b> " . ($this->supplier?->name ?? '-') . "\n" .
             "<b>Продукт:</b> " . ($this->product?->name ?? '-') . "\n" .

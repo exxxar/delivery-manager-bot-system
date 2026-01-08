@@ -26,11 +26,11 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
         </button>
         <button type="button"
                 @click="goTo('AgentPage')"
-                class="btn btn-outline-primary p-3">Список младших админов
+                class="btn btn-outline-primary p-3">Список админов
         </button>
         <button type="button"
                 @click="goTo('AdminPage')"
-                class="btn btn-outline-primary p-3">Список админов
+                class="btn btn-outline-primary p-3">Список старших админов
         </button>
 
         <button type="button"

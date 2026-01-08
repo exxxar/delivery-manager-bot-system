@@ -16,6 +16,16 @@
         <li class="list-group-item">
             <strong>Регион:</strong> {{ agent.region }}
         </li>
+        <li v-if="agent.in_learning" class="list-group-item">
+            <strong>Обучается у: </strong>
+            <template v-if="agent.mentor">
+                    {{ agent.mentor?.name || '-' }}
+            </template>
+            <template v-else>
+                Наставник не указан
+            </template>
+        </li>
+
 
     </ul>
 
