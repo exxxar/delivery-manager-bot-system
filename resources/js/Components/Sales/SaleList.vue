@@ -115,7 +115,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         <li><a class="dropdown-item text-danger" href="javascript:void(0)"
                                @click.prevent="confirmDelete(sale)">Удалить</a></li>
                         <li><a class="dropdown-item text-danger" href="javascript:void(0)"
-                               @click.prevent="cancelDeal(sale)">Отменить
+                               @click.prevent="confirmCancelDeal(sale)">Отменить
                             сделку</a></li>
                     </template>
                 </ul>
@@ -342,6 +342,14 @@ export default {
             this.modalStore.open(
                 `Вы уверены, что хотите удалить ${this.selectedSale?.title}?`,
                 () => this.salesStore.deleteSale(this.selectedSale.id),
+                () => this.modalStore.close()
+            )
+        },
+        confirmCancelDeal(sale) {
+            this.selectedSale = sale
+            this.modalStore.open(
+                `Вы уверены, что хотите отменить сделку ${this.selectedSale?.title}?`,
+                () => this.salesStore.cancelDeal(sale),
                 () => this.modalStore.close()
             )
         },

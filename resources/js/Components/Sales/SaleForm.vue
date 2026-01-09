@@ -59,7 +59,9 @@ const today = new Date().toISOString().split('T')[0]
                            readonly>
                     <label for="product">Продукт</label>
                 </div>
-                <button type="button" class="btn btn-outline-light text-primary" @click="tab='product'">Выбрать</button>
+                <button type="button"
+                        :disabled="form.supplier_id == null"
+                        class="btn btn-outline-light text-primary" @click="tab='product'">Выбрать</button>
             </div>
 
             <template v-if="form.supplier_id && form.product_id">
