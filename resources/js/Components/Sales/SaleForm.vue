@@ -329,9 +329,16 @@ export default {
             this.tab = 'main'
         },
         selectSupplier(supplier) {
+            const oldSupplierId =  this.form.supplier_id
             this.form.supplier_id = null
             this.supplierName = null
             this.product_filters.supplier_id = null
+
+            if (oldSupplierId !== supplier.id)
+            {
+                this.form.product_id = null
+                this.product = null
+            }
 
             this.$nextTick(() => {
                 this.form.supplier_id = supplier.id
