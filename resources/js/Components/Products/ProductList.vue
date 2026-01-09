@@ -33,7 +33,8 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                     <span
                         v-if="field_visible?.id||false"
                         class="badge bg-primary">#{{ product.id }}</span>
-                    {{ product.name }}</div>
+                    {{ product.name }}
+                </div>
                 <p class="text-muted small mb-0"
                    v-if="field_visible?.description||false">
 
@@ -46,7 +47,8 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                 </p>
                 <p class="text-muted small mb-0">
                     <i class="fa-solid fa-truck text-primary"></i>
-                    {{ product.supplier?.name || '-' }} <span class="fst-italic text-lowercase fw-bold small">({{ product.supplier?.description || '-' }})</span>
+                    {{ product.supplier?.name || '-' }} <span
+                    class="fst-italic text-lowercase fw-bold small">({{ product.supplier?.description || '-' }})</span>
                 </p>
 
                 <p class="text-muted small mb-0"
@@ -60,7 +62,6 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
 
                     {{ product.count }} ед.
                 </p>
-
 
 
             </div>
@@ -142,11 +143,11 @@ import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 export default {
     name: 'ProductList',
     components: {ProductForm, ProductCard},
-    props: ["forSelect"],
+    props: ["forSelect", "filters"],
     data() {
         return {
-            search:null,
-            field_visible:null,
+            search: null,
+            field_visible: null,
             productStore: useProductsStore(),
             modalStore: useModalStore(),
             products: [],
@@ -154,16 +155,24 @@ export default {
         }
     },
     created() {
-        this.fetchData()
+
+        if (this.filters) {
+            this.productStore.setFilters({
+                supplier_id: this.filters.supplier_id || null
+            })
+            this.productStore.setSort('id', 'asc')
+            this.productStore.fetchFilteredProducts(0, 30)
+        } else
+            this.fetchData()
     },
     methods: {
-        finishEdit(){
+        finishEdit() {
             this.fetchData()
             const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
             if (modal)
                 modal.hide()
         },
-        findProduct(){
+        findProduct() {
             this.productStore.setFilters({
                 name: this.search || ''
             })

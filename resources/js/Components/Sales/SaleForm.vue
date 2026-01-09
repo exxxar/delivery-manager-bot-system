@@ -230,7 +230,9 @@ const today = new Date().toISOString().split('T')[0]
                 @click="tab='main'"
                 class="btn btn-light text-secondary mb-3" style="position: sticky; top:0px; z-index: 100;">Назад
             </button>
-            <ProductList :for-select="true" @select="selectProduct"/>
+            <ProductList :for-select="true"
+                         :filters="product_filters"
+                         @select="selectProduct"/>
         </template>
     </form>
 
@@ -276,6 +278,9 @@ export default {
             userStore: useUsersStore(),
             can_add_past_assignments: false,
             file: null,
+            product_filters: {
+                supplier_id: null,
+            },
             form: {
                 title: '',
                 description: '',
@@ -324,9 +329,17 @@ export default {
             this.tab = 'main'
         },
         selectSupplier(supplier) {
-            this.form.supplier_id = supplier.id
-            this.supplierName = supplier.name
-            this.tab = 'main'
+            this.form.supplier_id = null
+            this.supplierName = null
+            this.product_filters.supplier_id = null
+
+            this.$nextTick(() => {
+                this.form.supplier_id = supplier.id
+                this.supplierName = supplier.name
+                this.tab = 'main'
+
+                this.product_filters.supplier_id = supplier.id
+            })
         },
         selectProduct(product) {
             this.form.product_id = product.id
