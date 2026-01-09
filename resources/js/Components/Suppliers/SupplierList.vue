@@ -6,13 +6,30 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 
 <template>
 
-<!--
-    <div class="form-floating mb-3">
-        <input type="search"
-               v-model="search"
-               class="form-control" id="searchInput" placeholder="Поиск..." />
-        <label for="searchInput">Поиск</label>
-    </div>-->
+    <div class="input-group mb-2">
+        <div class="form-floating ">
+            <input class="form-control"
+                   type="search"
+                   v-model="search"
+                   id="supplierInput" placeholder="Поставщик"/>
+            <label for="supplierInput">Поставщик</label>
+        </div>
+
+        <button
+            @click="findSupplier"
+            type="button"
+            class="btn btn-outline-light text-primary"
+        >
+            Найти
+        </button>
+    </div>
+    <!--
+        <div class="form-floating mb-3">
+            <input type="search"
+                   v-model="search"
+                   class="form-control" id="searchInput" placeholder="Поиск..." />
+            <label for="searchInput">Поиск</label>
+        </div>-->
 
     <template v-if="!forSelect">
         <SupplierFilter v-on:apply-filters="applyFilters"></SupplierFilter>
@@ -41,14 +58,16 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
             <!-- Левая часть -->
             <div class="flex-grow-1 me-3 text-break" @click="selectSupplier(supplier)">
                 <div class="fw-bold" @click="toggleSelection(supplier.id)">
-                    <span class="badge bg-primary" v-if="field_visible?.id||false">#{{supplier.id
-                    }}</span>{{ supplier.name }}
+                    <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
+                            supplier.id
+                        }}</span>{{ supplier.name }}
                     <span
                         v-if="field_visible?.percent||false"
                         class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
                 </div>
 
-                <p class="mb-2" v-if="field_visible?.phone||false">{{ supplier.phone }}</p>
+                <p class="mb-0" v-if="field_visible?.description||true">{{ supplier.description || '-' }}</p>
+                <p class="mb-0 fw-bold small" v-if="field_visible?.phone||true">{{ supplier.phone }}</p>
                 <p class="mb-2" v-if="field_visible?.email||false">{{ supplier.email }}</p>
                 <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
                 <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
@@ -78,7 +97,6 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
             </div>
         </li>
     </ul>
-
 
 
     <Pagination
@@ -115,39 +133,47 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 import axios from 'axios'
 import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
+
 export default {
     name: 'SupplierListGroup',
     props: ["forSelect"],
     data() {
         return {
-            field_visible:null,
+            field_visible: null,
             modalStore: useModalStore(),
             selection: [],
-            search:null,
-            selectedSupplier:null,
+            search: null,
+            selectedSupplier: null,
             suppliersStore: useSuppliersStore(),
         }
     },
     computed: {
-       /* filteredSuppliers() {
-            if (!this.search) return this.suppliersStore.items || []
-            const q = this.search.toLowerCase()
-            return this.suppliersStore.items.filter(supplier =>
-                Object.values(supplier).some(val =>
-                    val ? String(val).toLowerCase().includes(q) : false
-                )
-            )
-        }*/
+        /* filteredSuppliers() {
+             if (!this.search) return this.suppliersStore.items || []
+             const q = this.search.toLowerCase()
+             return this.suppliersStore.items.filter(supplier =>
+                 Object.values(supplier).some(val =>
+                     val ? String(val).toLowerCase().includes(q) : false
+                 )
+             )
+         }*/
     },
     created() {
         this.fetchData()
     },
     methods: {
+        findSupplier(){
+            this.suppliersStore.setFilters({
+                name: this.search || ''
+            })
+            this.suppliersStore.setSort('id', 'asc')
+            this.suppliersStore.fetchFiltered(0, 30)
+        },
         applyFilters(filters) {
 
             this.field_visible = filters.field_visible
             let size = filters.size || 30
-            let page = filters.page || 1
+            let page = filters.page || 0
             delete filters.field_visible
             this.suppliersStore.setFilters(filters.filters)
             this.suppliersStore.setSort(filters.sort.field, filters.sort.direction)

@@ -88,7 +88,7 @@ export const useSalesStore = defineStore('sales', {
 
             // пагинация
             params.append('page', String(page))
-            params.append('suze', String(size))
+            params.append('size', String(size))
 
             const {data} = await makeAxiosFactory(`${path}?${params.toString()}`, 'GET')
             this.items = data.data

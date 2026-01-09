@@ -33,9 +33,12 @@ import Pagination from "@/Components/Pagination.vue";
                             <li><a class="dropdown-item" href="#" @click.prevent="selectCustomer(customer)">Выбрать клиента</a>
                             </li>
                         </template>
-                        <li><a class="dropdown-item" href="#" @click.prevent="openEdit(customer)">Редактировать</a></li>
-                        <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(customer)">Удалить</a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="openView(customer)">Просмотреть</a></li>
+                        <template v-else>
+                            <li><a class="dropdown-item" href="#" @click.prevent="openEdit(customer)">Редактировать</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(customer)">Удалить</a></li>
+                            <li><a class="dropdown-item" href="#" @click.prevent="openView(customer)">Просмотреть</a></li>
+                        </template>
+
                     </ul>
                 </div>
             </li>

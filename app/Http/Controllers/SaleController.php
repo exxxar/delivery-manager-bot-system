@@ -22,97 +22,20 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $botUser = $request->botUser;
 
 
-        $query = Sale::query();
-
-        if (isset($request->number)) {
-            $query->where('id', $request->number);
-        }
-        // 🔹 Фильтры по тексту и статусу
-        if (isset($request->title)) {
-            $query->where('title', 'like', '%' . $request->title . '%');
-        }
-        if (isset($request->description)) {
-            $query->where('description', 'like', '%' . $request->description . '%');
-        }
-
-
-        if (isset($request->status)) {
-            $query->where('status', $request->status);
-        }
-
-        if (isset($request->payment_type) && !is_null($request->payment_type ?? null)) {
-            $query->where('payment_type', $request->payment_type);
-        }
-
-        // 🔹 Фильтр по типу даты и периоду
-        if ($request->date_from || $request->date_to) {
-            $query->whereBetween("due_date", [
-                    $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
-            ]);
-        }
-
-        // 🔹 Фильтры по связям
-        if (isset($request->agent_id) && $botUser->role >= 3) {
-            $query->where('agent_id', $request->agent_id);
-        }
-
-        if ($botUser->role < 3) {
-            $agent = Agent::query()
-                ->where("user_id", $botUser->id)
-                ->first();
-
-            $query
-                ->where(function ($q) use ($botUser, $agent) {
-                    if (is_null($agent))
-                        return $q->where("created_by_id", $botUser->id);
-                    else
-                        return $q->where("agent_id", $agent->id)
-                            ->orWhere("created_by_id", $botUser->id);
-                });
-        }
-
-        if (isset($request->customer_id)) {
-            $query->where('customer_id', $request->customer_id);
-        }
-        if (isset($request->supplier_id)) {
-            $query->where('supplier_id', $request->supplier_id);
-        }
-        if (isset($request->created_by_id) && $botUser->role >= 3) {
-            $query->where('created_by_id', $request->created_by_id);
-        }
-
-        // 🔹 Фильтры по количеству и цене
-        if (isset($request->quantity)) {
-            $query->where('quantity', $request->quantity);
-        }
-        if (isset($request->total_price)) {
-            $query->where('total_price', $request->total_price);
-        }
-
-
-        // 🔹 Сортировка
-        $sortField = $request->get('sort_field', 'id');
-        $sortDirection = $request->get('sort_direction', 'desc');
-        if (in_array($sortField, [
-                'id', 'title', 'description', 'status', 'due_date', 'sale_date',
-                'quantity', 'total_price', 'agent_id', 'customer_id', 'supplier_id', 'product_id'
-            ]) && in_array($sortDirection, ['asc', 'desc'])) {
-            $query->orderBy($sortField, $sortDirection);
-        }
-
-        // 🔹 Пагинация
-        $perPage = $request->get('per_page', $request->size ?? 10);
-        $sales = $query->paginate($perPage);
+        $sales = Sale::query()
+            ->filter($request)
+            ->sort($request)
+            ->paginate($request->get('per_page', 10));
 
         return response()->json($sales);
     }
 
     public function store(Request $request)
     {
+
+        $botUser = $request->botUser;
 
         $data = $request->all();
 
@@ -128,9 +51,14 @@ class SaleController extends Controller
         $needAutomaticNaming = $data["need_automatic_naming"] == "true";
         unset($data["need_automatic_naming"]);
 
+        $product = Product::query()->where("id", $data["product_id"])->first();
+
+        $data["product_category_id"] = $product->product_category_id ?? null;
+        $data["created_by_id"] = $botUser->id ?? null;
+
         if ($needAutomaticNaming) {
             $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
-            $product = Product::query()->where("id", $data["product_id"])->first();
+
 
             $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
             $data["description"] = "Товар " . ($product->name ?? 'товара')
@@ -168,11 +96,11 @@ class SaleController extends Controller
 
         if (!is_null($sale->payment_document_name ?? null)) {
 
-            $slash = env("APP_DEBUG") ? "\\":"/";
+            $slash = env("APP_DEBUG") ? "\\" : "/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 env("TELEGRAM_ADMIN_CHANNEL"),
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
+                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
@@ -195,11 +123,11 @@ class SaleController extends Controller
         $user = $request->botUser;
 
         if (!is_null($sale->payment_document_name ?? null)) {
-            $slash = env("APP_DEBUG") ? "\\":"/";
+            $slash = env("APP_DEBUG") ? "\\" : "/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 $user->telegram_chat_id,
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
+                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
@@ -239,11 +167,11 @@ class SaleController extends Controller
         );
 
         if ($hasFile) {
-            $slash = env("APP_DEBUG") ? "\\":"/";
+            $slash = env("APP_DEBUG") ? "\\" : "/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 env("TELEGRAM_ADMIN_CHANNEL"),
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
+                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );
@@ -268,6 +196,13 @@ class SaleController extends Controller
         }
 
         $sale = Sale::findOrFail($id);
+
+        $product = Product::query()->where("id", $data["product_id"] ?? $sale->product_id ?? null)->first();
+
+        if ($product->id != $sale->product_id) {
+            $data["product_category_id"] = $product->product_category_id ?? null;
+        }
+
         $sale->update($data);
 
         $saleInfo = $sale->toTelegramText();
@@ -277,11 +212,11 @@ class SaleController extends Controller
         );
 
         if ($hasFile) {
-            $slash = env("APP_DEBUG") ? "\\":"/";
+            $slash = env("APP_DEBUG") ? "\\" : "/";
             \App\Facades\BotMethods::bot()->sendDocument(
                 env("TELEGRAM_ADMIN_CHANNEL"),
                 "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app".$slash."uploads".$slash) . $sale->payment_document_name,
+                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
                     $sale->payment_document_name
                 )
             );

@@ -54,6 +54,8 @@ class StartCodesHandlerController extends Controller
         $user->save();
 
         BotManager::bot()->reply("Вы успешно изменили роль пользователю:\n".$user->toTelegramText());
+        sleep(1);
+        BotManager::bot()->sendMessage($telegramChatId, "Вам выдали роль <b>Администратор</b>");
 
     }
     public function roleInviteAction(...$data){

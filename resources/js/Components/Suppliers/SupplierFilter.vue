@@ -132,7 +132,7 @@ export default {
     },
     created() {
         // по умолчанию показываем name и phone
-        const defaultVisible = ['name', 'id','address']
+        const defaultVisible = ['name', 'id','description','phone']
         for (const field in this.sortableFields) {
             this.field_visible[field] = defaultVisible.includes(field)
         }

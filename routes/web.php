@@ -22,6 +22,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -37,7 +38,85 @@ use Maatwebsite\Excel\Facades\Excel;
 |
 */
 
-Route::get("/test-6", function(Request $request){
+Route::get("/upload-suppliers", function () {
+
+    function readCsv(string $path, callable $callback): void
+    {
+        if (($handle = fopen($path, 'r')) === false) {
+            throw new \Exception("Cannot open CSV file");
+        }
+
+        $header = fgetcsv($handle, 0, ';');
+
+        while (($row = fgetcsv($handle, 0, ';')) !== false) {
+            $data = array_combine($header, $row);
+            $callback($data);
+        }
+
+        fclose($handle);
+    }
+
+    $path = storage_path('app/data.csv');
+
+    readCsv($path, function ($data) {
+
+        $supplier = \App\Models\Supplier::query()
+            ->where("phone", $data["phone"])
+            ->first();
+
+        $category = \App\Models\ProductCategory::query()
+            ->where("name", $data['category'])
+            ->first();
+
+        if (is_null($category))
+            $category = \App\Models\ProductCategory::query()
+                ->create([
+                    'name' => $data["category"],
+                    'description' => $data["category"],
+                ]);
+
+        if (is_null($supplier))
+            $supplier = \App\Models\Supplier::query()->create([
+                'name' => $data['supplier'],
+                'description' => $data['category'],
+                'address' => null,
+                'phone' => $data['phone'] ?? null,
+                'work_phone' => $data['work_phone'] ?? null,
+                'percent' => 8,
+                'birthday' => null,
+                'email' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        else {
+            $tmp = $supplier->description ?? '';
+
+            if (mb_strpos($tmp, mb_trim($data['category']))===false)
+                $tmp .= ', ' . (strtolower($data['category']) ?? '');
+
+            $supplier->description = $tmp;
+            $supplier->save();
+        }
+
+        $product = \App\Models\Product::query()
+            ->where("product_category_id", $category->id)
+            ->where("supplier_id", $supplier->id)
+            ->first();
+
+        if (is_null($product))
+            \App\Models\Product::query()
+                ->create([
+                    'name' => $data["product"],
+                    'description' => $data["category"] ?? '',
+                    'price' => 0,
+                    'count' => 1,
+                    'supplier_id' => $supplier->id,
+                    'product_category_id' => $category->id,
+                ]);
+    });
+});
+
+Route::get("/test-6", function (Request $request) {
     $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
     $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
 
@@ -110,7 +189,7 @@ Route::get("/test-5", function (Request $request) {
         });
 
     $data = [
-        'agent' =>Agent::query()->find($agentId)->toArray(),
+        'agent' => Agent::query()->find($agentId)->toArray(),
         'period' => [
             'start' => $startDate,
             'end' => $endDate,
@@ -343,13 +422,13 @@ Route::prefix("bot-api")
 
         Route::prefix("imports")
             ->middleware(["tg.role:super"])
-            ->group(function(){
+            ->group(function () {
                 Route::post('/import-products-with-categories', [ProductController::class, 'import'])->name('imports.products');
             });
 
         Route::prefix("birthdays")
             ->middleware(["tg.role:super"])
-            ->group(function(){
+            ->group(function () {
                 Route::post('/', [BirthdayController::class, 'birthdaysNextWeek'])->name('birthdays.list');
             });
 
@@ -389,7 +468,7 @@ Route::prefix("bot-api")
                 // Удалить поставщика
                 Route::delete('/{id}', [SupplierController::class, 'destroy']);
 
-                 });
+            });
 
         Route::prefix('products')
             ->middleware(["tg.role:agent"])

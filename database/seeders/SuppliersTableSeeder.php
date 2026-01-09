@@ -101,12 +101,45 @@ class SuppliersTableSeeder extends Seeder
         '+79991234586'
     ];
 
+    public function readCsv(string $path, callable $callback): void
+    {
+        if (($handle = fopen($path, 'r')) === false) {
+            throw new \Exception("Cannot open CSV file");
+        }
+
+        $header = fgetcsv($handle, 0, ',');
+
+        while (($row = fgetcsv($handle, 0, ',')) !== false) {
+            $data = array_combine($header, $row);
+            $callback($data);
+        }
+
+        fclose($handle);
+    }
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        for ($i = 0; $i < count(self::COMPANY_NAMES); $i++) {
+        $path = database_path('seeders/data/users.csv');
+
+        $this->readCsv($path, function ($data) {
+            DB::table('users')->insert([
+                'name'  => $data['name'],
+                'description'=>null,
+                'address' => null,          // Адрес
+                'phone' => null,               // Телефон
+                'work_phone' => null,               // Телефон
+                'percent' => 8,            // Случайный процент от 0% до 10%
+                'birthday' => null, // Случайная дата рождения
+                'email'=> null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+      /*  for ($i = 0; $i < count(self::COMPANY_NAMES); $i++) {
             DB::table('suppliers')->insert([
                 'name' => self::COMPANY_NAMES[$i],          // Имя организации
                 'address' => self::ADDRESSES[$i],          // Адрес
@@ -118,6 +151,6 @@ class SuppliersTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        }
+        }*/
     }
 }

@@ -5,7 +5,23 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
 
 <template>
 
+    <div class="input-group mb-2">
+        <div class="form-floating ">
+            <input class="form-control"
+                   type="search"
+                   v-model="search"
+                   id="productSearchInput" placeholder="Товар"/>
+            <label for="productSearchInput">Товар</label>
+        </div>
 
+        <button
+            @click="findProduct"
+            type="button"
+            class="btn btn-outline-light text-primary"
+        >
+            Найти
+        </button>
+    </div>
     <template v-if="!forSelect">
         <ProductFilter v-on:apply-filters="applyFilters"></ProductFilter>
     </template>
@@ -30,7 +46,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
                 </p>
                 <p class="text-muted small mb-0">
                     <i class="fa-solid fa-truck text-primary"></i>
-                    {{ product.supplier?.name || '-' }}
+                    {{ product.supplier?.name || '-' }} <span class="fst-italic text-lowercase fw-bold small">({{ product.supplier?.description || '-' }})</span>
                 </p>
 
                 <p class="text-muted small mb-0"
@@ -129,6 +145,7 @@ export default {
     props: ["forSelect"],
     data() {
         return {
+            search:null,
             field_visible:null,
             productStore: useProductsStore(),
             modalStore: useModalStore(),
@@ -145,6 +162,13 @@ export default {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
             if (modal)
                 modal.hide()
+        },
+        findProduct(){
+            this.productStore.setFilters({
+                name: this.search || ''
+            })
+            this.productStore.setSort('id', 'asc')
+            this.productStore.fetchFilteredProducts(0, 30)
         },
         async applyFilters(filters) {
             this.field_visible = filters.field_visible

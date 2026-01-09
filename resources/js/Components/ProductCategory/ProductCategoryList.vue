@@ -6,6 +6,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 <template>
 
 
+
     <div class="d-flex">
         <a href="javascript:void(0)"
            @click="selectAll"
@@ -133,6 +134,7 @@ export default {
     props:["forSelect"],
     data() {
         return {
+
             modalStore: useModalStore(),
             productCategoryStore: useProductCategoriesStore(),
             selectedCategory: null,

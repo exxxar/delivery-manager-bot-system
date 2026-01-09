@@ -127,11 +127,24 @@ const today = new Date().toISOString().split('T')[0]
                 <label for="status">Статус</label>
             </div>
 
+            <div
+                class="form-check form-switch mb-2">
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    v-model="can_add_past_assignments"
+                    :id="`can-add-past-tasks`"
+                />
+                <label class="form-check-label" :for="`can-add-past-tasks`">
+                    Разрешить вносить за прошедшие дни
+                </label>
+            </div>
+
             <!-- Дата задания -->
             <div class="form-floating mb-2">
                 <input v-model="form.due_date"
                        required
-                       :min="today"
+                       :min="can_add_past_assignments?null:today"
                        type="date" class="form-control" id="due_date">
                 <label for="due_date">Дата задания</label>
             </div>
@@ -157,7 +170,8 @@ const today = new Date().toISOString().split('T')[0]
                 <!-- Агент -->
                 <div class="input-group mb-2">
                     <div class="form-floating flex-grow-1">
-                        <input type="text" class="form-control" id="agent" :value="agentName" placeholder="Младший администратор"
+                        <input type="text" class="form-control" id="agent" :value="agentName"
+                               placeholder="Младший администратор"
                                readonly>
                         <label for="agent">Администратор</label>
                     </div>
@@ -260,6 +274,7 @@ export default {
             tab: 'main',
             salesStore: useSalesStore(),
             userStore: useUsersStore(),
+            can_add_past_assignments: false,
             file: null,
             form: {
                 title: '',

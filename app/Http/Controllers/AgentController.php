@@ -72,64 +72,12 @@ class AgentController extends Controller
 
         $botUser = $request->botUser;
 
-        $agent = Agent::query()
-            ->where("user_id", $botUser->id)
-            ->first();
-
-
-        $query = Sale::query()
-            ->where(function ($q) use ($botUser, $agent) {
-                if (is_null($agent))
-                    return $q->where("created_by_id", $botUser->id);
-                else
-                    return $q->where("agent_id", $agent->id)
-                        ->orWhere("created_by_id", $botUser->id);
-            });
-
-        // 🔹 Фильтры по тексту и статусу
-        if (isset($request->title)) {
-            $query->where('title', 'like', '%' . $request->title . '%');
-        }
-        if (isset($request->description)) {
-            $query->where('description', 'like', '%' . $request->description . '%');
-        }
-        if (isset($request->status)) {
-            $query->where('status', $request->status);
-        }
-
-        // 🔹 Фильтр по типу даты и периоду
-        if ($request->date_type && ($request->date_from || $request->date_to)) {
-            $query->whereBetween($request->date_type, [
-                    $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
-            ]);
-        }
-
-
-        // 🔹 Фильтры по количеству и цене
-        if (isset($request->quantity)) {
-            $query->where('quantity', $request->quantity);
-        }
-        if (isset($request->total_price)) {
-            $query->where('total_price', $request->total_price);
-        }
-
-        // 🔹 Сортировка
-        $sortField = $request->get('sort_field', 'id');
-        $sortDirection = $request->get('sort_direction', 'asc');
-        if (in_array($sortField, [
-                'id', 'title', 'description', 'status', 'due_date', 'sale_date',
-                'quantity', 'total_price', 'agent_id', 'customer_id', 'supplier_id', 'product_id'
-            ]) && in_array($sortDirection, ['asc', 'desc'])) {
-            $query->orderBy($sortField, $sortDirection);
-        }
-
-        // 🔹 Пагинация
-        $perPage = $request->get('per_page', 10);
-        $sales = $query->paginate($perPage);
+        $sales = Sale::query()
+            ->filter($request, $botUser)
+            ->sort($request)
+            ->paginate($request->get('per_page', 10));
 
         return response()->json($sales);
-
 
     }
 

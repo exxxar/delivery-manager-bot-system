@@ -2,18 +2,21 @@
 import AgentList from "@/Components/Agents/AgentList.vue";
 import CustomerList from "@/Components/Customers/CustomerList.vue";
 import SupplierList from "@/Components/Suppliers/SupplierList.vue";
+import ProductList from "@/Components/Products/ProductList.vue";
+import ProductCategoryList from "@/Components/ProductCategory/ProductCategoryList.vue";
 </script>
 <template>
 
-<!--    <h5 class="modal-title">
-        {{ tab === 'filter' ? 'Фильтрация доставок' : titleMap[tab] }}
-    </h5>-->
+    <!--    <h5 class="modal-title">
+            {{ tab === 'filter' ? 'Фильтрация доставок' : titleMap[tab] }}
+        </h5>-->
 
     <!-- Кнопка фильтра -->
     <div class="mb-2">
         <button
             style="font-size:12px;"
-            class="btn btn-secondary" @click="openFilter">Фильтр</button>
+            class="btn btn-secondary" @click="openFilter">Фильтр
+        </button>
 
         <!-- Dropdown сортировки -->
         <div class="dropdown d-inline-block ms-2">
@@ -35,7 +38,6 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
     </div>
 
 
-
     <!-- Модалка фильтрации -->
     <div class="modal fade" id="saleFilterModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
@@ -44,21 +46,38 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                     <h5 class="modal-title">Фильтры</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                 <div  class="modal-body">
+                <div class="modal-body">
                     <template v-if="tab === 'filter'">
-
-                        <div
-                             class="form-check form-switch mb-2">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                v-model="onlyMyTask"
-                                :id="`only-my-tasks`"
-                            />
-                            <label class="form-check-label" :for="`only-my-tasks`">
-                              Только мои сделки
-                            </label>
+                        <!-- Статус -->
+                        <div class="form-floating mb-2">
+                            <select
+                                v-model="filters.status"
+                                class="form-select" id="statusSelect">
+                                <option value="">Все</option>
+                                <option value="pending">В ожидании</option>
+<!--                                <option value="assigned">Назначено</option>-->
+                                <option value="completed">Завершено</option>
+                                <option value="delivered">Доставляется</option>
+                                <option value="rejected">Отклонено</option>
+                            </select>
+                            <label for="statusSelect">Статус</label>
                         </div>
+
+                        <template v-if="role>=3">
+                            <div
+                                class="form-check form-switch mb-2">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    v-model="onlyMyTask"
+                                    :id="`only-my-tasks`"
+                                />
+                                <label class="form-check-label" :for="`only-my-tasks`">
+                                    Только мои сделки
+                                </label>
+                            </div>
+                        </template>
+
                         <!-- Номер сделки -->
                         <div class="form-floating mb-2">
                             <input class="form-control"
@@ -69,20 +88,20 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
 
 
                         <!-- Название -->
-                            <div class="form-floating mb-2">
-                                <input class="form-control"
-                                       v-model="filters.title"
-                                       id="titleInput" placeholder="Название"/>
-                                <label for="titleInput">Название</label>
-                            </div>
+                        <div class="form-floating mb-2">
+                            <input class="form-control"
+                                   v-model="filters.title"
+                                   id="titleInput" placeholder="Название"/>
+                            <label for="titleInput">Название</label>
+                        </div>
 
-                            <!-- Описание -->
-                            <div class="form-floating mb-2">
-                                <input class="form-control"
-                                       v-model="filters.description"
-                                       id="descInput" placeholder="Описание"/>
-                                <label for="descInput">Описание</label>
-                            </div>
+                        <!-- Описание -->
+                        <div class="form-floating mb-2">
+                            <input class="form-control"
+                                   v-model="filters.description"
+                                   id="descInput" placeholder="Описание"/>
+                            <label for="descInput">Описание</label>
+                        </div>
 
                         <div class="form-floating mb-2">
                             <select
@@ -97,60 +116,56 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                             <label for="itemsPerPage">Тип оплаты</label>
                         </div>
 
-                            <!-- Статус -->
-                            <div class="form-floating mb-2">
-                                <select
-                                    v-model="filters.status"
-                                    class="form-select" id="statusSelect">
-                                    <option value="">Все</option>
-                                    <option value="pending">В ожидании</option>
-                                    <option value="assigned">Назначено</option>
-                                    <option value="completed">Завершено</option>
-                                    <option value="delivered">Доставляется</option>
-                                    <option value="rejected">Отклонено</option>
-                                </select>
-                                <label for="statusSelect">Статус</label>
-                            </div>
 
-                            <!-- Статус -->
-                            <div class="form-floating mb-2">
-                                <select
-                                    v-model="filters.date_type"
-                                    class="form-select" id="dateTypeSelect">
-                                    <option :value="null">Не имеет значения</option>
-                                    <option value="0">Дата создания задачи</option>
-                                    <option value="1">Дата исполнения задания</option>
-                                    <option value="2">Дата заключения сделки (продажи)</option>
-                                    <option value="3">Дата доставки по договору</option>
-                                    <option value="4">Дата доставки фактическая</option>
-                                </select>
-                                <label for="dateTypeSelect">Тип даты</label>
-                            </div>
 
-                            <div class="form-floating mb-2">
-                                <input type="date"
-                                       v-model="filters.date_from"
-                                       class="form-control" id="dateFromInput"/>
-                                <label for="dateFromInput">Дата от</label>
-                            </div>
+                        <!-- Статус -->
+                        <div class="form-floating mb-2">
+                            <select
+                                v-model="filters.date_type"
+                                class="form-select" id="dateTypeSelect">
+                                <option :value="null">Не имеет значения</option>
+                                <option value="2">Дата оплаты заказа</option>
+<!--                                <option value="1">Дата исполнения задачи</option>-->
+                                <option value="0">Дата создания задачи</option>
+<!--                                <option value="3">Дата доставки по договору</option>-->
+                                <option value="4">Дата доставки фактическая</option>
+                            </select>
+                            <label for="dateTypeSelect">Тип даты</label>
+                        </div>
 
-                            <div class="form-floating mb-2">
-                                <input type="date"
-                                       v-model="filters.date_to"
-                                       class="form-control" id="dateToInput"/>
-                                <label for="dateToInput">Дата до</label>
-                            </div>
-                            <!-- Агент -->
-                            <p v-if="selectedAgent" class="mb-0" style="font-size: 10px;">Выбран торговый представитель:
-                                {{ selectedAgent.name || 'не указан' }}</p>
+                        <div class="form-floating mb-2">
+                            <input type="date"
+                                   v-model="filters.date_from"
+                                   class="form-control" id="dateFromInput"/>
+                            <label for="dateFromInput">Дата от</label>
+                        </div>
+
+                        <div class="form-floating mb-2">
+                            <input type="date"
+                                   v-model="filters.date_to"
+                                   class="form-control" id="dateToInput"/>
+                            <label for="dateToInput">Дата до</label>
+                        </div>
+
+                        <template v-if="role>=3">
+
                             <div class="input-group mb-2">
                                 <div class="form-floating flex-grow-1">
                                     <input
+                                        type="text" disabled
                                         @change="selectedAgent = null"
-                                        v-model="filters.agent_id"
+                                        :value="selectedAgent?.name || 'не указан'"
                                         class="form-control" id="agentInput" placeholder="Агент"/>
                                     <label for="agentInput">Администратор</label>
                                 </div>
+                                <button
+                                    type="button"
+                                    v-if="selectedAgent"
+                                    class="btn btn-outline-light text-primary"
+                                    @click="cancelAgent"
+                                >
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                                 <button
                                     type="button"
                                     class="btn btn-outline-light text-primary"
@@ -159,17 +174,25 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                     Выбрать
                                 </button>
                             </div>
-                            <!-- Клиент -->
-                            <p v-if="selectedCustomer" class="mb-0" style="font-size: 10px;">Выбран клиент:
-                                {{ selectedCustomer.name || 'не указан' }}</p>
+
+
                             <div class="input-group mb-2">
                                 <div class="form-floating flex-grow-1">
                                     <input class="form-control"
+                                           type="text" disabled
                                            @change="selectedCustomer = null"
-                                           v-model="filters.customer_id"
+                                           :value="selectedCustomer?.name||'не указан'"
                                            id="customerInput" placeholder="Клиент"/>
                                     <label for="customerInput">Клиент</label>
                                 </div>
+                                <button
+                                    type="button"
+                                    v-if="selectedCustomer"
+                                    class="btn btn-outline-light text-primary"
+                                    @click="cancelCustomer"
+                                >
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                                 <button
                                     type="button"
                                     class="btn btn-outline-light text-primary"
@@ -178,27 +201,87 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                     Выбрать
                                 </button>
                             </div>
-
-                            <!-- Поставщик -->
-                            <p v-if="selectedSupplier" class="mb-0" style="font-size: 10px;">Выбран поставщик:
-                                {{ selectedSupplier.name || 'не указан' }}</p>
-                            <div class="input-group mb-2">
-                                <div class="form-floating flex-grow-1">
-                                    <input class="form-control"
-                                           @change="selectedSupplier = null"
-                                           v-model="filters.supplier_id"
-                                           id="supplierInput" placeholder="Поставщик"/>
-                                    <label for="supplierInput">Поставщик</label>
-                                </div>
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-light text-primary"
-                                    @click="tab='supplier'"
-                                >
-                                    Выбрать
-                                </button>
+                        </template>
+                        <!-- Поставщик -->
+                        <div class="input-group mb-2">
+                            <div class="form-floating flex-grow-1">
+                                <input class="form-control"
+                                       type="text" disabled
+                                       @change="selectedSupplier = null"
+                                       :value="selectedSupplier?.name||'не указан'"
+                                       id="supplierInput" placeholder="Поставщик"/>
+                                <label for="supplierInput">Поставщик</label>
                             </div>
+                            <button
+                                type="button"
+                                v-if="selectedSupplier"
+                                class="btn btn-outline-light text-primary"
+                                @click="cancelSupplier"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-outline-light text-primary"
+                                @click="tab='supplier'"
+                            >
+                                Выбрать
+                            </button>
+                        </div>
 
+                        <div class="input-group mb-2">
+                            <div class="form-floating flex-grow-1">
+                                <input
+                                    type="text" disabled
+                                    @change="selectedProduct = null"
+                                    :value="selectedProduct?.name||'не указан'"
+                                    class="form-control" id="agentInput" placeholder="Агент"/>
+                                <label for="agentInput">Продукт</label>
+                            </div>
+                            <button
+                                type="button"
+                                v-if="selectedProduct"
+                                class="btn btn-outline-light text-primary"
+                                @click="cancelProduct"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-outline-light text-primary"
+                                @click="tab='product'"
+                            >
+                                Выбрать
+                            </button>
+                        </div>
+
+                        <div class="input-group mb-2">
+                            <div class="form-floating flex-grow-1">
+                                <input
+                                    type="text" disabled
+                                    @change="selectedProductCategory = null"
+                                    :value="selectedProductCategory?.name||'не указана'"
+                                    class="form-control" id="agentInput" placeholder="Агент"/>
+                                <label for="agentInput">Категория товара</label>
+                            </div>
+                            <button
+                                type="button"
+                                v-if="selectedProductCategory"
+                                class="btn btn-outline-light text-primary"
+                                @click="cancelProductCategory"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-outline-light text-primary"
+                                @click="tab='product_category'"
+                            >
+                                Выбрать
+                            </button>
+                        </div>
+
+                        <template v-if="role>=3">
                             <h6>Отображаемые поля</h6>
                             <div v-for="(label, field) in sortableFields" :key="field"
                                  class="form-check form-switch mb-2">
@@ -212,7 +295,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                     {{ label }}
                                 </label>
                             </div>
-
+                        </template>
 
                         <div class="form-floating mb-2">
                             <select
@@ -235,15 +318,15 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                                 id="pageNumber"
                                 class="form-control"
                                 v-model="page"
-                                min="1"
+                                min="0"
                             />
                             <label for="pageNumber">Номер страницы</label>
                         </div>
 
-                            <button type="button"
-                                    @click="clearFilters"
-                                    class="btn btn-outline-light text-secondary mb-2 w-100 p-3">Очистить фильтры
-                            </button>
+                        <button type="button"
+                                @click="clearFilters"
+                                class="btn btn-outline-light text-secondary mb-2 w-100 p-3">Очистить фильтры
+                        </button>
 
 
                     </template>
@@ -260,7 +343,42 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                             @click="selectAgent(null)">Отменить выбор
                         </button>
 
-                        <AgentList :for-select="true" v-on:select-agent="selectAgent"></AgentList>
+                        <AgentList :for-select="true" v-on:select="selectAgent"></AgentList>
+                        <!-- Заглушка: таблица агентов -->
+
+                    </template>
+
+                    <template v-if="tab === 'product'">
+                        <button
+                            class="btn btn-secondary my-3" @click="tab = 'filter'">Назад
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary p-3 w-100 mb-2"
+                            v-if="selectedProduct!=null"
+                            @click="selectProduct(null)">Отменить выбор
+                        </button>
+
+                        <ProductList :for-select="true" v-on:select="selectProduct"></ProductList>
+                        <!-- Заглушка: таблица агентов -->
+
+                    </template>
+
+                    <template v-if="tab === 'product_category'">
+                        <button
+                            class="btn btn-secondary my-3" @click="tab = 'filter'">Назад
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary p-3 w-100 mb-2"
+                            v-if="selectedProductCategory!=null"
+                            @click="selectProductCategory(null)">Отменить выбор
+                        </button>
+
+                        <ProductCategoryList :for-select="true"
+                                             v-on:select="selectProductCategory"></ProductCategoryList>
                         <!-- Заглушка: таблица агентов -->
 
                     </template>
@@ -278,7 +396,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                             @click="selectCustomer(null)">Отменить выбор
                         </button>
 
-                        <CustomerList :for-select="true" v-on:select-customer="selectCustomer"></CustomerList>
+                        <CustomerList :for-select="true" v-on:select="selectCustomer"></CustomerList>
                     </template>
 
                     <!-- Вкладка выбора поставщика -->
@@ -294,7 +412,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
                             @click="selectSupplier(null)">Отменить выбор
                         </button>
 
-                        <SupplierList :for-select="true" v-on:select-supplier="selectSupplier"></SupplierList>
+                        <SupplierList :for-select="true" v-on:select="selectSupplier"></SupplierList>
 
                     </template>
 
@@ -311,15 +429,18 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
 <script>
 
 import {useSalesStore} from '@/stores/sales'
+import {useUsersStore} from "@/stores/users";
 
 export default {
     name: 'SaleFilterForm',
     data() {
         return {
-            page:1,
-            size:20,
-            onlyMyTask:false,
-            salesStore:useSalesStore(),
+            page:0,
+            size: 20,
+            onlyMyTask: false,
+            needCompletedTask: false,
+            userStore: useUsersStore(),
+            salesStore: useSalesStore(),
             tab: 'filter',
             titleMap: {
                 agent: 'Выбор младшего админа',
@@ -327,6 +448,8 @@ export default {
                 supplier: 'Выбор поставщика'
             },
             selectedAgent: null,
+            selectedProduct: null,
+            selectedProductCategory: null,
             selectedSupplier: null,
             selectedCustomer: null,
             field_visible: [],
@@ -348,7 +471,7 @@ export default {
                 product_id: 'Продукт',
             },
             filters: {
-                number:'',
+                number: '',
                 title: '',
                 payment_type: null,
                 description: '',
@@ -360,14 +483,20 @@ export default {
                 customer_id: '',
                 supplier_id: '',
                 created_by_id: '',
+                product_id: '',
+                product_category_id: '',
                 quantity: '',
                 total_price: ''
             }
         }
     },
-
+    computed: {
+        role() {
+            return this.userStore.self?.role ?? 0
+        }
+    },
     mounted() {
-        let tmpVisibleFields = [ 'title', 'description','status','due_date']
+        let tmpVisibleFields = ['title', 'description', 'status', 'due_date']
         for (const field in this.sortableFields) {
             this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
         }
@@ -380,7 +509,7 @@ export default {
                 ...this.filters,
                 size: this.size,
                 page: this.page,
-                only_my_tasks:this.onlyMyTask,
+                only_my_tasks: this.onlyMyTask,
                 field_visible: this.field_visible
             }
 
@@ -389,6 +518,12 @@ export default {
                 filterModal.hide()
 
             this.$emit('apply-filters', filter)
+        },
+        cancelAgent() {
+            this.selectedAgent = null
+            this.$nextTick(() => {
+                this.filters.agent_id =  null
+            })
         },
         selectAgent(agent) {
             this.selectedAgent = null
@@ -402,6 +537,12 @@ export default {
         openFilter() {
             new bootstrap.Modal(document.getElementById('saleFilterModal')).show()
         },
+        cancelCustomer() {
+            this.selectedCustomer = null
+            this.$nextTick(() => {
+                this.filters.customer_id =  null
+            })
+        },
         selectCustomer(customer) {
 
             this.selectedCustomer = null
@@ -411,7 +552,41 @@ export default {
                 this.tab = 'filter'
             })
         },
-
+        cancelProductCategory() {
+            this.selectedProductCategory = null
+            this.$nextTick(() => {
+                this.filters.product_category_id =  null
+            })
+        },
+        selectProductCategory(category){
+            console.log(category)
+            this.selectedProductCategory = null
+            this.$nextTick(() => {
+                this.selectedProductCategory = category
+                this.filters.product_category_id = category?.id || null
+                this.tab = 'filter'
+            })
+        },
+        cancelProduct() {
+            this.selectedProduct = null
+            this.$nextTick(() => {
+                this.filters.product_id =  null
+            })
+        },
+        selectProduct(product){
+            this.selectedProduct = null
+            this.$nextTick(() => {
+                this.selectedProduct = product
+                this.filters.product_id = product?.id || null
+                this.tab = 'filter'
+            })
+        },
+        cancelSupplier() {
+            this.selectedSupplier = null
+            this.$nextTick(() => {
+                this.filters.supplier_id =  null
+            })
+        },
         selectSupplier(supplier) {
             this.selectedSupplier = null
             this.$nextTick(() => {
@@ -429,7 +604,7 @@ export default {
         },
         clearFilters() {
             const filters = {
-                number:'',
+                number: '',
                 title: '',
                 description: '',
                 status: '',
@@ -438,6 +613,8 @@ export default {
                 date_to: '',
                 agent_id: '',
                 customer_id: '',
+                product_id: '',
+                product_category_id: '',
                 supplier_id: '',
                 created_by_id: '',
                 quantity: '',
@@ -445,9 +622,9 @@ export default {
             }
 
             this.size = 20
-            this.page = 1
+            this.page = 0
             this.onlyMyTask = false
-            let tmpVisibleFields = [ 'title', 'description','status','due_date']
+            let tmpVisibleFields = ['title', 'description', 'status', 'due_date']
             for (const field in this.sortableFields) {
                 this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
             }
