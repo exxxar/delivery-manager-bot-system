@@ -10,6 +10,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
+                   @keyup="findSupplier"
                    v-model="search"
                    id="supplierInput" placeholder="Поставщик"/>
             <label for="supplierInput">Поставщик</label>
@@ -23,6 +24,28 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
             Найти
         </button>
     </div>
+
+    <div
+        class="form-check form-switch mb-2">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            v-model="showSimpleSupplierForm"
+            :id="`show-simple-supplier-form`"
+        />
+        <label class="form-check-label" :for="`show-simple-supplier-form`">
+            Добавить и выбрать нового поставщика
+        </label>
+    </div>
+
+    <template v-if="showSimpleSupplierForm">
+        <SupplierForm
+            v-on:saved="addNewSupplier"
+            class="mb-2"
+            :is-simple="true"></SupplierForm>
+    </template>
+
+
     <!--
         <div class="form-floating mb-3">
             <input type="search"
@@ -143,6 +166,7 @@ export default {
             modalStore: useModalStore(),
             selection: [],
             search: null,
+            showSimpleSupplierForm: false,
             selectedSupplier: null,
             suppliersStore: useSuppliersStore(),
         }
@@ -162,12 +186,15 @@ export default {
         this.fetchData()
     },
     methods: {
-        findSupplier(){
+        findSupplier() {
             this.suppliersStore.setFilters({
                 name: this.search || ''
             })
             this.suppliersStore.setSort('id', 'asc')
             this.suppliersStore.fetchFiltered(0, 30)
+        },
+        addNewSupplier(supplier){
+            this.$emit("select", supplier)
         },
         applyFilters(filters) {
 

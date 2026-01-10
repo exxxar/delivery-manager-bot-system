@@ -119,7 +119,7 @@ export default {
                 direction: 'asc'
             },
             sortableFields: {
-                id: "ID",
+                id: "№",
                 name: "Название",
                 description: "Описание",
                 address: "Адрес",

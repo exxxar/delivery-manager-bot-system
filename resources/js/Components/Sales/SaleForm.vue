@@ -96,25 +96,18 @@ const today = new Date().toISOString().split('T')[0]
             </div>
 
             <template v-if="form.payment_type==='1'">
-                <div class="card mb-2 rounded-0">
-                    <div class="card-body">
-                        <h6>Фотография чека</h6>
-                        <div class="form-floating ">
+                <h6>Фотография чека</h6>
+                <div class="form-floating mb-2">
 
-                            <input
-                                type="file"
-                                class="form-control"
-                                @change="onFileChange"
-                                accept=".jpg,.png,.pdf"
-                                required
-                            />
-                            <label for="payment-type">Прикрепить</label>
-                        </div>
-
-                    </div>
+                    <input
+                        type="file"
+                        class="form-control"
+                        @change="onFileChange"
+                        accept=".jpg,.png,.pdf"
+                        required
+                    />
+                    <label for="payment-type">Прикрепить</label>
                 </div>
-
-
             </template>
 
             <!-- Статус -->

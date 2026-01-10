@@ -58,11 +58,13 @@
 
 <script>
 import {useSalesStore} from "@/stores/sales";
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     name: 'TaskCard',
     props: {
         task: {
+            alertStore: useAlertStore(),
             type: Object,
             required: true
         }
@@ -85,7 +87,9 @@ export default {
             return new Date(date).toLocaleDateString()
         },
         async sendPaymentDocumentToTg() {
-            await this.salesStore.sendPaymentDocumentToTg(this.task.id)
+            await this.salesStore.sendPaymentDocumentToTg(this.task.id).then(() => {
+                this.alertStore.show("Чек отправлен вам в телеграм бот!");
+            })
         },
         statusClass(status) {
             switch (status) {

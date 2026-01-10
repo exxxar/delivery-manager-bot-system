@@ -219,22 +219,17 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         </div>
 
                         <template v-if="paymentConfirmForm.payment_type==='1'">
-                            <div class="card mb-2 rounded-0">
-                                <div class="card-body">
-                                    <h6>Фотография чека</h6>
-                                    <div class="form-floating ">
+                            <h6>Фотография чека</h6>
+                            <div class="form-floating mb-2">
 
-                                        <input
-                                            type="file"
-                                            class="form-control"
-                                            @change="onFileChange"
-                                            accept=".jpg,.png,.pdf"
-                                            required
-                                        />
-                                        <label for="payment-type">Прикрепить</label>
-                                    </div>
-
-                                </div>
+                                <input
+                                    type="file"
+                                    class="form-control"
+                                    @change="onFileChange"
+                                    accept=".jpg,.png,.pdf"
+                                    required
+                                />
+                                <label for="payment-type">Прикрепить</label>
                             </div>
 
 
@@ -254,6 +249,7 @@ import {useSalesStore} from '@/stores/sales'
 import {useAgentsStore} from "@/stores/agents";
 import {useUsersStore} from "@/stores/users";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     name: 'SaleList',
@@ -263,6 +259,7 @@ export default {
             field_visible: null,
             sales: [],
             search: '',
+            alertStore: useAlertStore(),
             userStore: useUsersStore(),
             salesStore: useSalesStore(),
             agentStore: useAgentsStore(),
@@ -309,7 +306,11 @@ export default {
     },
     methods: {
         async sendPaymentDocumentToTg(id) {
-            await this.salesStore.sendPaymentDocumentToTg(id)
+            await this.salesStore.sendPaymentDocumentToTg(id).then(() => {
+                this.alertStore.show("Чек отправлен вам в телеграм бот!");
+            })
+
+
         },
         onFileChange(e) {
             this.paymentConfirmForm.file = e.target.files[0]

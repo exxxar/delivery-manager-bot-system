@@ -1,6 +1,7 @@
 <script setup>
 import Pagination from "@/Components/Pagination.vue";
 import ProductFilter from "@/Components/Products/ProductFilter.vue";
+import ProductSimpleForm from "@/Components/Products/ProductSimpleForm.vue";
 </script>
 
 <template>
@@ -9,6 +10,7 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
+                   @keydown="findProduct"
                    v-model="search"
                    id="productSearchInput" placeholder="Товар"/>
             <label for="productSearchInput">Товар</label>
@@ -25,7 +27,29 @@ import ProductFilter from "@/Components/Products/ProductFilter.vue";
     <template v-if="!forSelect">
         <ProductFilter v-on:apply-filters="applyFilters"></ProductFilter>
     </template>
-    <ul class="list-group">
+
+    <div
+        class="form-check form-switch mb-2">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            v-model="showProductForm"
+            :id="`show-simple-supplier-form`"
+        />
+        <label class="form-check-label" :for="`show-simple-supplier-form`">
+            Добавить и выбрать новый товар
+        </label>
+    </div>
+
+    <template v-if="showProductForm">
+        <ProductSimpleForm
+            :supplier-id="filters.supplier_id"
+            v-on:saved="addNewProduct"
+            class="mb-2"
+            :is-simple="true"></ProductSimpleForm>
+    </template>
+
+    <ul class="list-group" v-if="productStore.items.length>0">
         <li v-for="product in productStore.items" :key="product.id"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div @click.prevent="$emit('select', product)">
@@ -146,6 +170,7 @@ export default {
     props: ["forSelect", "filters"],
     data() {
         return {
+            showProductForm:false,
             search: null,
             field_visible: null,
             productStore: useProductsStore(),
@@ -166,6 +191,9 @@ export default {
             this.fetchData()
     },
     methods: {
+        addNewProduct(product){
+            this.$emit("select", product)
+        },
         finishEdit() {
             this.fetchData()
             const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));

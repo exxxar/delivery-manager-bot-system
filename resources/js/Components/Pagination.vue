@@ -1,38 +1,41 @@
 <template>
-    <nav v-if="pagination" aria-label="Page navigation" class="my-3">
-        <ul class="pagination justify-content-center align-items-center">
-            <!-- Кнопка "Назад" -->
-            <li class="page-item" :class="{ disabled: !pagination.prev_page_url }">
-                <button
-                    type="button"
-                    class="page-link"
-                    :disabled="!pagination.prev_page_url"
-                    @click="changePage(pagination.prev_page_url)"
-                >
-                    &laquo;
-                </button>
-            </li>
+    <template v-if="pagination">
+        <nav v-if="pagination.total>0" aria-label="Page navigation" class="my-3">
+            <ul class="pagination justify-content-center align-items-center">
+                <!-- Кнопка "Назад" -->
+                <li class="page-item" :class="{ disabled: !pagination.prev_page_url }">
+                    <button
+                        type="button"
+                        class="page-link"
+                        :disabled="!pagination.prev_page_url"
+                        @click="changePage(pagination.prev_page_url)"
+                    >
+                        &laquo;
+                    </button>
+                </li>
 
-            <!-- Текущая страница / всего -->
-            <li class="page-item disabled">
+                <!-- Текущая страница / всего -->
+                <li class="page-item disabled">
         <span class="page-link">
           {{ pagination.current_page }} / {{ pagination.last_page }}
         </span>
-            </li>
+                </li>
 
-            <!-- Кнопка "Вперёд" -->
-            <li class="page-item" :class="{ disabled: !pagination.next_page_url }">
-                <button
-                    type="button"
-                    class="page-link"
-                    :disabled="!pagination.next_page_url"
-                    @click="changePage(pagination.next_page_url)"
-                >
-                    &raquo;
-                </button>
-            </li>
-        </ul>
-    </nav>
+                <!-- Кнопка "Вперёд" -->
+                <li class="page-item" :class="{ disabled: !pagination.next_page_url }">
+                    <button
+                        type="button"
+                        class="page-link"
+                        :disabled="!pagination.next_page_url"
+                        @click="changePage(pagination.next_page_url)"
+                    >
+                        &raquo;
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </template>
+
 </template>
 
 <script>

@@ -8,6 +8,7 @@ use App\Http\Requests\ProductStoreRequest;
 use App\Http\Requests\ProductUpdateRequest;
 use App\Imports\ProductsImport;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use Carbon\Carbon;
 use HttpException;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::query()
-            ->with(["category","supplier"]);
+            ->with(["category", "supplier"]);
 
         // 🔹 Фильтры по тексту
         if ($request->filled('name')) {
@@ -80,7 +81,30 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $product = Product::create($request->all());
+        $data = $request->all();
+        $data["description"] = $data["description"] ?? $data["name"];
+        $data["price"] = $data["price"] ?? 0;
+        $data["count"] = $data["count"] ?? 1;
+
+        $category = $data["category"] ?? null;
+
+        if (!is_null($category)) {
+            $category = ProductCategory::query()
+                ->where("name", $category)
+                ->first();
+
+            if (is_null($category))
+                $category = ProductCategory::query()
+                    ->create([
+                        'name' => $category,
+                        'description' => $category,
+                    ]);
+        }
+
+        $data["product_category_id"] = $data["product_category_id"] ?? $category->id ?? null;
+
+        $product = Product::create($data);
+        $product->load(['supplier', 'category']);
         return response()->json($product, 201);
     }
 
@@ -126,24 +150,27 @@ class ProductController extends Controller
         if (is_null($user))
             throw new HttpException("Пользователь не авторизован", 403);
 
-        switch ($type){
+        switch ($type) {
             default:
             case 0:
                 $title = "Сводная таблица продуктов";
-                $data = Excel::raw(new \App\Exports\ProductsExport(), \Maatwebsite\Excel\Excel::XLSX); break;
+                $data = Excel::raw(new \App\Exports\ProductsExport(), \Maatwebsite\Excel\Excel::XLSX);
+                break;
             case 1:
                 $title = "Таблица продуктов, разделенных по категориям";
-                $data = Excel::raw(new \App\Exports\ExportType5\ProductsByCategoryReport(), \Maatwebsite\Excel\Excel::XLSX); break;
+                $data = Excel::raw(new \App\Exports\ExportType5\ProductsByCategoryReport(), \Maatwebsite\Excel\Excel::XLSX);
+                break;
             case 2:
                 $title = "Таблица продуктов, разделенных по поставщикам";
-                $data = Excel::raw(new \App\Exports\ExportType5\ProductsBySupplierReport(), \Maatwebsite\Excel\Excel::XLSX); break;
+                $data = Excel::raw(new \App\Exports\ExportType5\ProductsBySupplierReport(), \Maatwebsite\Excel\Excel::XLSX);
+                break;
         }
 
-        $fileName = "export-products-".Carbon::now()->format("Y-m-d H-i-s").".xlsx";
+        $fileName = "export-products-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
 
         \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id,"$title",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data,$fileName));
+            ->sendDocument($user->telegram_chat_id, "$title",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
         return response()->noContent();
     }
 }

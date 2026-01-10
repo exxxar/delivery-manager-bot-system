@@ -29,6 +29,7 @@ import ProductCategoryList from "@/Components/ProductCategory/ProductCategoryLis
                 <span v-if="salesStore.sort.direction==='desc'"><i class="fa-solid fa-arrow-up"></i></span>)
             </button>
             <ul class="dropdown-menu">
+                <li><a class="dropdown-item" @click="changeSort('id')">№</a></li>
                 <li><a class="dropdown-item" @click="changeSort('title')">Название</a></li>
                 <li><a class="dropdown-item" @click="changeSort('status')">Статус</a></li>
                 <li><a class="dropdown-item" @click="changeSort('sale_date')">Дата продажи</a></li>
