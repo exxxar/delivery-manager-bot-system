@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\RoleEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+
 class Sale extends Model
 {
     use HasFactory, SoftDeletes;
@@ -50,7 +52,7 @@ class Sale extends Model
         'created_by_id' => 'integer',
     ];
 
-    protected $with = ["product", "agent", "customer", "supplier", "creator","category"];
+    protected $with = ["product", "agent", "customer", "supplier", "creator", "category"];
 
     public function product(): BelongsTo
     {
@@ -117,54 +119,46 @@ class Sale extends Model
 
         $agent = Agent::where('user_id', $botUser->id)->first();
 
-        // 🔹 Ограничение доступа
-        $query->where(function ($q) use ($botUser, $agent) {
-            if (is_null($agent)) {
-                $q->where('created_by_id', $botUser->id);
-            } else {
-                $q->where('agent_id', $agent->id)
-                    ->orWhere('created_by_id', $botUser->id);
-            }
-        });
+        if ($botUser->role == RoleEnum::AGENT->value)
+            // 🔹 Ограничение доступа
+            $query->where(function ($q) use ($botUser, $agent) {
+                if (is_null($agent)) {
+                    $q->where('created_by_id', $botUser->id);
+                } else {
+                    $q->where('agent_id', $agent->id)
+                        ->orWhere('created_by_id', $botUser->id);
+                }
+            });
 
 
         // 🔹 Простые фильтры
-        $query->when($request->number, fn ($q) =>
-        $q->where('id', $request->number)
+        $query->when($request->number, fn($q) => $q->where('id', $request->number)
         );
 
-        $query->when($request->title, fn ($q) =>
-        $q->where('title', 'like', "%{$request->title}%")
+        $query->when($request->title, fn($q) => $q->where('title', 'like', "%{$request->title}%")
         );
 
-        $query->when($request->description, fn ($q) =>
-        $q->where('description', 'like', "%{$request->description}%")
+        $query->when($request->description, fn($q) => $q->where('description', 'like', "%{$request->description}%")
         );
 
-        $query->when($request->status, fn ($q) =>
-        $q->where('status', $request->status)
+        $query->when($request->status, fn($q) => $q->where('status', $request->status)
         );
 
-        $query->when($request->payment_type, fn ($q) =>
-        $q->where('payment_type', $request->payment_type)
+        $query->when($request->payment_type, fn($q) => $q->where('payment_type', $request->payment_type)
         );
 
         // 🔹 Foreign keys
-        $query->when($request->product_category_id, fn ($q) =>
-        $q->where('product_category_id', $request->product_category_id)
+        $query->when($request->product_category_id, fn($q) => $q->where('product_category_id', $request->product_category_id)
         );
 
 
-        $query->when($request->product_id, fn ($q) =>
-        $q->where('product_id', $request->product_id)
+        $query->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id)
         );
 
-        $query->when($request->supplier_id, fn ($q) =>
-        $q->where('supplier_id', $request->supplier_id)
+        $query->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id)
         );
 
-        $query->when($request->customer_id, fn ($q) =>
-        $q->where('customer_id', $request->customer_id)
+        $query->when($request->customer_id, fn($q) => $q->where('customer_id', $request->customer_id)
         );
 
         // 🔹 Даты
@@ -177,22 +171,18 @@ class Sale extends Model
 
         // 🔹 Роли
         if ($botUser->role >= 3) {
-            $query->when($request->agent_id, fn ($q) =>
-            $q->where('agent_id', $request->agent_id)
+            $query->when($request->agent_id, fn($q) => $q->where('agent_id', $request->agent_id)
             );
 
-            $query->when($request->created_by_id, fn ($q) =>
-            $q->where('created_by_id', $request->created_by_id)
+            $query->when($request->created_by_id, fn($q) => $q->where('created_by_id', $request->created_by_id)
             );
         }
 
         // 🔹 Количество и цена
-        $query->when($request->quantity, fn ($q) =>
-        $q->where('quantity', $request->quantity)
+        $query->when($request->quantity, fn($q) => $q->where('quantity', $request->quantity)
         );
 
-        $query->when($request->total_price, fn ($q) =>
-        $q->where('total_price', $request->total_price)
+        $query->when($request->total_price, fn($q) => $q->where('total_price', $request->total_price)
         );
 
 

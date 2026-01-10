@@ -536,10 +536,8 @@ Route::prefix("bot-api")
                 // Получить конкретную продажу по ID
                 Route::get('/{id}', [SaleController::class, 'show']);
                 // Обновить данные продажи
-                Route::put('/{id}', [SaleController::class, 'update'])
-                    ->middleware(["tg.role:admin"]);
-                Route::patch('/{id}', [SaleController::class, 'update'])
-                    ->middleware(["tg.role:admin"]);
+                Route::put('/{id}', [SaleController::class, 'update']);
+                Route::patch('/{id}', [SaleController::class, 'update']);
                 // Удалить продажу
                 Route::delete('/{id}', [SaleController::class, 'destroy'])
                     ->middleware(["tg.role:admin"]);
