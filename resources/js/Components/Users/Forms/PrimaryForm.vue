@@ -40,11 +40,25 @@
             </div>
         </template>
 
-
+        <div class="alert alert-light mb-2 border-primary">
+            <p class="mb-2">
+                Нажимая кнопку, вы даете согласие на обработку персональных данных согласно
+                <a href="https://www.consultant.ru/document/cons_doc_LAW_61801/" target="_blank">
+                    Федеральному закону №152-ФЗ
+                </a>
+            </p>
+            <div class="form-check form-switch">
+                <input
+                    v-model="offer_agreement"
+                    class="form-check-input" type="checkbox" role="switch" id="offerSwitch" checked>
+                <label class="form-check-label fw-bold" for="offerSwitch">Я даю согласие</label>
+            </div>
+        </div>
 
         <!-- SUBMIT -->
         <button
             type="submit"
+            :disabled="!offer_agreement"
             class="btn btn-primary w-100 p-3">
             Сохранить
         </button>
@@ -67,6 +81,7 @@ export default {
         return {
             userStore: useUsersStore(),
             selectedRole: useUsersStore().self.role || 0,
+            offer_agreement: true,
             form: {
                 name: "",
                 email: "",
