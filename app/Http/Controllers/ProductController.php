@@ -82,8 +82,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->all();
-        dd($data);
-        $data["name"] = $data["name"] ?? '-';
+
         $data["description"] = $data["description"] ?? $data["name"] ?? '-';
         $data["price"] = $data["price"] ?? 0;
         $data["count"] = $data["count"] ?? 1;
@@ -105,6 +104,7 @@ class ProductController extends Controller
 
         $data["product_category_id"] = $data["product_category_id"] ?? $category->id ?? null;
 
+        dd($data);
         $product = Product::create($data);
         $product->load(['supplier', 'category']);
         return response()->json($product, 201);
