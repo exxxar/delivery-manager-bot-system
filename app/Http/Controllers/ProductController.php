@@ -82,7 +82,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->all();
-        $data["description"] = $data["description"] ?? $data["name"];
+        $data["name"] = $data["name"] ?? '-';
+        $data["description"] = $data["description"] ?? $data["name"] ?? '-';
         $data["price"] = $data["price"] ?? 0;
         $data["count"] = $data["count"] ?? 1;
 
