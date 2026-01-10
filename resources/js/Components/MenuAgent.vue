@@ -3,14 +3,22 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </script>
 <template>
 
-        <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
-            <button type="button"
-                    @click="goTo('SalePage')"
-                    class="btn btn-outline-primary p-3">Мои доставки</button>
-            <button type="button"
-                    data-bs-toggle="modal" :data-bs-target="'#reportModal'"
-                    class="btn btn-outline-primary p-3">Сформировать отчет</button>
-        </div>
+    <button
+        type="button"
+        v-if="!userStore.self?.registration_at && userStore.self?.role > 0"
+        @click="openPrimaryRegistration"
+        class="btn btn-success p-3 w-100 mb-2">Заполнить данные о себе
+    </button>
+    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
+        <button type="button"
+                @click="goTo('SalePage')"
+                class="btn btn-outline-primary p-3">Мои доставки
+        </button>
+        <button type="button"
+                data-bs-toggle="modal" :data-bs-target="'#reportModal'"
+                class="btn btn-outline-primary p-3">Сформировать отчет
+        </button>
+    </div>
 
 
     <!-- Модалка -->
@@ -32,16 +40,21 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </template>
 <script>
 import {useBaseExports} from "@/stores/baseExports";
+import {useUsersStore} from "@/stores/users";
 
 export default {
-    data(){
+    data() {
         return {
-            reportStore:useBaseExports()
+            userStore: useUsersStore(),
+            reportStore: useBaseExports()
         }
     },
-    methods:{
+    methods: {
+        openPrimaryRegistration() {
+            new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
+        },
         goTo(name) {
-            this.$router.push({ name: name})
+            this.$router.push({name: name})
 
         },
         handleReport(payload) {
