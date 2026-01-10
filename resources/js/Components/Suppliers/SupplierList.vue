@@ -10,7 +10,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @keyup="findSupplier"
+                   @keydown="findSupplier"
                    v-model="search"
                    id="supplierInput" placeholder="Поставщик"/>
             <label for="supplierInput">Поставщик</label>
