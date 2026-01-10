@@ -211,7 +211,7 @@ export default {
                 () => {
                     this.productCategoryStore.remove(this.selectedCategory.id)
                     this.selection = []
-                    this.fetchData()
+                    this.productCategoryStore.fetchAllByPage();
                 },
                 () => {
                     this.modalStore.close()
