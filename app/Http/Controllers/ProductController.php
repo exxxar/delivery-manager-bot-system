@@ -87,24 +87,24 @@ class ProductController extends Controller
         $data["price"] = $data["price"] ?? 0;
         $data["count"] = $data["count"] ?? 1;
 
-        $category = $data["category"] ?? null;
+        $categoryName = $data["category"] ?? null;
 
-        if (!is_null($category)) {
+        if (!is_null($categoryName)) {
             $category = ProductCategory::query()
-                ->where("name", $category)
+                ->where("name", $categoryName)
                 ->first();
 
             if (is_null($category))
                 $category = ProductCategory::query()
                     ->create([
-                        'name' => $category,
-                        'description' => $category,
+                        'name' => $categoryName,
+                        'description' => $categoryName,
                     ]);
         }
 
         $data["product_category_id"] = $data["product_category_id"] ?? $category->id ?? null;
 
-        dd($data);
+
         $product = Product::create($data);
         $product->load(['supplier', 'category']);
         return response()->json($product, 201);
