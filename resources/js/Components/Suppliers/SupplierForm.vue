@@ -38,11 +38,13 @@
             </div>
 
 
-            <div class="form-floating mb-2">
-                <input v-model="form.percent" type="number" step="0.01" class="form-control" id="percent"
-                       placeholder="Процент">
-                <label for="percent">Процент, %</label>
-            </div>
+            <template v-if="(user?.role || 0) >= 3">
+                <div class="form-floating mb-2">
+                    <input v-model="form.percent" type="number" step="0.01" class="form-control" id="percent"
+                           placeholder="Процент">
+                    <label for="percent">Процент, %</label>
+                </div>
+            </template>
 
             <div class="form-floating mb-2">
                 <input v-model="form.birthday" type="date" class="form-control" id="birthday"
@@ -62,6 +64,7 @@
 
 <script>
 import {useSuppliersStore} from "@/stores/suppliers";
+import {useUsersStore} from "@/stores/users";
 
 export default {
     name: 'SupplierForm',
@@ -75,8 +78,14 @@ export default {
             default: null
         }
     },
+    computed: {
+        user() {
+            return this.userStore.self || null
+        },
+    },
     data() {
         return {
+            userStore: useUsersStore(),
             suppliersStore: useSuppliersStore(),
             isEdit: false,
             form: {

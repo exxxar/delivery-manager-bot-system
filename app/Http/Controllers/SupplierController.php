@@ -82,7 +82,11 @@ class SupplierController extends Controller
 
     public function store(Request $request)
     {
-        $supplier = Supplier::create($request->all());
+        $data = $request->all();
+
+        $data["percent"] = $data["percent"] ?? 8;
+
+        $supplier = Supplier::create($data);
         return response()->json($supplier, 201);
     }
 
@@ -94,8 +98,12 @@ class SupplierController extends Controller
 
     public function update(Request $request, $id)
     {
+        $data = $request->all();
+
+        $data["percent"] = $data["percent"] ?? 8;
+
         $supplier = Supplier::findOrFail($id);
-        $supplier->update($request->all());
+        $supplier->update($data);
         return response()->json($supplier);
     }
 
@@ -104,7 +112,6 @@ class SupplierController extends Controller
         Supplier::destroy($id);
         return response()->json(null, 204);
     }
-
 
 
     /**
@@ -117,17 +124,18 @@ class SupplierController extends Controller
         if (is_null($user))
             throw new HttpException("Пользователь не авторизован", 403);
 
-        $fileName = "export-sales-".Carbon::now()->format("Y-m-d H-i-s").".xlsx";
+        $fileName = "export-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
         $data = Excel::raw(new \App\Exports\SuppliersExport(), \Maatwebsite\Excel\Excel::XLSX);
         \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id,"Экспорт списка поставщиков",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data,$fileName));
+            ->sendDocument($user->telegram_chat_id, "Экспорт списка поставщиков",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
         return response()->noContent();
     }
 
-    public function removeAll(Request $request){
+    public function removeAll(Request $request)
+    {
         $request->validate([
-            "ids"=>"required"
+            "ids" => "required"
         ]);
 
         $ids = $request->ids ?? [];
@@ -138,7 +146,8 @@ class SupplierController extends Controller
         return response()->json(null, 204);
     }
 
-    public function indexWithProducts(Request $request){
+    public function indexWithProducts(Request $request)
+    {
 
         $size = $request->size ?? 10;
         // Список поставщиков с первыми 10 товарами
@@ -158,12 +167,13 @@ class SupplierController extends Controller
         return response()->json($suppliers);
     }
 
-    public function nextProducts(Request $request, $supplierId){
+    public function nextProducts(Request $request, $supplierId)
+    {
         $page = $request->get('page', 1);
         $perPage = 10;
 
         $products = Product::query()
-            ->with(["category","supplier"])
+            ->with(["category", "supplier"])
             ->where('supplier_id', $supplierId)
             ->paginate($perPage, ['*'], 'page', $page);
 
