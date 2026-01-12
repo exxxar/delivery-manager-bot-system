@@ -33,7 +33,7 @@
             <div class="form-floating mb-2">
                 <input v-model="form.work_phone"
                        v-mask="'+7(###) ###-##-##'"
-                       type="text" class="form-control" id="work_phone" placeholder="Телефон" required>
+                       type="text" class="form-control" id="work_phone" placeholder="Телефон">
                 <label for="work_phone">Рабочий телефон</label>
             </div>
 
