@@ -10,7 +10,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @change="findSupplier"
+                   @input="searchDebounced"
                    v-model="search"
                    id="supplierInput" placeholder="Поставщик"/>
             <label for="supplierInput">Поставщик</label>
@@ -57,11 +57,11 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
     <template v-if="!forSelect">
         <SupplierFilter v-on:apply-filters="applyFilters"></SupplierFilter>
 
-        <div class="d-flex">
+        <div class="d-flex" v-if="(user?.role || 0) >= 3">
             <a href="javascript:void(0)"
                @click="selectAll"
                class="small">Выделить все</a>
-            <template v-if="selection.length>0&&(user?.role || 0) >= 3">
+            <template v-if="selection.length>0">
                 <a href="javascript:void(0)"
                    @click="removeAll"
                    class="small text-danger mx-2">Удалить выделенное</a>
@@ -157,6 +157,7 @@ import axios from 'axios'
 import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 import {useUsersStore} from "@/stores/users";
+import debounce from 'lodash.debounce'
 export default {
     name: 'SupplierListGroup',
     props: ["forSelect"],
@@ -190,6 +191,11 @@ export default {
         this.fetchData()
     },
     methods: {
+        searchDebounced(){
+            debounce(() => {
+                this.findSupplier()
+            }, 300)
+        },
         findSupplier() {
             this.suppliersStore.setFilters({
                 name: this.search || ''

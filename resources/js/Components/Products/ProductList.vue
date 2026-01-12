@@ -10,7 +10,7 @@ import ProductSimpleForm from "@/Components/Products/ProductSimpleForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @change="findProduct"
+                   @input="searchDebounced"
                    v-model="search"
                    id="productSearchInput" placeholder="Товар"/>
             <label for="productSearchInput">Товар</label>
@@ -164,7 +164,7 @@ import ProductCard from './ProductCard.vue'
 import {useProductsStore} from "@/stores/products";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 import {useUsersStore} from "@/stores/users";
-
+import debounce from 'lodash.debounce'
 export default {
     name: 'ProductList',
     components: {ProductForm, ProductCard},
@@ -198,6 +198,11 @@ export default {
             this.fetchData()
     },
     methods: {
+        searchDebounced(){
+            debounce(() => {
+                this.findProduct()
+            }, 300)
+        },
         addNewProduct(product){
             this.$emit("select", product)
         },
