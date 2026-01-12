@@ -10,7 +10,6 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @input="searchDebounced"
                    v-model="search"
                    id="supplierInput" placeholder="Поставщик"/>
             <label for="supplierInput">Поставщик</label>
@@ -158,6 +157,7 @@ import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 import {useUsersStore} from "@/stores/users";
 import debounce from 'lodash.debounce'
+
 export default {
     name: 'SupplierListGroup',
     props: ["forSelect"],
@@ -172,6 +172,12 @@ export default {
             selectedSupplier: null,
             suppliersStore: useSuppliersStore(),
         }
+    },
+    watch: {
+
+        'search': function (newVal, oldVal) {
+            this.searchDebounced()
+        },
     },
     computed: {
         user() {
@@ -191,7 +197,7 @@ export default {
         this.fetchData()
     },
     methods: {
-        searchDebounced(){
+        searchDebounced() {
             debounce(() => {
                 this.findSupplier()
             }, 300)
@@ -203,7 +209,7 @@ export default {
             this.suppliersStore.setSort('id', 'asc')
             this.suppliersStore.fetchFiltered(0, 30)
         },
-        addNewSupplier(supplier){
+        addNewSupplier(supplier) {
             this.$emit("select", supplier)
         },
         applyFilters(filters) {

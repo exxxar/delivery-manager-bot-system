@@ -10,7 +10,6 @@ import ProductSimpleForm from "@/Components/Products/ProductSimpleForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @input="searchDebounced"
                    v-model="search"
                    id="productSearchInput" placeholder="Товар"/>
             <label for="productSearchInput">Товар</label>
@@ -180,6 +179,12 @@ export default {
             products: [],
             selectedProduct: null
         }
+    },
+    watch: {
+
+        'search': function (newVal, oldVal) {
+            this.searchDebounced()
+        },
     },
     computed: {
         user() {
