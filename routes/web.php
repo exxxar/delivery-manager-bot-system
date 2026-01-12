@@ -454,7 +454,8 @@ Route::prefix("bot-api")
             ->group(function () {
                 Route::get('/with-products', [SupplierController::class, 'indexWithProducts']);
                 Route::get('/fetch-next-products/{supplierId}/products', [SupplierController::class, 'nextProducts']);
-                Route::post('/remove-all', [SupplierController::class, 'removeAll']);
+                Route::post('/remove-all', [SupplierController::class, 'removeAll'])
+                    ->middleware(["tg.role:admin"]);
 
                 // Список всех поставщиков
                 Route::get('/', [SupplierController::class, 'index']);
@@ -466,7 +467,8 @@ Route::prefix("bot-api")
                 Route::put('/{id}', [SupplierController::class, 'update']);
                 Route::patch('/{id}', [SupplierController::class, 'update']); // частичное обновление
                 // Удалить поставщика
-                Route::delete('/{id}', [SupplierController::class, 'destroy']);
+                Route::delete('/{id}', [SupplierController::class, 'destroy'])
+                    ->middleware(["tg.role:admin"]);
 
             });
 
@@ -483,7 +485,8 @@ Route::prefix("bot-api")
                 Route::put('/{id}', [ProductController::class, 'update']);
                 Route::patch('/{id}', [ProductController::class, 'update']); // частичное обновление
                 // Удалить продукт
-                Route::delete('/{id}', [ProductController::class, 'destroy']);
+                Route::delete('/{id}', [ProductController::class, 'destroy'])
+                    ->middleware(["tg.role:admin"]);
             });
 
         Route::prefix('product-categories')
@@ -503,7 +506,8 @@ Route::prefix("bot-api")
                 Route::put('/{id}', [ProductCategoryController::class, 'update']);
                 Route::patch('/{id}', [ProductCategoryController::class, 'update']); // частичное обновление
                 // Удалить категорию
-                Route::delete('/{id}', [ProductCategoryController::class, 'destroy']);
+                Route::delete('/{id}', [ProductCategoryController::class, 'destroy'])
+                    ->middleware(["tg.role:admin"]);
 
             });
 

@@ -18,6 +18,7 @@
                 class="btn btn-outline-primary p-3">Список категорий товаров
         </button>
         <button
+            v-if="(user?.role || 0) >= 3"
             @click="selectMenu('import-products')"
             type="button" class="btn btn-outline-primary p-3">Загрузить прайс с товарами и категориями
         </button>
@@ -25,7 +26,7 @@
 
     </div>
 
-    <div class="dropdown mt-2">
+    <div class="dropdown mt-2" v-if="(user?.role || 0) >= 3">
         <button class="btn btn-outline-primary p-3 dropdown-toggle  w-100" type="button" data-bs-toggle="dropdown"
                 aria-expanded="false">
             Скачать таблицу с товарами
@@ -63,12 +64,18 @@
 </template>
 <script>
 import {useBaseExports} from "@/stores/baseExports";
-
+import {useUsersStore} from "@/stores/users";
 export default {
     data() {
         return {
+            userStore: useUsersStore(),
             jobStore: useBaseExports()
         }
+    },
+    computed: {
+        user() {
+            return this.userStore.self || null
+        },
     },
     methods: {
         selectMenu(name) {

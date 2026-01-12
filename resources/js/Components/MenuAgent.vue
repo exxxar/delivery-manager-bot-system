@@ -20,6 +20,18 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
         </button>
     </div>
 
+    <hr>
+    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
+        <button type="button"
+                @click="goTo('SupplierPage')"
+                class="btn btn-outline-primary p-3">Список поставщиков
+        </button>
+
+        <button type="button"
+                @click="goTo('ProductPage')"
+                class="btn btn-outline-primary p-3">Работа с товаром
+        </button>
+    </div>
 
     <!-- Модалка -->
     <div class="modal fade" :id="'reportModal'" tabindex="-1">

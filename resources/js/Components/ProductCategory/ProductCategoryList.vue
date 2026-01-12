@@ -55,7 +55,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
                                 @click.prevent="openEditModal(category)"
                             >Редактировать</a>
                         </li>
-                        <li>
+                        <li v-if="(user?.role || 0) >= 3">
                             <a
                                 class="dropdown-item text-danger"
                                 href="#"
@@ -126,13 +126,14 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 <script>
 import {useProductCategoriesStore} from "@/stores/product-categories";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
+import {useUsersStore} from "@/stores/users";
 
 export default {
     name: "ProductCategoryList",
     props:["forSelect"],
     data() {
         return {
-
+            userStore: useUsersStore(),
             modalStore: useModalStore(),
             productCategoryStore: useProductCategoriesStore(),
             selectedCategory: null,
@@ -141,6 +142,11 @@ export default {
     },
     created() {
         this.fetchData();
+    },
+    computed: {
+        user() {
+            return this.userStore.self || null
+        },
     },
     methods: {
         removeAll() {

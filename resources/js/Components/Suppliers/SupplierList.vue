@@ -10,7 +10,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @keydown="findSupplier"
+                   @change="findSupplier"
                    v-model="search"
                    id="supplierInput" placeholder="Поставщик"/>
             <label for="supplierInput">Поставщик</label>
@@ -61,7 +61,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
             <a href="javascript:void(0)"
                @click="selectAll"
                class="small">Выделить все</a>
-            <template v-if="selection.length>0">
+            <template v-if="selection.length>0&&(user?.role || 0) >= 3">
                 <a href="javascript:void(0)"
                    @click="removeAll"
                    class="small text-danger mx-2">Удалить выделенное</a>
@@ -112,7 +112,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                         <li>
                             <a class="dropdown-item" href="#" @click.prevent="openEditModal(supplier)">Редактировать</a>
                         </li>
-                        <li>
+                        <li v-if="(user?.role || 0) >= 3">
                             <a class="dropdown-item text-danger" href="#" @click.prevent="openDeleteModal(supplier)">Удалить</a>
                         </li>
                     </template>
@@ -156,7 +156,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 import axios from 'axios'
 import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
-
+import {useUsersStore} from "@/stores/users";
 export default {
     name: 'SupplierListGroup',
     props: ["forSelect"],
@@ -164,6 +164,7 @@ export default {
         return {
             field_visible: null,
             modalStore: useModalStore(),
+            userStore: useUsersStore(),
             selection: [],
             search: null,
             showSimpleSupplierForm: false,
@@ -172,6 +173,9 @@ export default {
         }
     },
     computed: {
+        user() {
+            return this.userStore.self || null
+        },
         /* filteredSuppliers() {
              if (!this.search) return this.suppliersStore.items || []
              const q = this.search.toLowerCase()

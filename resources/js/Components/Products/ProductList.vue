@@ -10,7 +10,7 @@ import ProductSimpleForm from "@/Components/Products/ProductSimpleForm.vue";
         <div class="form-floating ">
             <input class="form-control"
                    type="search"
-                   @keydown="findProduct"
+                   @change="findProduct"
                    v-model="search"
                    id="productSearchInput" placeholder="Товар"/>
             <label for="productSearchInput">Товар</label>
@@ -103,7 +103,7 @@ import ProductSimpleForm from "@/Components/Products/ProductSimpleForm.vue";
                     <template v-if="!forSelect">
                         <li><a class="dropdown-item" href="#" @click.prevent="openView(product)">Просмотреть</a></li>
                         <li><a class="dropdown-item" href="#" @click.prevent="openEdit(product)">Редактировать</a></li>
-                        <li><a class="dropdown-item text-danger" href="#"
+                        <li v-if="(user?.role || 0) >= 3"><a class="dropdown-item text-danger" href="#"
                                @click.prevent="confirmDelete(product)">Удалить</a></li>
                     </template>
                 </ul>
@@ -163,6 +163,7 @@ import ProductForm from './ProductForm.vue'
 import ProductCard from './ProductCard.vue'
 import {useProductsStore} from "@/stores/products";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
+import {useUsersStore} from "@/stores/users";
 
 export default {
     name: 'ProductList',
@@ -175,9 +176,15 @@ export default {
             field_visible: null,
             productStore: useProductsStore(),
             modalStore: useModalStore(),
+            userStore: useUsersStore(),
             products: [],
             selectedProduct: null
         }
+    },
+    computed: {
+        user() {
+            return this.userStore.self || null
+        },
     },
     created() {
 
