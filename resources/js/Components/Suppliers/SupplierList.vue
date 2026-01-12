@@ -18,7 +18,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <button
             @click="findSupplier"
             type="button"
-            class="btn btn-outline-light text-primary"
+            class="btn btn-outline-light text-primary find-btn"
         >
             Найти
         </button>

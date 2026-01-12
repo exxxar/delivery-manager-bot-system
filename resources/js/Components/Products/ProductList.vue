@@ -18,7 +18,7 @@ import ProductSimpleForm from "@/Components/Products/ProductSimpleForm.vue";
         <button
             @click="findProduct"
             type="button"
-            class="btn btn-outline-light text-primary"
+            class="btn btn-outline-light text-primary find-btn"
         >
             Найти
         </button>

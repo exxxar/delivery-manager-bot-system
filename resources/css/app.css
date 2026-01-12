@@ -3,3 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 */
+
+.find-btn {
+    border: var(--bs-border-width) solid var(--bs-border-color);
+}

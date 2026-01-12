@@ -46,7 +46,7 @@ const today = new Date().toISOString().split('T')[0]
                         readonly>
                     <label for="supplier">Поставщик</label>
                 </div>
-                <button type="button" class="btn btn-outline-light text-primary" @click="tab='supplier'">Выбрать
+                <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='supplier'">Выбрать
                 </button>
             </div>
 
@@ -61,7 +61,7 @@ const today = new Date().toISOString().split('T')[0]
                 </div>
                 <button type="button"
                         :disabled="form.supplier_id == null"
-                        class="btn btn-outline-light text-primary" @click="tab='product'">Выбрать</button>
+                        class="btn btn-outline-light text-primary find-btn" @click="tab='product'">Выбрать</button>
             </div>
 
             <template v-if="form.supplier_id && form.product_id">
@@ -170,7 +170,7 @@ const today = new Date().toISOString().split('T')[0]
                                readonly>
                         <label for="agent">Администратор</label>
                     </div>
-                    <button type="button" class="btn btn-outline-light text-primary" @click="tab='agent'">Выбрать
+                    <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='agent'">Выбрать
                     </button>
                 </div>
 
@@ -184,7 +184,7 @@ const today = new Date().toISOString().split('T')[0]
                                        readonly>
                                 <label for="customer">Клиент</label>
                             </div>
-                            <button type="button" class="btn btn-outline-light text-primary" @click="tab='customer'">Выбрать
+                            <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='customer'">Выбрать
                             </button>
                         </div>
             -->
