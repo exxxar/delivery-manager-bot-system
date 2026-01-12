@@ -181,9 +181,8 @@ export default {
         }
     },
     watch: {
-
-        'search': function (newVal, oldVal) {
-            this.searchDebounced()
+        search: function (newVal, oldVal) {
+            this.findProduct()
         },
     },
     computed: {
