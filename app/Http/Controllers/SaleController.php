@@ -49,6 +49,7 @@ class SaleController extends Controller
 
 
         $needAutomaticNaming = $data["need_automatic_naming"] == "true";
+        $receiptIsLost = $data["receipt_is_lost"] == "true";
         unset($data["need_automatic_naming"]);
 
         $product = Product::query()->where("id", $data["product_id"])->first();
@@ -70,7 +71,7 @@ class SaleController extends Controller
 
         $sale = Sale::query()->create($data);
 
-        $saleInfo = $sale->toTelegramText();
+        $saleInfo = $sale->toTelegramText($receiptIsLost);
 
         if (!is_null($sale->agent_id ?? null)) {
             $agent = Agent::query()
@@ -132,6 +133,11 @@ class SaleController extends Controller
                 )
             );
 
+        } else {
+            \App\Facades\BotMethods::bot()->sendMessage(
+                $user->telegram_chat_id,
+                "Чек к сделке №" . ($sale->id ?? '-') . " - не найден!"
+            );
         }
         return response()->noContent();
     }
@@ -142,6 +148,9 @@ class SaleController extends Controller
             "id" => "required",
             "payment_type" => "required"
         ]);
+
+        $receiptIsLost = ($request->receipt_is_lost ?? false) == "true";
+
 
         $sale = Sale::findOrFail($request->id);
 
@@ -160,7 +169,7 @@ class SaleController extends Controller
         $sale->sale_date = Carbon::now();
         $sale->save();
 
-        $saleInfo = $sale->toTelegramText();
+        $saleInfo = $sale->toTelegramText($receiptIsLost);
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
             "#обновление_данных_сделки\n$saleInfo"

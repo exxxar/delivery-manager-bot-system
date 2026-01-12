@@ -104,10 +104,20 @@ const today = new Date().toISOString().split('T')[0]
                         class="form-control"
                         @change="onFileChange"
                         accept=".jpg,.png,.pdf"
-                        required
+                        :required="!form.receipt_is_lost"
                     />
                     <label for="payment-type">Прикрепить</label>
                 </div>
+
+                <div
+                    class="form-check form-switch mb-2">
+                    <input
+                        v-model="form.receipt_is_lost"
+                        class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
+                    <label class="form-check-label" for="need_automatic_naming">Чек был утрачен
+                    </label>
+                </div>
+
             </template>
 
             <!-- Статус -->
@@ -291,6 +301,7 @@ export default {
                 payment_type: '0',
                 payment_document_name: null,
                 need_automatic_naming: true,
+                receipt_is_lost: false
             },
             agentName: '',
             customerName: '',

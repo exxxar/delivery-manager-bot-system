@@ -229,11 +229,18 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                                     class="form-control"
                                     @change="onFileChange"
                                     accept=".jpg,.png,.pdf"
-                                    required
+                                    :required="!paymentConfirmForm.receipt_is_lost"
                                 />
                                 <label for="payment-type">Прикрепить</label>
                             </div>
-
+                            <div
+                                class="form-check form-switch mb-2">
+                                <input
+                                    v-model="paymentConfirmForm.receipt_is_lost"
+                                    class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
+                                <label class="form-check-label" for="need_automatic_naming">Чек был утрачен
+                                </label>
+                            </div>
 
                         </template>
                         <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
@@ -277,6 +284,7 @@ export default {
             paymentConfirmForm: {
                 file: null,
                 payment_type: 0,
+                receipt_is_lost:false,
             },
             dealForm: {
                 sale_date: new Date().toISOString().split('T')[0],

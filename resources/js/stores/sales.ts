@@ -191,6 +191,8 @@ export const useSalesStore = defineStore('sales', {
                 // @ts-ignore
                 formData.append("payment_type", sale.payment_type || 0)
                 // @ts-ignore
+                formData.append("receipt_is_lost", sale.receipt_is_lost || false)
+                // @ts-ignore
                 if (sale.file)
                     // @ts-ignore
                     formData.append('file', sale.file)

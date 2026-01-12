@@ -84,9 +84,12 @@ class Sale extends Model
         return $this->belongsTo(User::class, 'created_by_id', 'id');
     }
 
-    public function toTelegramText(): string
+    public function toTelegramText($receiptIsLost = false): string
     {
-        $paymentType = $this->payment_type == 0 ? 'Наличный расчет' : 'Безналичный расчет';
+
+        $paymentType = ($this->payment_type == 0 ? 'Наличный расчет' : 'Безналичный расчет')
+            .($receiptIsLost ? " (Чек утрачен)":"");
+
 
         $status = [
             "pending" => "Ожидание",
