@@ -15,13 +15,17 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
             </div>
 
             <div class="form-floating mb-2">
-                <input v-model="form.category" type="text" class="form-control" id="category" placeholder="Название" required>
+                <input v-model="form.category" type="text" class="form-control" id="category" placeholder="Название"
+                       required>
                 <label for="category">Название категории</label>
             </div>
 
             <button
                 type="submit" class="btn btn-primary w-100 p-3">
-                Добавить продукт
+                <span v-if="spent_time>0">{{ spent_time }} сек.</span>
+                <span v-else>
+                       Добавить продукт
+                </span>
             </button>
 
         </form>
@@ -31,6 +35,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
 <script>
 import axios from 'axios'
 import {useProductsStore} from "@/stores/products";
+import {startTimer, checkTimer, getSpentTimeCounter} from "@/utilites/commonMethods.js";
 
 export default {
     name: 'ProductSimpleForm',
@@ -39,9 +44,10 @@ export default {
         return {
             tab: 'main',
             productStore: useProductsStore(),
+            spent_time: 0,
             form: {
                 name: '',
-                category:'',
+                category: '',
                 supplier_id: null,
             },
 
@@ -50,15 +56,24 @@ export default {
     created() {
         this.form.supplier_id = this.supplierId || null
     },
+    mounted() {
+        checkTimer();
+
+        window.addEventListener("trigger-spent-timer", (event) => { // (1)
+            this.spent_time = event.detail
+        });
+    },
     methods: {
 
 
         async submitForm() {
+            startTimer(10)
+
             try {
-               await this.productStore.create(this.form)
-                    .then((resp)=>{
-                    this.$emit('saved', resp)
-                })
+                await this.productStore.create(this.form)
+                    .then((resp) => {
+                        this.$emit('saved', resp)
+                    })
 
 
             } catch (error) {

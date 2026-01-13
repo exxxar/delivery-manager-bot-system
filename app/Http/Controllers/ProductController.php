@@ -90,6 +90,8 @@ class ProductController extends Controller
         $categoryName = $data["category"] ?? null;
 
         if (!is_null($categoryName)) {
+            unset($data["category"]);
+
             $category = ProductCategory::query()
                 ->where("name", $categoryName)
                 ->first();
@@ -105,7 +107,7 @@ class ProductController extends Controller
         $data["product_category_id"] = $data["product_category_id"] ?? $category->id ?? null;
 
 
-        $product = Product::create($data);
+        $product = Product::query()->firstOrCreate($data);
         $product->load(['supplier', 'category']);
         return response()->json($product, 201);
     }
