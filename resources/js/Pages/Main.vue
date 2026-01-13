@@ -44,8 +44,7 @@ export default {
         },
     },
     mounted() {
-
-
+        this.tg.requestFullscreen()
     },
     methods: {
         open(url) {

@@ -4,7 +4,7 @@
 
         <div class="form-floating mb-2">
             <input v-model="form.name" type="text" class="form-control" id="name" placeholder="Название" required>
-            <label for="name">Название</label>
+            <label for="name">Имя поставщика</label>
         </div>
 
         <div class="form-floating mb-2">

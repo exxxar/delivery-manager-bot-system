@@ -6,24 +6,6 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 
 <template>
 
-    <div class="input-group mb-2">
-        <div class="form-floating ">
-            <input class="form-control"
-                   type="search"
-                   v-model="search"
-                   id="supplierInput" placeholder="Поставщик"/>
-            <label for="supplierInput">Поставщик</label>
-        </div>
-
-        <button
-            @click="findSupplier"
-            type="button"
-            class="btn btn-outline-light text-primary find-btn"
-        >
-            Найти
-        </button>
-    </div>
-
     <div
         class="form-check form-switch mb-2">
         <input
@@ -41,96 +23,109 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <SupplierForm
             v-on:saved="addNewSupplier"
             class="mb-2"
-            :is-simple="true"></SupplierForm>
+        ></SupplierForm>
     </template>
 
+    <template v-if="!showSimpleSupplierForm">
+        <div class="input-group mb-2">
+            <div class="form-floating ">
+                <input class="form-control"
+                       type="search"
+                       v-model="search"
+                       id="supplierInput" placeholder="Поставщик"/>
+                <label for="supplierInput">Поставщик</label>
+            </div>
 
-    <!--
-        <div class="form-floating mb-3">
-            <input type="search"
-                   v-model="search"
-                   class="form-control" id="searchInput" placeholder="Поиск..." />
-            <label for="searchInput">Поиск</label>
-        </div>-->
-
-    <template v-if="!forSelect">
-        <SupplierFilter v-on:apply-filters="applyFilters"></SupplierFilter>
-
-        <div class="d-flex" v-if="(user?.role || 0) >= 3">
-            <a href="javascript:void(0)"
-               @click="selectAll"
-               class="small">Выделить все</a>
-            <template v-if="selection.length>0">
-                <a href="javascript:void(0)"
-                   @click="removeAll"
-                   class="small text-danger mx-2">Удалить выделенное</a>
-            </template>
-
+            <button
+                @click="findSupplier"
+                type="button"
+                class="btn btn-outline-light text-primary find-btn"
+            >
+                Найти
+            </button>
         </div>
-    </template>
+
+        <template v-if="!forSelect">
+            <SupplierFilter v-on:apply-filters="applyFilters"></SupplierFilter>
+
+            <div class="d-flex" v-if="(user?.role || 0) >= 3">
+                <a href="javascript:void(0)"
+                   @click="selectAll"
+                   class="small">Выделить все</a>
+                <template v-if="selection.length>0">
+                    <a href="javascript:void(0)"
+                       @click="removeAll"
+                       class="small text-danger mx-2">Удалить выделенное</a>
+                </template>
+
+            </div>
+        </template>
 
 
-    <ul class="list-group">
-        <li
-            v-for="supplier in suppliersStore.items"
-            :key="supplier.id"
-            class="list-group-item d-flex justify-content-between align-items-start"
-            v-bind:class="{'border-primary': selection.indexOf(supplier.id)!==-1}"
-        >
-            <!-- Левая часть -->
-            <div class="flex-grow-1 me-3 text-break" @click="selectSupplier(supplier)">
-                <div class="fw-bold" @click="toggleSelection(supplier.id)">
+        <ul class="list-group">
+            <li
+                v-for="supplier in suppliersStore.items"
+                :key="supplier.id"
+                class="list-group-item d-flex justify-content-between align-items-start"
+                v-bind:class="{'border-primary': selection.indexOf(supplier.id)!==-1}"
+            >
+                <!-- Левая часть -->
+                <div class="flex-grow-1 me-3 text-break" @click="selectSupplier(supplier)">
+                    <div class="fw-bold" @click="toggleSelection(supplier.id)">
                     <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
                             supplier.id
                         }}</span>{{ supplier.name }}
-                    <span
-                        v-if="field_visible?.percent||false"
-                        class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
+                        <span
+                            v-if="field_visible?.percent||false"
+                            class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
+                    </div>
+
+                    <p class="mb-0" v-if="field_visible?.description||true">{{ supplier.description || '-' }}</p>
+                    <p class="mb-0 fw-bold small" v-if="field_visible?.phone||true">{{ supplier.phone }}</p>
+                    <p class="mb-2" v-if="field_visible?.email||false">{{ supplier.email }}</p>
+                    <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
+                    <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
+
                 </div>
 
-                <p class="mb-0" v-if="field_visible?.description||true">{{ supplier.description || '-' }}</p>
-                <p class="mb-0 fw-bold small" v-if="field_visible?.phone||true">{{ supplier.phone }}</p>
-                <p class="mb-2" v-if="field_visible?.email||false">{{ supplier.email }}</p>
-                <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
-                <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
-
-            </div>
-
-            <!-- Правая часть (меню) -->
-            <div class="dropdown flex-shrink-0">
-                <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <template v-if="forSelect">
-                        <li>
-                            <a class="dropdown-item" href="#" @click.prevent="selectSupplier(supplier)">Выбрать</a>
-                        </li>
-                    </template>
-                    <template v-else>
-                        <li>
-                            <a class="dropdown-item" href="#" @click.prevent="openEditModal(supplier)">Редактировать</a>
-                        </li>
-                        <li v-if="(user?.role || 0) >= 3">
-                            <a class="dropdown-item text-danger" href="#" @click.prevent="openDeleteModal(supplier)">Удалить</a>
-                        </li>
-                    </template>
-                </ul>
-            </div>
-        </li>
-    </ul>
+                <!-- Правая часть (меню) -->
+                <div class="dropdown flex-shrink-0">
+                    <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <template v-if="forSelect">
+                            <li>
+                                <a class="dropdown-item" href="#" @click.prevent="selectSupplier(supplier)">Выбрать</a>
+                            </li>
+                        </template>
+                        <template v-else>
+                            <li>
+                                <a class="dropdown-item" href="#"
+                                   @click.prevent="openEditModal(supplier)">Редактировать</a>
+                            </li>
+                            <li v-if="(user?.role || 0) >= 3">
+                                <a class="dropdown-item text-danger" href="#"
+                                   @click.prevent="openDeleteModal(supplier)">Удалить</a>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </li>
+        </ul>
 
 
-    <Pagination
-        :pagination="suppliersStore.pagination"
-        @page-changed="fetchDataByUrl"
-    />
+        <Pagination
+            :pagination="suppliersStore.pagination"
+            @page-changed="fetchDataByUrl"
+        />
 
-    <!-- Сообщение если список пуст -->
-    <div v-if="suppliersStore.items?.length === 0" class="alert alert-info mt-3">
-        Поставщиков пока нет.
-    </div>
+        <!-- Сообщение если список пуст -->
+        <div v-if="suppliersStore.items?.length === 0" class="alert alert-info mt-3">
+            Поставщиков пока нет.
+        </div>
 
+    </template>
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSupplierModal" tabindex="-1">
         <div class="modal-dialog">
