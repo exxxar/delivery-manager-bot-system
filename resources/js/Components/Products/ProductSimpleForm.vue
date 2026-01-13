@@ -21,6 +21,7 @@ import SupplierList from "@/Components/Suppliers/SupplierList.vue";
             </div>
 
             <button
+                :disabled="spent_time>0"
                 type="submit" class="btn btn-primary w-100 p-3">
                 <span v-if="spent_time>0">{{ spent_time }} сек.</span>
                 <span v-else>
