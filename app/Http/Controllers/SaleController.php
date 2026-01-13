@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Exports\ProductsExport;
 use App\Exports\SalesExport;
 use App\Http\Requests\SaleStoreRequest;
@@ -51,11 +52,15 @@ class SaleController extends Controller
         $needAutomaticNaming = $data["need_automatic_naming"] == "true";
         $receiptIsLost = $data["receipt_is_lost"] == "true";
         unset($data["need_automatic_naming"]);
+        unset($data["receipt_is_lost"]);
 
         $product = Product::query()->where("id", $data["product_id"])->first();
 
         $data["product_category_id"] = $product->product_category_id ?? null;
         $data["created_by_id"] = $botUser->id ?? null;
+
+        if ($botUser->role == RoleEnum::AGENT->value)
+            $data["agent_id"] = $botUser->agent->id ?? null;
 
         if ($needAutomaticNaming) {
             $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
@@ -69,9 +74,11 @@ class SaleController extends Controller
                 . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
         }
 
-        $sale = Sale::query()->create($data);
+        $sale = Sale::query()->firstOrCreate($data);
 
         $saleInfo = $sale->toTelegramText($receiptIsLost);
+
+        $userLink = $botUser->getUserTelegramLink();
 
         if (!is_null($sale->agent_id ?? null)) {
             $agent = Agent::query()
@@ -92,7 +99,7 @@ class SaleController extends Controller
 
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
-            "#создание_сделки\n$saleInfo"
+            "#создание_сделки\n$saleInfo" . $userLink
         );
 
         if (!is_null($sale->payment_document_name ?? null)) {

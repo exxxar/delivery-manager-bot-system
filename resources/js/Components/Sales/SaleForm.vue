@@ -201,8 +201,13 @@ const today = new Date().toISOString().split('T')[0]
 
 
             <!-- Кнопка -->
-            <button type="submit" class="btn btn-primary w-100 p-3">
-                {{ isEdit ? 'Сохранить изменения' : 'Создать задание' }}
+            <button
+                :disabled="spent_time>0"
+                type="submit" class="btn btn-primary w-100 p-3">
+                <span v-if="spent_time>0">{{ spent_time }} сек.</span>
+                <span v-else>
+                      {{ isEdit ? 'Сохранить изменения' : 'Создать задание' }}
+                </span>
             </button>
         </template>
 
@@ -252,6 +257,8 @@ import SupplierListGroup from '../Suppliers/SupplierList.vue'
 import ProductList from '../Products/ProductList.vue'
 import {useUsersStore} from "@/stores/users";
 import {useSalesStore} from "@/stores/sales";
+import {startTimer, checkTimer, getSpentTimeCounter} from "@/utilites/commonMethods.js";
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     name: 'SaleForm',
@@ -279,6 +286,8 @@ export default {
     data() {
         return {
             tab: 'main',
+            spent_time: 0,
+            alertStore: useAlertStore(),
             salesStore: useSalesStore(),
             userStore: useUsersStore(),
             can_add_past_assignments: false,
@@ -319,6 +328,13 @@ export default {
             this.supplierName = this.initialData.supplier?.name || ''
             this.product = this.initialData.product || null
         }
+    },
+    mounted() {
+        checkTimer();
+
+        window.addEventListener("trigger-spent-timer", (event) => { // (1)
+            this.spent_time = event.detail
+        });
     },
     methods: {
         onFileChange(e) {
@@ -363,11 +379,13 @@ export default {
         },
 
         async submitForm() {
-            if (this.isEdit) {
-                await this.salesStore.update(this.form.id, this.form, this.file)
-            } else {
+            this.alertStore.show("Началось добавление заявки");
+            startTimer(10)
+
+            this.isEdit ?
+                await this.salesStore.update(this.form.id, this.form, this.file) :
                 await this.salesStore.create(this.form, this.file)
-            }
+
             this.$emit('saved')
         }
     }
