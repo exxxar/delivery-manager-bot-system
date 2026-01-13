@@ -10,9 +10,9 @@ export async function makeAxiosFactory(
     Promise<AxiosResponse<any>> {
     if (!navigator.onLine) {
         const alertStore = useAlertStore();
-        alertStore.show("Вы не в сети!");
+        alertStore.show("У вас отключился интернет!");
         // @ts-ignore
-        return Promise.reject("Вы не в сети!");
+        return Promise.reject("У вас отключился интернет!");
     }
 
     const tgData = (window as any).Telegram?.WebApp.initData || null;

@@ -53,6 +53,7 @@ class SaleController extends Controller
         $receiptIsLost = $data["receipt_is_lost"] == "true";
         unset($data["need_automatic_naming"]);
         unset($data["receipt_is_lost"]);
+        unset($data["file"]);
 
         $product = Product::query()->where("id", $data["product_id"])->first();
 
@@ -74,7 +75,7 @@ class SaleController extends Controller
                 . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
         }
 
-        $sale = Sale::query()->firstOrCreate($data);
+        $sale = Sale::query()->create($data);
 
         $saleInfo = $sale->toTelegramText($receiptIsLost);
 

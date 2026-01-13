@@ -7,7 +7,7 @@ export const useAlertStore = defineStore('alert', {
         visible: false as boolean
     }),
     actions: {
-        show(message: string, type: 'success' | 'error' | 'info' = 'info') {
+        show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
             this.message = message
             this.type = type
             this.visible = true
