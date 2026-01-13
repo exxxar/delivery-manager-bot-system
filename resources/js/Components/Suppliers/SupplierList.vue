@@ -140,6 +140,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                         v-if="selectedSupplier"
                         :initial-data="selectedSupplier" @saved="fetchData"/>
                 </div>
+
             </div>
         </div>
     </div>

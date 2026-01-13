@@ -246,6 +246,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
                     </form>
                 </div>
+                
             </div>
         </div>
     </div>
