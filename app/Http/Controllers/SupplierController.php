@@ -81,7 +81,7 @@ class SupplierController extends Controller
 
             if ($sortField == "id") {
                 $favoriteSuppliersIds = $agent->favorite_suppliers ?? [];
-                    $query->orderByRaw('FIELD(id, ' . implode(',', $favoriteSuppliersIds) . ") $sortDirection");
+                    $query->orderByRaw('FIELD(id, ' . implode(',', $favoriteSuppliersIds) . ") DESC");
             } else
                 $query->orderBy($sortField, $sortDirection);
         }
