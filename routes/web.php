@@ -456,6 +456,7 @@ Route::prefix("bot-api")
                 Route::get('/fetch-next-products/{supplierId}/products', [SupplierController::class, 'nextProducts']);
                 Route::post('/remove-all', [SupplierController::class, 'removeAll'])
                     ->middleware(["tg.role:admin"]);
+                Route::post("/toggle-favorite", [SupplierController::class, "toggleSupplierInFavorites"]);
 
                 // Список всех поставщиков
                 Route::get('/', [SupplierController::class, 'index']);
@@ -534,6 +535,10 @@ Route::prefix("bot-api")
                 Route::get('/', [SaleController::class, 'index']);
                 // Создать новую продажу
                 Route::post('/', [SaleController::class, 'store']);
+
+                Route::post('/accept-all', [SaleController::class, 'acceptAll'])
+                    ->middleware(["tg.role:admin"]);
+
                 Route::post('/confirm-payment', [SaleController::class, 'confirmPayment']);
                 Route::get('/self-sales', [AgentController::class, 'selfSales']);
                 Route::get('/payment-document/{id}', [SaleController::class, 'getPaymentDocument']);

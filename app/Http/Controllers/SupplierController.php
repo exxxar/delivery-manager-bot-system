@@ -20,6 +20,12 @@ class SupplierController extends Controller
 {
     public function index(Request $request)
     {
+
+        $botUser = $request->botUser;
+
+        $agent = $botUser->agent ?? null;
+
+
         $query = Supplier::query();
 
         // 🔹 Фильтры по текстовым полям
@@ -65,20 +71,64 @@ class SupplierController extends Controller
 
         // 🔹 Сортировка
         $sortField = $request->get('sort_field', 'id');
+
+
         $sortDirection = $request->get('sort_direction', 'desc');
         if (in_array($sortField, [
                 'id', 'name', 'address', 'description', 'phone',
                 'percent', 'birthday', 'email', 'created_at', 'updated_at'
             ]) && in_array($sortDirection, ['asc', 'desc'])) {
-            $query->orderBy($sortField, $sortDirection);
+
+            if ($sortField == "id") {
+                $favoriteSuppliersIds = $agent->favorite_suppliers ?? [];
+                    $query->orderByRaw('FIELD(id, ' . implode(',', $favoriteSuppliersIds) . ") $sortDirection");
+            } else
+                $query->orderBy($sortField, $sortDirection);
         }
+
 
         // 🔹 Пагинация
         $perPage = $request->get('per_page', $request->size ?? 10);
-        $suppliers = $query->paginate($perPage);
+        $suppliers = $query
+            ->paginate($perPage);
 
         return response()->json($suppliers);
     }
+
+    public function toggleSupplierInFavorites(Request $request)
+    {
+        //favorite_suppliers
+
+        $request->validate([
+            "id" => "required"
+        ]);
+
+        $id = $request->id;
+
+        $botUser = $request->botUser;
+
+        $agent = $botUser->agent ?? null;
+
+        if (is_null($agent))
+            return response()->noContent(403);
+
+        $favoriteSuppliers = $agent->favorite_suppliers ?? [];
+
+
+        if (in_array($id, $favoriteSuppliers)) {
+            $favoriteSuppliers = array_values(array_diff($favoriteSuppliers, [$id]));
+        } else {
+
+            $favoriteSuppliers[] = $id;
+        }
+
+        $agent->favorite_suppliers = $favoriteSuppliers;
+        $agent->save();
+
+        return response()->json($agent->favorite_suppliers);
+
+    }
+
 
     public function store(Request $request)
     {

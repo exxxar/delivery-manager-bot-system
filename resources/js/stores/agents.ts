@@ -67,6 +67,8 @@ export const useAgentsStore = defineStore('agents', {
             return data as Agent
         },
 
+
+
         async update(id: number, payload: object) {
             const {data} = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)
             const idx = this.items.findIndex(a => a.id === id)

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { makeAxiosFactory } from './utillites/makeAxiosFactory'
+import {Agent} from "./agents";
 
 export interface Supplier {
     id: number
@@ -112,6 +113,13 @@ export const useSuppliersStore = defineStore('suppliers', {
             const { data } = await makeAxiosFactory(`${path}`, 'POST', payload)
             this.items.push(data)
             return data as Supplier
+        },
+        async toggleFavorites(id: number) {
+            const {data} = await makeAxiosFactory(`${path}/toggle-favorite`, 'POST',{
+                id: id
+            })
+           // this.items = data.data
+            //this.pagination = data
         },
         // @ts-ignore
         async removeAll(ids: number[]) {

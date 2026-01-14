@@ -88,29 +88,38 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 
                 </div>
 
-                <!-- Правая часть (меню) -->
-                <div class="dropdown flex-shrink-0">
-                    <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-bars"></i>
+                <div class="d-flex justify-content-between">
+                    <button type="button"
+                            class="btn btn-sm"
+                            @click="toggleFavorites(supplier.id)">
+                        <span v-if="favorites.indexOf(supplier.id)===-1"><i class="fa-regular fa-star text-danger"></i></span>
+                        <span v-else><i class="fa-solid fa-star text-danger"></i></span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <template v-if="forSelect">
-                            <li>
-                                <a class="dropdown-item" href="#" @click.prevent="selectSupplier(supplier)">Выбрать</a>
-                            </li>
-                        </template>
-                        <template v-else>
-                            <li>
-                                <a class="dropdown-item" href="#"
-                                   @click.prevent="openEditModal(supplier)">Редактировать</a>
-                            </li>
-                            <li v-if="(user?.role || 0) >= 3">
-                                <a class="dropdown-item text-danger" href="#"
-                                   @click.prevent="openDeleteModal(supplier)">Удалить</a>
-                            </li>
-                        </template>
-                    </ul>
+                    <!-- Правая часть (меню) -->
+                    <div class="dropdown flex-shrink-0">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <template v-if="forSelect">
+                                <li>
+                                    <a class="dropdown-item" href="#" @click.prevent="selectSupplier(supplier)">Выбрать</a>
+                                </li>
+                            </template>
+                            <template v-else>
+                                <li>
+                                    <a class="dropdown-item" href="#"
+                                       @click.prevent="openEditModal(supplier)">Редактировать</a>
+                                </li>
+                                <li v-if="(user?.role || 0) >= 3">
+                                    <a class="dropdown-item text-danger" href="#"
+                                       @click.prevent="openDeleteModal(supplier)">Удалить</a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
                 </div>
+
             </li>
         </ul>
 
@@ -153,6 +162,7 @@ import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 import {useUsersStore} from "@/stores/users";
 import debounce from 'lodash.debounce'
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     name: 'SupplierListGroup',
@@ -162,6 +172,7 @@ export default {
             field_visible: null,
             modalStore: useModalStore(),
             userStore: useUsersStore(),
+            alertStore: useAlertStore(),
             selection: [],
             search: null,
             showSimpleSupplierForm: false,
@@ -175,6 +186,9 @@ export default {
         },
     },
     computed: {
+        favorites(){
+          return this.user.agent?.favorite_suppliers || []
+        },
         user() {
             return this.userStore.self || null
         },
@@ -201,7 +215,7 @@ export default {
             this.suppliersStore.setFilters({
                 name: this.search || ''
             })
-            this.suppliersStore.setSort('id', 'asc')
+            this.suppliersStore.setSort('id', 'desc')
             this.suppliersStore.fetchFiltered(0, 30)
         },
         addNewSupplier(supplier) {
@@ -216,6 +230,16 @@ export default {
             this.suppliersStore.setFilters(filters.filters)
             this.suppliersStore.setSort(filters.sort.field, filters.sort.direction)
             this.suppliersStore.fetchFiltered(page, size)
+        },
+        toggleFavorites(id){
+            this.suppliersStore.toggleFavorites(id).then(()=>{
+                this.alertStore.show(this.favorites.indexOf(id)!==-1?
+                    "Убираем из избранного":
+                    "Добавляем в избранное",
+                    "success")
+
+                this.userStore.fetchSelf()
+            })
         },
         removeAll() {
             this.modalStore.open(

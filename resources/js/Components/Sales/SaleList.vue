@@ -11,13 +11,28 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
     <!-- Быстрый поиск -->
     <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
 
+    <div class="d-flex" v-if="(user?.role || 0) >= 3">
+        <a href="javascript:void(0)"
+           @click="selectAll"
+           class="small">Выделить все</a>
+        <template v-if="selection.length>0">
+            <a href="javascript:void(0)"
+               @click="acceptAll"
+               class="small text-danger mx-2">Подтвердить заявку ({{ selection.length }})</a>
+        </template>
+
+    </div>
+
     <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
 
     <ul class="list-group">
-        <li v-for="sale in filteredSales" :key="sale.id"
+        <li
+
+            v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1}"
+            v-for="sale in filteredSales" :key="sale.id"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div>
-                <p class="fw-bold mb-2">
+                <p class="fw-bold mb-2" @click="toggleSelection(sale.id)">
                     <span class="badge"
                           v-bind:class="{'bg-warning':!sale.sale_date, 'bg-success':sale.sale_date}"
                           v-if="sale.payment_type===0">
@@ -246,7 +261,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
                     </form>
                 </div>
-                
+
             </div>
         </div>
     </div>
@@ -266,6 +281,7 @@ export default {
     props: ["forSelect", "adminId", "agentId", "productId", "customerId", "supplierId"],
     data() {
         return {
+            selection: [],
             field_visible: null,
             sales: [],
             search: '',
@@ -285,7 +301,7 @@ export default {
             paymentConfirmForm: {
                 file: null,
                 payment_type: 0,
-                receipt_is_lost:false,
+                receipt_is_lost: false,
             },
             dealForm: {
                 sale_date: new Date().toISOString().split('T')[0],
@@ -310,10 +326,7 @@ export default {
             supplier_id: this.supplierId || null,
         })
 
-        if ((this.user?.role || 0) >= 3)
-            this.salesStore.fetchFiltered()
-        else
-            this.salesStore.selfSalesFiltered()
+        this.salesStore.fetchFiltered()
     },
     methods: {
         async sendPaymentDocumentToTg(id) {
@@ -322,6 +335,23 @@ export default {
             })
 
 
+        },
+
+        selectAll() {
+            if (this.selection.length === 0)
+                this.salesStore.items.forEach(i => {
+                    if (this.selection.indexOf(i.id) === -1)
+                        this.selection.push(i.id)
+                })
+            else
+                this.selection = []
+        },
+        toggleSelection(id) {
+            let index = this.selection.findIndex(i => i === id)
+            if (index === -1)
+                this.selection.push(id)
+            else
+                this.selection.splice(index, 1)
         },
         onFileChange(e) {
             this.paymentConfirmForm.file = e.target.files[0]
@@ -387,6 +417,23 @@ export default {
                 this.paymentConfirmForm.payment_type = sale.payment_type
                 new bootstrap.Modal(document.getElementById('paymentConfirmForm')).show()
             })
+        },
+        acceptAll() {
+            this.modalStore.open(
+                `Вы уверены, что хотите подтвердить все выбранные заявки? Будет подтвержден факт доставки и факт оплаты`,
+                () => {
+                    this.salesStore.acceptAll(this.selection).then(() => {
+                        this.salesStore.fetchFiltered()
+                    })
+                    this.selection = []
+                },
+                () => {
+                    this.modalStore.close()
+                    this.selection = []
+                }
+            )
+
+
         },
         openConfirmDeal(sale) {
             this.selectedSale = null

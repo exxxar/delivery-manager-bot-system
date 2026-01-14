@@ -27,6 +27,7 @@ class Sale extends Model
         'description',
         'status',
         'total_price',
+        'mentor_award',
         'payment_type',
         'payment_document_name',
         'payed_at',
@@ -43,6 +44,7 @@ class Sale extends Model
     protected $casts = [
         'id' => 'integer',
         'total_price' => 'float',
+        'mentor_award' => 'float',
         'product_id' => 'integer',
         'product_category_id' => 'integer',
         'payment_type' => 'integer',

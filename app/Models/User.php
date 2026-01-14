@@ -28,6 +28,7 @@ class User extends Authenticatable
         "telegram_chat_id",
         "role",
         "percent",
+        "mentor_percent",
         "is_work",
         "birthday",
         "email_verified_at",

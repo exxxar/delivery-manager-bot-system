@@ -21,6 +21,7 @@ class Agent extends Model
         'mentor_id',
         'name',
         'in_learning',
+        'favorite_suppliers',
         'phone',
         'email',
         'region',
@@ -39,7 +40,8 @@ class Agent extends Model
         'id' => 'integer',
         'user_id' => 'integer',
         'mentor_id' => 'integer',
-        'in_learning' => 'boolean'
+        'in_learning' => 'boolean',
+        'favorite_suppliers' => 'array'
     ];
 
     public function user(): BelongsTo

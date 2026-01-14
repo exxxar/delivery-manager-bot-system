@@ -47,6 +47,12 @@ export const useSalesStore = defineStore('sales', {
                 this.loading = false
             }
         },
+        async acceptAll(ids: number[]) {
+            await makeAxiosFactory(`${path}/accept-all`, 'POST', {
+                ids: ids
+            })
+
+        },
         async selfSalesFiltered(page = 1, size = 30) {
             const params = new URLSearchParams()
 

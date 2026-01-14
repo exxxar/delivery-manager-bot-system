@@ -67,7 +67,9 @@
 
         @foreach($admins as $admin)
             <th style="width: 150px;font-weight: bold;">
-                {{ $admin['admin_name'] }} ({{ $admin['percent'] }}%)
+                {{ $admin['admin_name'] }} ({{ $admin['percent'] }}
+                % {{($admin["mentor_award"] ?? 0) > 0?"+ за наставника":""}} )
+
             </th>
         @endforeach
 

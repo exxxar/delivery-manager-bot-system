@@ -154,6 +154,8 @@ class BusinessLogic
         $revenueTotal = 0;
         $revenueWithoutTaxTotal = 0;
 
+        $mentorAwards = [];
+
         // --- 1. Продажи по датам и поставщикам ---
         $salesByDateSupplier = Sale::query()
             ->whereBetween('sale_date', [$startDate, $endDate])
@@ -161,14 +163,22 @@ class BusinessLogic
             ->orderBy('sale_date')
             ->with('supplier')
             ->get()
-            ->map(function ($sale) use ($taxPercent, &$revenueTotal, &$revenueWithoutTaxTotal) {
+            ->map(function ($sale) use ($taxPercent, &$revenueTotal, &$revenueWithoutTaxTotal, &$mentorAwards) {
 
                 $transferPercent = env('TRANSFER_PERCENT', 8); // %
 
+                $mentorId = (Agent::query()->find($sale->agent_id))->mentor_id ?? null;
+
+                if (!is_null($mentorId))
+                    $mentorAwards[$mentorId] = isset($mentorAwards[$mentorId]) ?
+                        $mentorAwards[$mentorId] + $sale->mentor_award :
+                        $sale->mentor_award;
+
                 $percent = $sale->supplier->percent ?? 0;
-                $revenueLocal = $sale->total_price * ($percent / 1);
-                $taxAmount = $revenueLocal * ($taxPercent / 100);
+                $revenueLocal = $sale->total_price * ($percent / 100);
+                $taxAmount = $revenueLocal * ($taxPercent / 100) ;
                 $revenueAfterTax = $revenueLocal - $taxAmount;
+
 
                 $revenueTotal += $revenueLocal;
                 $revenueWithoutTaxTotal += $revenueAfterTax;
@@ -178,7 +188,7 @@ class BusinessLogic
                     'supplier_name' => $sale->supplier->name ?? 'Неизвестный поставщик',
                     'sale_amount' => $sale->total_price,
                     'percent' => $percent,
-                    'transfer' => $revenueLocal* ($transferPercent / 100),
+                    'transfer' => $revenueLocal * ($transferPercent / 100),
                     'revenue_total' => $revenueLocal,
                     'revenue_after_tax' => $revenueAfterTax,
                 ];
@@ -189,14 +199,21 @@ class BusinessLogic
         $adminsRevenue = User::query()
             ->where('is_work', true)
             ->get()
-            ->map(function ($user) use ($revenueTotal, $revenueWithoutTaxTotal) {
-                $incomeTotal = $revenueTotal * ($user->percent / 100);
-                $incomeAfterTax = $revenueWithoutTaxTotal * ($user->percent / 100);
+            ->map(function ($user) use ($taxPercent, $revenueTotal, $revenueWithoutTaxTotal, &$mentorAwards) {
+
+                $mentorAward = $mentorAwards[$user->id] ?? 0;
+                $mentorAwardWithoutTax = $mentorAward * (1 - ($taxPercent / 100)) ;
+
+                $incomeTotal = $revenueTotal * ($user->percent / 100) ;
+                $incomeAfterTax = $revenueWithoutTaxTotal * ($user->percent / 100) + $mentorAwardWithoutTax;
 
                 return [
                     'admin_id' => $user->id,
                     'admin_name' => $user->name,
                     'percent' => $user->percent,
+                    'mentor_award' => $mentorAwards[$user->id] ?? 0, //снять налог и добавить к сумме
+                    'income_with_award_total' => $incomeTotal + $mentorAward,
+                    'income_with_award_after_text' =>$incomeAfterTax + $mentorAwardWithoutTax,
                     'income_total' => $incomeTotal,
                     'income_after_tax' => $incomeAfterTax,
                 ];

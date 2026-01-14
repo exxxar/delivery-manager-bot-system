@@ -67,6 +67,7 @@ class AgentController extends Controller
     }
 
 
+
     public function selfSales(Request $request)
     {
 
@@ -116,7 +117,7 @@ class AgentController extends Controller
 
 
         if ($agent->in_learning && !$inLearning) {
-           $data["start_learning_date"] = Carbon::now();
+            $data["start_learning_date"] = Carbon::now();
         }
 
         if (!$agent->in_learning && $inLearning) {
