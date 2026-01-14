@@ -79,11 +79,15 @@ class SupplierController extends Controller
                 'percent', 'birthday', 'email', 'created_at', 'updated_at'
             ]) && in_array($sortDirection, ['asc', 'desc'])) {
 
-            if ($sortField == "id") {
-                $favoriteSuppliersIds = $agent->favorite_suppliers ?? [];
-                    $query->orderByRaw('FIELD(id, ' . implode(',', $favoriteSuppliersIds) . ") DESC");
-            } else
+            if ($sortField === 'id' && !empty($agent->favorite_suppliers)) {
+                $ids = $agent->favorite_suppliers;
+
+                $query->orderByRaw(
+                    'FIELD(id, ' . implode(',', $ids) . ") $sortDirection"
+                );
+            } else {
                 $query->orderBy($sortField, $sortDirection);
+            }
         }
 
 
