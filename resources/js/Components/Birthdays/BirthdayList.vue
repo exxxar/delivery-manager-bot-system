@@ -45,6 +45,8 @@
                         </small>
                     </div>
 
+                    <span class="fw-bold small">{{item.date || '-'}}</span>
+
                     <span class="badge bg-primary">
                         {{ item.weekday }}
                     </span>

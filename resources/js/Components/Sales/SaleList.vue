@@ -11,19 +11,25 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
     <!-- Быстрый поиск -->
     <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
 
-    <div class="d-flex" v-if="(user?.role || 0) >= 3">
-        <a href="javascript:void(0)"
-           @click="selectAll"
-           class="small">Выделить все</a>
-        <template v-if="selection.length>0">
-            <a href="javascript:void(0)"
-               @click="acceptAll"
-               class="small text-danger mx-2">Подтвердить заявку ({{ selection.length }})</a>
-        </template>
 
-    </div>
 
     <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
+    <div class="d-flex justify-content-between my-2" >
+        <div v-if="(user?.role || 0) >= 3">
+            <a href="javascript:void(0)"
+               @click="selectAll"
+               class="small">Выделить все</a>
+            <template v-if="selection.length>0">
+                <a href="javascript:void(0)"
+                   @click="acceptAll"
+                   class="small text-danger mx-2">Подтвердить заявку ({{ selection.length }})</a>
+            </template>
+        </div>
+
+        <span
+            class="fw-bold small "
+            v-if="salesStore.pagination">Всего {{salesStore.pagination.total}} ед.</span>
+    </div>
 
     <ul class="list-group">
         <li

@@ -20,7 +20,10 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
-        $query->where('role', RoleEnum::ADMIN->value);
+        $query->whereIn('role', [
+            RoleEnum::ADMIN->value,
+            RoleEnum::SUPERADMIN->value
+        ]);
 
         $perPage = $request->get('per_page', 30);
         $users = $query->paginate($perPage);
