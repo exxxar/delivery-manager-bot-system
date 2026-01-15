@@ -55,9 +55,9 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                     <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
                             sale.id
                         }}</span> {{ sale.title }} </p>
-                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
+                <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
                     {{ sale.due_date || 'не указана' }}</p>
-                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.sale_date||true">Дата продажи
+                <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.sale_date||true">Дата продажи
                     {{ sale.sale_date || 'не указана' }}</p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.payment_type||false">
                     Тип оплаты
