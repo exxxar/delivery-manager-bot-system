@@ -66,7 +66,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                 </p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.actual_delivery_date||false">
                     Фактическая дата доставки {{ sale.actual_delivery_date || 'не указана' }}</p>
-                <small class="text-muted" v-if="field_visible?.status||false">Статус:
+                <small class="text-muted" v-if="field_visible?.status||true">Статус:
                     <span
                         class="badge"
                         v-bind:class="{
@@ -77,7 +77,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                             'bg-danger':sale.status==='rejected',
                         }">{{ saleStatuses[sale.status] }}</span>
                 </small>
-                <p class="mb-2" v-if="field_visible?.description||false">{{ sale.description }}</p>
+                <p class="mb-2" v-if="field_visible?.description||true">{{ sale.description }}</p>
                 <p class="mb-2" v-if="field_visible?.quantity||false">Доставляемое число товара <span
                     class="fw-bold">{{ sale.quantity || 'не указана' }}</span> ед.</p>
                 <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
