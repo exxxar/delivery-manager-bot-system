@@ -307,7 +307,7 @@ class SaleController extends Controller
 
         $sale = Sale::findOrFail($id);
 
-        $priceIsChange = $sale->total_price != $data["total_price"];
+        $priceIsChange = $sale->total_price != ($data["total_price"] ?? 0);
 
         $product = Product::query()->where("id", $data["product_id"] ?? $sale->product_id ?? null)->first();
 
