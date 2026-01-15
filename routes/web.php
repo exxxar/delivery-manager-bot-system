@@ -446,7 +446,8 @@ Route::prefix("bot-api")
                 Route::get('/clients', [CustomerController::class, 'export'])->name('exports.clients');
                 Route::get('/suppliers', [SupplierController::class, 'export'])->name('exports.suppliers');
                 Route::get('/sales-history', [SaleController::class, 'export'])->name('exports.salesHistory');
-                Route::post('/full', [AdminController::class, 'exportFull'])->name('exports.full');
+                Route::post('/full/{id?}', [AdminController::class, 'exportFull'])->name('exports.full');
+                //сделать экспорт по конкретному админу
             });
 
         Route::prefix('suppliers')

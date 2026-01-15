@@ -32,7 +32,7 @@ class SummaryAgentReport implements WithMultipleSheets
      */
     public function sheets(): array
     {
-        set_time_limit(300);
+        set_time_limit(600);
         $agents = is_null($this->agentId ?? null) ? Agent::query()->get() : Agent::query()
             ->where("id", $this->agentId)->get();
 

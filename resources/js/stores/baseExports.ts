@@ -29,7 +29,8 @@ export const useBaseExports = defineStore('exports', {
         },
         async exportFull(payload) {
             const alertStore = useAlertStore()
-            let url = `${path}/full`
+            let id = payload.id || null
+            let url = !id?`${path}/full`:`${path}/full/${id}`
             alertStore.show( "Процесс генерации отчета запущен")
             this.loading = true
             this.error = null

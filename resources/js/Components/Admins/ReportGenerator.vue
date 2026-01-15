@@ -37,7 +37,7 @@
         </div>
 
         <button
-            :disabled="adminsStore.loading"
+            :disabled="report.loading"
             type="submit" class="btn btn-primary p-3 w-100">
             Сформировать отчёт
         </button>
@@ -48,15 +48,13 @@
 <script>
 
 
-import {useAdminsStore} from "@/stores/admins";
-
 export default {
     name: 'ReportGenerator',
     props: ["type", "isSimple"],
     data() {
         return {
             need_more_options: false,
-            adminsStore: useAdminsStore(),
+
             report: {
                 result_type:0,
                 startDate: '',

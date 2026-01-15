@@ -53,7 +53,9 @@ import UserForm from "@/Components/Users/UserForm.vue";
 
                     <template v-if="!forSelect">
                         <li><a class="dropdown-item" href="#" @click.prevent="openAgentInfo(agent)">Просмотр</a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="openEditAgent(agent)">Редактировать</a>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openEditAgent(agent)">Редактировать</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="getPersonalStatistic(agent)">Выгрузка
+                            статистики</a>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
@@ -137,12 +139,63 @@ import UserForm from "@/Components/Users/UserForm.vue";
             </div>
         </div>
     </div>
+
+
+    <!-- Модалка редактирования -->
+    <div class="modal fade" id="personalStatisticModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Персональная статистика за период</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="generateReport">
+
+
+                        <div class="form-floating mb-2">
+                            <input
+                                type="date"
+                                class="form-control"
+                                id="startDate"
+                                v-model="report.startDate"
+                                required
+                            />
+                            <label for="startDate">Дата начала периода</label>
+                        </div>
+
+                        <!-- Дата окончания -->
+                        <div class="form-floating mb-2">
+                            <input
+                                type="date"
+                                class="form-control"
+                                id="endDate"
+                                v-model="report.endDate"
+                                required
+                            />
+                            <label for="endDate">Дата окончания периода</label>
+                        </div>
+
+
+                        <button
+                            :disabled="report.loading"
+                            type="submit" class="btn btn-primary p-3 w-100">
+                            Сформировать отчёт
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
 
 import AgentForm from './AgentForm.vue'
 import {useAgentsStore} from "@/stores/agents";
+import {useAdminsStore} from "@/stores/admins";
+import {useBaseExports} from "@/stores/baseExports";
 
 
 export default {
@@ -154,7 +207,12 @@ export default {
             search: '',
             selectedAdmin: null,
             agentStore: useAgentsStore(),
-            selectedAgent: null
+            reportStore: useBaseExports(),
+            selectedAgent: null,
+            report: {
+                startDate: '',
+                endDate: '',
+            }
         }
     },
     computed: {
@@ -173,6 +231,18 @@ export default {
 
     },
     methods: {
+        generateReport() {
+            const payload = {
+                ...this.report, ...{
+                    id: this.selectedAgent.id
+                }
+            }
+            const modal = bootstrap.Modal.getInstance(document.getElementById('personalStatisticModal'))
+            modal.hide()
+
+            this.reportStore.exportFull(payload)
+
+        },
         openEdit(user) {
             this.selectedAdmin = null
             this.$nextTick(() => {
@@ -212,6 +282,13 @@ export default {
             } catch (error) {
                 console.error('Ошибка удаления:', error)
             }
+        },
+        getPersonalStatistic(agent) {
+            this.selectedAgent = null
+            this.$nextTick(() => {
+                this.selectedAgent = agent
+                new bootstrap.Modal(document.getElementById('personalStatisticModal')).show()
+            })
         },
         openEditAgent(agent) {
             this.selectedAgent = null
