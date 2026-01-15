@@ -435,7 +435,7 @@ Route::prefix("bot-api")
 
         // 🔹 Экспорты
         Route::prefix('exports')
-            ->middleware(["tg.role:super"])
+            ->middleware(["tg.role:agent"])
             ->group(function () {
                 Route::get('/agents', [AgentController::class, 'export'])->name('exports.agents');
                 Route::get('/birthdays', [BirthdayController::class, 'export'])->name('exports.birthdays');
