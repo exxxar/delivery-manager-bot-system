@@ -2,6 +2,7 @@
 
 namespace App\Classes;
 
+use App\Enums\RoleEnum;
 use App\Models\Agent;
 use App\Models\Product;
 use App\Models\Sale;
@@ -198,6 +199,10 @@ class BusinessLogic
         // --- 2. Доход админов ---
         $adminsRevenue = User::query()
             ->where('is_work', true)
+            ->whereIn("role",[
+                RoleEnum::SUPERADMIN->value,
+                RoleEnum::ADMIN->value
+            ])
             ->get()
             ->map(function ($user) use ($taxPercent, $revenueTotal, $revenueWithoutTaxTotal, &$mentorAwards) {
 
