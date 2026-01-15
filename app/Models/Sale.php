@@ -122,9 +122,11 @@ class Sale extends Model
     {
         $botUser = $request->botUser;
 
+        $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
+
         $agent = Agent::where('user_id', $botUser->id)->first();
 
-        if ($botUser->role == RoleEnum::AGENT->value)
+        if ($onlySelfSales)
             // 🔹 Ограничение доступа
             $query->where(function ($q) use ($botUser, $agent) {
                 if (is_null($agent)) {

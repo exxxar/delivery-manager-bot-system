@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
+use App\Exports\AgentSalesExport;
+use App\Exports\ExportType4\RevenueExportSheet;
+use App\Facades\BusinessLogicFacade;
 use App\Http\Requests\SupplierStoreRequest;
 use App\Http\Requests\SupplierUpdateRequest;
 use App\Models\Agent;
@@ -35,6 +38,7 @@ class AdminController extends Controller
 
     }
 
+
     /**
      * @throws \HttpException
      */
@@ -59,6 +63,8 @@ class AdminController extends Controller
 
         $fromDate = Carbon::parse($validate["startDate"]);
         $toDate = Carbon::parse($validate["endDate"]);
+
+
         $content =
             Excel::raw(new \App\Exports\ExportType3\AdminWorkReport(
                 $admin->id,
@@ -87,8 +93,8 @@ class AdminController extends Controller
 
         $admin = $request->botUser;
 
-        $agent = $admin->role < 3 ? Agent::query()
-            ->where("user_id", $admin->id)->first() : null;
+
+        $agent = Agent::query()->where("user_id", $admin->id)->first();
 
         $fromDate = Carbon::parse($validate["startDate"]);
         $toDate = Carbon::parse($validate["endDate"]);
@@ -98,13 +104,12 @@ class AdminController extends Controller
                 "Внимание! Готовим отчет по зарплатам, это займет какое-то время!"
             );
 
-        $content =
-            Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
-                $fromDate ?? Carbon::now()->startOfMonth(),
-                $toDate ?? Carbon::now()->endOfMonth(),
-                $agent,
-                $resultType
-            ), \Maatwebsite\Excel\Excel::XLSX);
+        $content = Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
+            $fromDate ?? Carbon::now()->startOfMonth(),
+            $toDate ?? Carbon::now()->endOfMonth(),
+            $agent->id ?? null,
+            $resultType
+        ), \Maatwebsite\Excel\Excel::XLSX);
 
         $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
         \App\Facades\BotMethods::bot()
@@ -112,8 +117,21 @@ class AdminController extends Controller
                 "Отчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
                 \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
 
-        if ($admin->role < 3)
+
+        if ($admin->role < 3) {
+            $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
+            $data = Excel::raw(new AgentSalesExport(
+              $agent->id ?? null,
+                $fromDate,
+                $toDate
+            ), \Maatwebsite\Excel\Excel::XLSX);
+            \App\Facades\BotMethods::bot()
+                ->sendDocument($admin->telegram_chat_id, "Экспорт собственных продаж",
+                    \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+
             return response()->noContent();
+        }
+
 
         \App\Facades\BotMethods::bot()
             ->sendMessage($admin->telegram_chat_id,

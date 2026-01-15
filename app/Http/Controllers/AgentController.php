@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AgentSalesExport;
 use App\Exports\AgentsExport;
 use App\Http\Requests\AgentStoreRequest;
 use App\Http\Requests\AgentUpdateRequest;
@@ -72,6 +73,8 @@ class AgentController extends Controller
     {
 
         $botUser = $request->botUser;
+
+        $request->only_self_sales = true;
 
         $sales = Sale::query()
             ->filter($request, $botUser)

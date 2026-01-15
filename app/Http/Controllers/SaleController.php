@@ -305,6 +305,8 @@ class SaleController extends Controller
             $hasFile = true;
         }
 
+        $data["due_date"] = Carbon::parse($data["due_date"]);
+
         $sale = Sale::findOrFail($id);
 
         $priceIsChange = $sale->total_price != ($data["total_price"] ?? 0);

@@ -161,6 +161,7 @@ class BusinessLogic
         $salesByDateSupplier = Sale::query()
             ->whereBetween('sale_date', [$startDate, $endDate])
             ->where("agent_id", $agent->id)
+            ->where("status", "completed")
             ->orderBy('sale_date')
             ->with('supplier')
             ->get()
