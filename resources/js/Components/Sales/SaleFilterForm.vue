@@ -465,7 +465,7 @@ export default {
                 actual_delivery_date: 'Фактическая дата доставки',
                 quantity: 'Доставляемое число товара',
                 total_price: 'Сумма заказа',
-                agent_id: 'Торговый представитель',
+                agent_id: 'Администратор',
                 customer_id: 'Клиент',
                 supplier_id: 'Поставщик',
                 created_by_id: 'Создатель заявки',
@@ -497,7 +497,7 @@ export default {
         }
     },
     mounted() {
-        let tmpVisibleFields = ['title', 'description', 'status', 'due_date']
+        let tmpVisibleFields = ['title', 'description', 'status', 'due_date','agent_id']
         for (const field in this.sortableFields) {
             this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
         }
@@ -625,7 +625,7 @@ export default {
             this.size = 20
             this.page = 0
             this.onlyMyTask = false
-            let tmpVisibleFields = ['title', 'description', 'status', 'due_date']
+            let tmpVisibleFields = ['title', 'description', 'status', 'due_date','agent_id']
             for (const field in this.sortableFields) {
                 this.field_visible[field] = tmpVisibleFields.indexOf(field) !== -1
             }

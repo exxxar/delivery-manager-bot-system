@@ -57,7 +57,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         }}</span> {{ sale.title }} </p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
                     {{ sale.due_date || 'не указана' }}</p>
-                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.sale_date||false">Дата продажи
+                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.sale_date||true">Дата продажи
                     {{ sale.sale_date || 'не указана' }}</p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.payment_type||false">
                     Тип оплаты
@@ -82,7 +82,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                     class="fw-bold">{{ sale.quantity || 'не указана' }}</span> ед.</p>
                 <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
                     class="fw-bold">{{ sale.total_price }}</span> руб.</p>
-                <p class="mb-2" v-if="field_visible?.agent_id||false">Администратор <span
+                <p class="mb-2" v-if="field_visible?.agent_id||true">Администратор <span
                     class="fw-bold">{{ sale.agent?.name || sale.agent_id || '-' }}</span></p>
                 <p class="mb-2" v-if="field_visible?.customer_id||false">Клиент <span
                     class="fw-bold">{{ sale.customer?.name || sale.customer_id || '-' }}</span></p>
