@@ -2,6 +2,7 @@
 import AgentInfo from "@/Components/Agents/AgentInfo.vue";
 import Pagination from "@/Components/Pagination.vue";
 import UserForm from "@/Components/Users/UserForm.vue";
+import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGenerator.vue";
 </script>
 
 <template>
@@ -150,40 +151,10 @@ import UserForm from "@/Components/Users/UserForm.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="generateReport">
-
-
-                        <div class="form-floating mb-2">
-                            <input
-                                type="date"
-                                class="form-control"
-                                id="startDate"
-                                v-model="report.startDate"
-                                required
-                            />
-                            <label for="startDate">Дата начала периода</label>
-                        </div>
-
-                        <!-- Дата окончания -->
-                        <div class="form-floating mb-2">
-                            <input
-                                type="date"
-                                class="form-control"
-                                id="endDate"
-                                v-model="report.endDate"
-                                required
-                            />
-                            <label for="endDate">Дата окончания периода</label>
-                        </div>
-
-
-                        <button
-                            :disabled="report.loading"
-                            type="submit" class="btn btn-primary p-3 w-100">
-                            Сформировать отчёт
-                        </button>
-
-                    </form>
+                <ReportIndividualGenerator
+                    v-if="selectedAgent"
+                    :agent-id="selectedAgent.id"
+                    v-on:generate-report="generateReport"></ReportIndividualGenerator>
                 </div>
             </div>
         </div>
@@ -207,7 +178,7 @@ export default {
             search: '',
             selectedAdmin: null,
             agentStore: useAgentsStore(),
-            reportStore: useBaseExports(),
+
             selectedAgent: null,
             report: {
                 startDate: '',
@@ -232,16 +203,8 @@ export default {
     },
     methods: {
         generateReport() {
-            const payload = {
-                ...this.report, ...{
-                    id: this.selectedAgent.id
-                }
-            }
             const modal = bootstrap.Modal.getInstance(document.getElementById('personalStatisticModal'))
             modal.hide()
-
-            this.reportStore.exportFull(payload)
-
         },
         openEdit(user) {
             this.selectedAdmin = null

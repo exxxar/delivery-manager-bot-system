@@ -27,10 +27,27 @@ export const useBaseExports = defineStore('exports', {
         async exportProducts(type = 0) {
             return this._exportHelper(`${path}/products?type=${type}`, 'Продукты выгружены')
         },
+        async exportIndividual(payload){
+            const alertStore = useAlertStore()
+            let id = payload.id
+            this.loading = true
+            try {
+                const { data } = await makeAxiosFactory(`${path}/individual/${id}`, 'POST', payload)
+                this.successMessage = 'Отчет сформирован'
+                this.exportData = data
+                alertStore.show( this.successMessage,"success")
+                return data
+            } catch (error: any) {
+                this.error = error.response?.data?.message ?? 'Ошибка выгрузки'
+                alertStore.show( this.error,"error")
+                throw error
+            } finally {
+                this.loading = false
+            }
+        },
         async exportFull(payload) {
             const alertStore = useAlertStore()
-            let id = payload.id || null
-            let url = !id?`${path}/full`:`${path}/full/${id}`
+            let url = `${path}/full`
             alertStore.show( "Процесс генерации отчета запущен")
             this.loading = true
             this.error = null

@@ -1,5 +1,6 @@
 <script setup>
 import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
+import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGenerator.vue";
 </script>
 <template>
 
@@ -42,7 +43,10 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ReportGenerator @generate-report="handleReport"></ReportGenerator>
+                    <ReportIndividualGenerator
+                        v-if="userStore.self"
+                        :agent-id="userStore.self.agent.id"
+                        @generate-report="handleReport"></ReportIndividualGenerator>
                 </div>
 
             </div>

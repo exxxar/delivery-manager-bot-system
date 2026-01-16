@@ -82,6 +82,34 @@ class AdminController extends Controller
 
     }
 
+    public function exportIndividual(Request $request, $agentId) {
+        $validate = $request->validate([
+            "startDate" => "required",
+            "endDate" => "required",
+        ]);
+
+        $admin = $request->botUser;
+
+        $fromDate = Carbon::parse($validate["startDate"]);
+        $toDate = Carbon::parse($validate["endDate"]);
+
+        $agent = Agent::query()->where("user_id", $agentId ?? $admin->id)->first();
+
+        $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
+        $data = Excel::raw(new AgentSalesExport(
+            $agent->id ?? null,
+            $fromDate,
+            $toDate
+        ), \Maatwebsite\Excel\Excel::XLSX);
+        \App\Facades\BotMethods::bot()
+            ->sendDocument($admin->telegram_chat_id,
+                "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>"
+                ,
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+
+        return response()->noContent();
+    }
+
     public function exportFull(Request $request, $agentId = null)
     {
         $validate = $request->validate([
@@ -119,22 +147,6 @@ class AdminController extends Controller
                 "Отчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
                 \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
 
-
-        if (!is_null($agentId)) {
-            $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-            $data = Excel::raw(new AgentSalesExport(
-                $agent->id ?? null,
-                $fromDate,
-                $toDate
-            ), \Maatwebsite\Excel\Excel::XLSX);
-            \App\Facades\BotMethods::bot()
-                ->sendDocument($admin->telegram_chat_id,
-                    "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>"
-                    ,
-                    \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-
-
-        }
 
         if ($admin->role < 3)
             return response()->noContent();

@@ -100,15 +100,23 @@ class SaleController extends Controller
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
             $data["payment_document_name"] = $filename;
-            $data["sale_date"] = Carbon::now();
+            $data["sale_date"] = is_null($date["due_date"] ?? null)? Carbon::now() : Carbon::parse($data["due_date"]);
         }
 
 
         $needAutomaticNaming = $data["need_automatic_naming"] == "true";
+        $isAlreadyDelivered = $data["is_already_delivered"] == "true";
         $receiptIsLost = $data["receipt_is_lost"] == "true";
         unset($data["need_automatic_naming"]);
         unset($data["receipt_is_lost"]);
+        unset($data["is_already_delivered"]);
         unset($data["file"]);
+
+        if ($isAlreadyDelivered){
+            $data["status"] = "completed";
+            $data["sale_date"] = is_null($date["due_date"] ?? null)? Carbon::now() : Carbon::parse($data["due_date"]);
+            $data["actual_delivery_date"] = is_null($date["due_date"] ?? null)? Carbon::now() : Carbon::parse($data["due_date"]);
+        }
 
         $product = Product::query()->where("id", $data["product_id"])->first();
 

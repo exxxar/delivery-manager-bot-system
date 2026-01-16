@@ -200,6 +200,18 @@ const today = new Date().toISOString().split('T')[0]
             -->
 
 
+
+            <template v-if="!isEdit">
+                <div
+                    class="form-check form-switch mb-2">
+                    <input
+                        v-model="form.is_already_delivered"
+                        class="form-check-input" type="checkbox" role="switch" id="is_already_delivered">
+                    <label class="form-check-label" for="is_already_delivered">Товар уже доставлен
+                    </label>
+                </div>
+            </template>
+
             <!-- Кнопка -->
             <button
                 :disabled="spent_time>0"
@@ -310,7 +322,8 @@ export default {
                 payment_type: '0',
                 payment_document_name: null,
                 need_automatic_naming: true,
-                receipt_is_lost: false
+                receipt_is_lost: false,
+                is_already_delivered: false
             },
             agentName: '',
             customerName: '',
