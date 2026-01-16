@@ -93,7 +93,7 @@ class AdminController extends Controller
         $fromDate = Carbon::parse($validate["startDate"]);
         $toDate = Carbon::parse($validate["endDate"]);
 
-        $agent = Agent::query()->where("user_id", $agentId ?? $admin->id)->first();
+        $agent = Agent::query()->where("id", $agentId )->first();
 
         $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
         $data = Excel::raw(new AgentSalesExport(
@@ -121,8 +121,9 @@ class AdminController extends Controller
 
         $admin = $request->botUser;
 
-
-        $agent = Agent::query()->where("user_id", $agentId ?? $admin->id)->first();
+        $agent = is_null($agentId) ?
+            Agent::query()->where("user_id", $admin->id)->first():
+            Agent::query()->where("id",$agentId)->first();
 
         $fromDate = Carbon::parse($validate["startDate"]);
         $toDate = Carbon::parse($validate["endDate"]);
