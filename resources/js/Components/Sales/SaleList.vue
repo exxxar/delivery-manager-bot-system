@@ -18,11 +18,13 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
         <div>
             <a href="javascript:void(0)"
                @click="selectAll"
-               class="small">Выделить все</a>
+               style="font-size:12px;"
+               class="small fw-bold">Выделить все</a>
             <template v-if="selection.length>0">
                 <a href="javascript:void(0)"
                    @click="acceptAll"
-                   class="small text-danger mx-2">Подтвердить заявки ({{ selection.length }})</a>
+                   style="font-size:12px;"
+                   class="small text-danger mx-2 fw-bold">Подтвердить заявки ({{ selection.length }})</a>
             </template>
         </div>
 
