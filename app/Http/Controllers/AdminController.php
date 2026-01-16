@@ -61,8 +61,8 @@ class AdminController extends Controller
         if (is_null($admin))
             throw new \HttpException("Администратор не найден", 404);
 
-        $fromDate = Carbon::parse($validate["startDate"]);
-        $toDate = Carbon::parse($validate["endDate"]);
+        $fromDate = Carbon::parse($validate["startDate"])->startOfDay();
+        $toDate = Carbon::parse($validate["endDate"])->endOfDay();
 
 
         $content =
@@ -90,8 +90,8 @@ class AdminController extends Controller
 
         $admin = $request->botUser;
 
-        $fromDate = Carbon::parse($validate["startDate"]);
-        $toDate = Carbon::parse($validate["endDate"]);
+        $fromDate = Carbon::parse($validate["startDate"])->startOfDay();
+        $toDate = Carbon::parse($validate["endDate"])->endOfDay();
 
         $agent = Agent::query()->where("id", $agentId )->first();
 
@@ -125,8 +125,8 @@ class AdminController extends Controller
             Agent::query()->where("user_id", $admin->id)->first():
             Agent::query()->where("id",$agentId)->first();
 
-        $fromDate = Carbon::parse($validate["startDate"]);
-        $toDate = Carbon::parse($validate["endDate"]);
+        $fromDate = Carbon::parse($validate["startDate"])->startOfDay();
+        $toDate = Carbon::parse($validate["endDate"])->endOfDay();
 
         \App\Facades\BotMethods::bot()
             ->sendMessage($admin->telegram_chat_id,
