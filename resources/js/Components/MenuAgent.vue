@@ -74,12 +74,8 @@ export default {
 
         },
         handleReport(payload) {
-
             const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'))
             modal.hide()
-
-
-            this.reportStore.exportFull(payload)
         }
     }
 }
