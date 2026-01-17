@@ -79,7 +79,7 @@ class BusinessLogic
         $formattedResults = [];
         foreach ($results as $supplier => $monthlyData) {
 
-            $basePercent = ($monthlyData["base_percent"] ?? 0) == 0 ? ($defaultPercent / 100) : $monthlyData["base_percent"];
+            $basePercent = ($monthlyData["base_percent"] ?? 0) == 0 ? ($defaultPercent / 100) : ($monthlyData["base_percent"]/100);
 
             unset($monthlyData["base_percent"]);
             $income = array_values($monthlyData); // извлекаем массив доходов
