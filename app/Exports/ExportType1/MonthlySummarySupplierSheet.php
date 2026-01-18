@@ -18,20 +18,22 @@ class MonthlySummarySupplierSheet implements FromView, WithTitle
     protected $supplier;
     protected $fromDate;
     protected $toDate;
+    protected $agentsIds;
 
-    public function __construct($supplier, $fromDate = null, $toDate = null)
+    public function __construct($supplier, $fromDate = null, $toDate = null, $agentsIds = [])
     {
         $this->title = $supplier->name;
         $this->supplier = $supplier;
         $this->fromDate = $fromDate;
         $this->toDate = $toDate;
+        $this->agentsIds = $agentsIds;
     }
 
     public function view(): View
     {
 
         $result = BusinessLogicFacade::method()
-            ->getMonthlySalesSummaryForAllAgentsByCurrentSupplier($this->supplier, $this->fromDate, $this->toDate);
+            ->getMonthlySalesSummaryForAllAgentsByCurrentSupplier($this->supplier, $this->fromDate, $this->toDate, $this->agentsIds);
 
         return view('exports.export-agent-to-supplier', $result);
     }

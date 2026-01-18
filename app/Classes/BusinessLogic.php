@@ -26,11 +26,25 @@ class BusinessLogic
         return $title;
     }
 
-    public function getGeneralSalesSummaryByAgentsAndSuppliers($defaultPercent = 10): object
+    public function getGeneralSalesSummaryByAgentsAndSuppliers($defaultPercent = 8, $fromDate = null, $toDate = null, $suppliersIds = [], $agentsIds = []): object
     {
 
         // Получаем заказы за интересующий период
-        $orders = Sale::with('supplier')
+        $orders = Sale::with('supplier');
+
+        if (!is_null($fromDate) && !is_null($toDate))
+            $orders = $orders
+                ->whereBetween('sale_date', [$fromDate, $toDate]);
+
+        if (!empty($suppliersIds))
+            $orders = $orders
+                ->whereIn('supplier_id', $suppliersIds);
+
+        if (!empty($agentsIds))
+            $orders = $orders
+                ->whereIn('agent_id', $agentsIds);
+
+        $orders = $orders
             ->where("status", "completed")
             ->whereNotNull('sale_date') // исключаем заказы без даты продажи
             ->orderBy('sale_date')
@@ -70,6 +84,7 @@ class BusinessLogic
             // Обновляем доходы по этому поставщику и месяцу
             $results[$supplier][$month] += $order->total_price;
             $results[$supplier]["base_percent"] = $order->supplier->percent ?? $defaultPercent;
+            //  $results[$supplier]["payment_type"] = $order->payment_type ?? 0;
 
         }
 
@@ -79,7 +94,7 @@ class BusinessLogic
         $formattedResults = [];
         foreach ($results as $supplier => $monthlyData) {
 
-            $basePercent = ($monthlyData["base_percent"] ?? 0) == 0 ? ($defaultPercent / 100) : ($monthlyData["base_percent"]/100);
+            $basePercent = ($monthlyData["base_percent"] ?? 0) == 0 ? ($defaultPercent / 100) : ($monthlyData["base_percent"] / 100);
 
             unset($monthlyData["base_percent"]);
             $income = array_values($monthlyData); // извлекаем массив доходов
@@ -134,14 +149,18 @@ class BusinessLogic
         return $finalResult;
     }
 
-    public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate)
+    public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate, $suppliersIds = [])
     {
 
 
         // Общая сумма продаж
         $totalSales = Sale::query()
-            ->where("agent_id", $agent->id)
-            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->where("agent_id", $agent->id);
+
+        if (!empty($suppliersIds))
+            $totalSales = $totalSales->whereIn("supplier_id", $suppliersIds);
+
+        $totalSales = $totalSales->whereBetween('sale_date', [$startDate, $endDate])
             ->sum('total_price');
 
         // Налог и переводы
@@ -160,8 +179,12 @@ class BusinessLogic
         // --- 1. Продажи по датам и поставщикам ---
         $salesByDateSupplier = Sale::query()
             ->whereBetween('sale_date', [$startDate, $endDate])
-            ->where("agent_id", $agent->id)
-            ->where("status", "completed")
+            ->where("agent_id", $agent->id);
+
+        if (!empty($suppliersIds))
+            $salesByDateSupplier = $salesByDateSupplier->whereIn("supplier_id", $suppliersIds);
+
+        $salesByDateSupplier = $salesByDateSupplier->where("status", "completed")
             ->orderBy('sale_date')
             ->with('supplier')
             ->get()
@@ -178,7 +201,7 @@ class BusinessLogic
 
                 $percent = $sale->supplier->percent ?? 0;
                 $revenueLocal = $sale->total_price * ($percent / 100);
-                $taxAmount = $revenueLocal * ($taxPercent / 100) ;
+                $taxAmount = $revenueLocal * ($taxPercent / 100);
                 $revenueAfterTax = $revenueLocal - $taxAmount;
 
 
@@ -200,7 +223,7 @@ class BusinessLogic
         // --- 2. Доход админов ---
         $adminsRevenue = User::query()
             ->where('is_work', true)
-            ->whereIn("role",[
+            ->whereIn("role", [
                 RoleEnum::SUPERADMIN->value,
                 RoleEnum::ADMIN->value
             ])
@@ -208,9 +231,9 @@ class BusinessLogic
             ->map(function ($user) use ($taxPercent, $revenueTotal, $revenueWithoutTaxTotal, &$mentorAwards) {
 
                 $mentorAward = $mentorAwards[$user->id] ?? 0;
-                $mentorAwardWithoutTax = $mentorAward * (1 - ($taxPercent / 100)) ;
+                $mentorAwardWithoutTax = $mentorAward * (1 - ($taxPercent / 100));
 
-                $incomeTotal = $revenueTotal * ($user->percent / 100) ;
+                $incomeTotal = $revenueTotal * ($user->percent / 100);
                 $incomeAfterTax = $revenueWithoutTaxTotal * ($user->percent / 100) + $mentorAwardWithoutTax;
 
                 return [
@@ -219,7 +242,7 @@ class BusinessLogic
                     'percent' => $user->percent,
                     'mentor_award' => $mentorAwards[$user->id] ?? 0, //снять налог и добавить к сумме
                     'income_with_award_total' => $incomeTotal + $mentorAward,
-                    'income_with_award_after_text' =>$incomeAfterTax + $mentorAwardWithoutTax,
+                    'income_with_award_after_text' => $incomeAfterTax + $mentorAwardWithoutTax,
                     'income_total' => $incomeTotal,
                     'income_after_tax' => $incomeAfterTax,
                 ];
@@ -256,10 +279,13 @@ class BusinessLogic
         ];
     }
 
-    public function getMonthlySalesSummaryForAllAgentsByCurrentSupplier($supplier, $fromDate, $toDate): array
+    public function getMonthlySalesSummaryForAllAgentsByCurrentSupplier($supplier, $fromDate, $toDate, $agentsIds = []): array
     {
 
-        $agents = Agent::all();
+        if (empty($agentsIds))
+            $agents = Agent::all();
+        else
+            $agents = Agent::query()->whereIn("id", $agentsIds)->get();
 
         $daysOfWeek = [
             'Sunday' => 'Воскресенье',

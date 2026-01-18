@@ -15,17 +15,30 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
         <label for="searchInput">Поиск</label>
     </div>
 
+    <template v-if="!forSelect">
+        <div class="d-flex justify-content-between" v-if="(user?.role || 0) >= 3">
+            <a href="javascript:void(0)"
+               @click="selectAll"
+               class="small">Выделить все</a>
+
+            <template v-if="selection.length>0">
+                <span class="small">Выбрано <span class="fw-bold">{{selection.length}}</span> админов</span>
+            </template>
+        </div>
+    </template>
+
     <ul class="list-group">
         <li
 
             v-for="agent in filteredAgents" :key="agent.id"
+            v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1}"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div @click="selectAgent(agent)">
                 <div class="fw-bold">
                     <span v-if="agent.in_learning" class="badge bg-success">
                         <i class="fa-solid fa-user-graduate"></i>
                     </span>
-                    {{ agent.name }}
+                    <span @click="toggleSelection(agent.id)">{{ agent.name }}</span>
                     <span v-if="agent.in_learning&&!forSelect" class="small text-success">
                         <template v-if="agent.mentor">
                            <a
@@ -70,11 +83,32 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
         </li>
     </ul>
 
-    <!-- Пагинация -->
-    <Pagination
-        :pagination="agentStore.pagination"
-        @page-changed="fetchAgentsByUrl"
-    />
+    <template v-if="agentStore.pagination?.total>0">
+
+
+        <div class="form-floating my-2">
+            <select
+                id="itemsPerPage"
+                class="form-select"
+                v-model="size"
+            >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+                <option value="5000">5000</option>
+            </select>
+            <label for="itemsPerPage">Элементов на странице</label>
+        </div>
+        <!-- Пагинация -->
+        <Pagination
+            :pagination="agentStore.pagination"
+            @page-changed="fetchAgentsByUrl"
+        />
+    </template>
+
 
     <!-- Модалка просмотра агента -->
     <div class="modal fade" id="agentInfoModal" tabindex="-1">
@@ -167,18 +201,21 @@ import AgentForm from './AgentForm.vue'
 import {useAgentsStore} from "@/stores/agents";
 import {useAdminsStore} from "@/stores/admins";
 import {useBaseExports} from "@/stores/baseExports";
+import {useUsersStore} from "@/stores/users";
 
 
 export default {
-    name: 'SupplierListWithDropdown',
+    name: 'AgentList',
     components: {AgentForm},
     props: ["forSelect"],
     data() {
         return {
+            size:20,
             search: '',
             selectedAdmin: null,
             agentStore: useAgentsStore(),
-
+            userStore: useUsersStore(),
+            selection: [],
             selectedAgent: null,
             report: {
                 startDate: '',
@@ -186,7 +223,15 @@ export default {
             }
         }
     },
+    watch:{
+      'size':function (){
+          this.fetchAgents()
+      }
+    },
     computed: {
+        user() {
+            return this.userStore.self || null
+        },
         filteredAgents() {
             if (!this.search) return this.agentStore.items || []
             const q = this.search.toLowerCase()
@@ -202,6 +247,26 @@ export default {
 
     },
     methods: {
+        toggleSelection(id) {
+            let index = this.selection.findIndex(i => i === id)
+            if (index === -1)
+                this.selection.push(id)
+            else
+                this.selection.splice(index, 1)
+
+            this.$emit("select", this.selection)
+        },
+        selectAll() {
+            if (this.selection.length === 0)
+                this.agentStore.items.forEach(i => {
+                    if (this.selection.indexOf(i.id) === -1)
+                        this.selection.push(i.id)
+                })
+            else
+                this.selection = []
+
+            this.$emit("select", this.selection)
+        },
         generateReport() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('personalStatisticModal'))
             modal.hide()
@@ -215,7 +280,7 @@ export default {
 
         },
         async fetchAgents(page = 1) {
-            await this.agentStore.fetchAllByPage(page)
+            await this.agentStore.fetchAllByPage(page, this.size)
         },
         async fetchAgentsByUrl(url) {
             await this.agentStore.fetchByUrl(url)

@@ -8,7 +8,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
         <!-- Кнопка вызова модалки -->
         <button
             type="button"
-            class="btn btn-outline-primary p-3" data-bs-toggle="modal" :data-bs-target="'#reportModal'">
+            class="btn btn-outline-primary p-3" @click="openReportModal">
             Сформировать отчет
         </button>
 
@@ -60,7 +60,9 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <ReportGenerator @generate-report="handleReport"></ReportGenerator>
+                    <ReportGenerator
+                        v-if="load"
+                        @generate-report="handleReport"></ReportGenerator>
                 </div>
 
             </div>
@@ -73,12 +75,24 @@ import {useBaseExports} from "@/stores/baseExports";
 export default {
     data() {
         return {
+            load:true,
             reportStore: useBaseExports()
         }
     },
     methods: {
         goTo(name) {
             this.$router.push({name: name})
+        },
+        openReportModal(){
+            this.load = false
+
+            this.$nextTick(()=>{
+                this.load = true
+
+                const modal = new bootstrap.Modal(document.getElementById('reportModal'))
+                modal.show()
+            })
+
         },
         handleReport(payload) {
 

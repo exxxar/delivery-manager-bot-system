@@ -124,10 +124,33 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         </ul>
 
 
-        <Pagination
-            :pagination="suppliersStore.pagination"
-            @page-changed="fetchDataByUrl"
-        />
+
+
+        <template v-if="suppliersStore.pagination?.total>0">
+
+
+            <div class="form-floating my-2">
+                <select
+                    id="itemsPerPage"
+                    class="form-select"
+                    v-model="size"
+                >
+                    <option value="10">10</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                    <option value="5000">5000</option>
+                </select>
+                <label for="itemsPerPage">Элементов на странице</label>
+            </div>
+            <!-- Пагинация -->
+            <Pagination
+                :pagination="suppliersStore.pagination"
+                @page-changed="fetchDataByUrl"
+            />
+        </template>
 
         <!-- Сообщение если список пуст -->
         <div v-if="suppliersStore.items?.length === 0" class="alert alert-info mt-3">
@@ -175,6 +198,7 @@ export default {
             alertStore: useAlertStore(),
             selection: [],
             search: null,
+            size:30,
             showSimpleSupplierForm: false,
             selectedSupplier: null,
             suppliersStore: useSuppliersStore(),
@@ -184,6 +208,9 @@ export default {
         search: function (newVal, oldVal) {
             this.findSupplier()
         },
+        size:function (){
+            this.fetchData()
+        }
     },
     computed: {
         favorites(){
@@ -216,7 +243,7 @@ export default {
                 name: this.search || ''
             })
             this.suppliersStore.setSort('id', 'desc')
-            this.suppliersStore.fetchFiltered(0, 30)
+            this.suppliersStore.fetchFiltered(0, this.size)
         },
         addNewSupplier(supplier) {
             this.$emit("select", supplier)
@@ -224,7 +251,7 @@ export default {
         applyFilters(filters) {
 
             this.field_visible = filters.field_visible
-            let size = filters.size || 30
+            let size = filters.size || this.size || 30
             let page = filters.page || 0
             delete filters.field_visible
             this.suppliersStore.setFilters(filters.filters)
@@ -270,6 +297,8 @@ export default {
                 this.selection.push(id)
             else
                 this.selection.splice(index, 1)
+
+            this.$emit("select", this.selection)
         },
         selectAll() {
             if (this.selection.length === 0)
@@ -279,9 +308,11 @@ export default {
                 })
             else
                 this.selection = []
+
+            this.$emit("select", this.selection)
         },
         async fetchData(page = 0) {
-            await this.suppliersStore.fetchAllByPage(page)
+            await this.suppliersStore.fetchAllByPage(page, this.size)
         },
         async fetchDataByUrl(url) {
             await this.suppliersStore.fetchByUrl(url)

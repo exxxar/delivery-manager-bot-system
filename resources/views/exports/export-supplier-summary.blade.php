@@ -44,7 +44,7 @@
             <tr>
                 <td>{{$index}}</td>
                 <td style="width:300px;">{{ $item['supplier'] }}</td>
-                <td style="width:150px;text-align: center;">{{ $item['base_percent']*100 }}</td>
+                <td style="width:150px;text-align: center;">{{ $item['base_percent'] * 100}}</td>
                 <td style="width:150px;text-align: center;">{{ number_format($item['percentage'],2,'.', '') }}</td>
                 <td style="width:100px;text-align: center;">{{ $item['january'] }}</td>
                 <td style="width:100px;text-align: center;">{{ $item['february'] }}</td>

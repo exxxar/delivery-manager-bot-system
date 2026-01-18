@@ -117,6 +117,10 @@ class AdminController extends Controller
             "endDate" => "required",
         ]);
 
+
+        $supplierIds = $request->selected_suppliers ?? [];
+        $agentIds = $request->selected_agents ?? [];
+
         $resultType = $request->result_type ?? 0;
 
         $admin = $request->botUser;
@@ -136,10 +140,11 @@ class AdminController extends Controller
             );
 
         $content = Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
-            $fromDate ?? Carbon::now()->startOfMonth(),
-            $toDate ?? Carbon::now()->endOfMonth(),
-            $agent->id ?? null,
-            $resultType
+            resultType: $resultType,
+            fromDate: $fromDate ?? Carbon::now()->startOfMonth(),
+            toDate: $toDate ?? Carbon::now()->endOfMonth(),
+            agentsIds:$agentIds,
+            suppliersIds: $supplierIds,
         ), \Maatwebsite\Excel\Excel::XLSX);
 
         $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
@@ -154,12 +159,14 @@ class AdminController extends Controller
 
         \App\Facades\BotMethods::bot()
             ->sendMessage($admin->telegram_chat_id,
-                "Внимание! Готовим отчет по поставщикам, это займет какое-то время!"
+                "Внимание! Готовим отчет по поставщикам, это займет какое-то время (минут 10-15)!"
             );
         $content =
             Excel::raw(new \App\Exports\ExportType1\SummarySuppliersReport(
-                $fromDate ?? Carbon::now()->startOfMonth(),
-                $toDate ?? Carbon::now()->endOfMonth()
+                fromDate: $fromDate ?? Carbon::now()->startOfMonth(),
+                toDate: $toDate ?? Carbon::now()->endOfMonth(),
+                agentsIds: $agentIds,
+                suppliersIds: $supplierIds
             ), \Maatwebsite\Excel\Excel::XLSX);
 
         $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";

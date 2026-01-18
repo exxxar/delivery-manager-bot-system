@@ -39,8 +39,8 @@ export const useAgentsStore = defineStore('agents', {
             }
         },
         // @ts-ignore
-        async fetchAllByPage(page = 1) {
-            const {data} = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
+        async fetchAllByPage(page = 1, size = 20) {
+            const {data} = await makeAxiosFactory(`${path}?page=${page}&size=${size}`, 'GET')
             this.items = data.data
             this.pagination = data
         },

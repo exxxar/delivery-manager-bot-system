@@ -3,6 +3,7 @@
 namespace App\Exports\ExportType4;
 
 use App\Facades\BusinessLogicFacade;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -13,16 +14,26 @@ class ProductsSheet implements FromView, WithTitle
 {
 
     protected $resultType;
+    protected $suppliersIds;
 
-    public function __construct($resultType = 0)
+    public function __construct($resultType = 0, $suppliersIds = [])
     {
         $this->resultType = $resultType;
+        $this->suppliersIds = $suppliersIds;
     }
 
     public function view(): View
     {
-        $products = BusinessLogicFacade::method()
-            ->getProducts();
+        if (empty($this->suppliersIds))
+            $products = Product::query()
+                ->with('category', 'supplier')
+                ->get();
+        else
+            $products = Product::query()
+                ->with('category', 'supplier')
+                ->whereIn("id", $this->suppliersIds)
+                ->get();
+
 
         return view($this->resultType == 0 ?
             'exports.products-v2' :

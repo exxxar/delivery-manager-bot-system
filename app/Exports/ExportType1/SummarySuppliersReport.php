@@ -11,11 +11,15 @@ class SummarySuppliersReport implements WithMultipleSheets
 
     protected $fromDate;
     protected $toDate;
+    protected $suppliersIds;
+    protected $agentsIds;
 
-    public function __construct($fromDate, $toDate)
+    public function __construct($fromDate, $toDate, $agentsIds = [], $suppliersIds = [])
     {
         $this->fromDate = $fromDate;
         $this->toDate = $toDate;
+        $this->agentsIds = $agentsIds;
+        $this->suppliersIds = $suppliersIds;
     }
 
     /**
@@ -26,13 +30,28 @@ class SummarySuppliersReport implements WithMultipleSheets
     public function sheets(): array
     {
         $tmp = [
-            new GeneralSummarySheet(),
+            new GeneralSummarySheet(
+                fromDate: $this->fromDate,
+                toDate:  $this->toDate,
+                agentsIds: $this->agentsIds,
+                suppliersIds:    $this->suppliersIds),
         ];
 
-        $suppliers = Supplier::query()->get();
+
+        if (empty($this->suppliersIds))
+            $suppliers = Supplier::query()
+                ->get();
+        else
+            $suppliers = Supplier::query()
+                ->whereIn("id", $this->suppliersIds)
+                ->get();
 
         foreach ($suppliers as $supplier)
-            $tmp[] = new MonthlySummarySupplierSheet($supplier,  $this->fromDate, $this->toDate);
+            $tmp[] = new MonthlySummarySupplierSheet(
+                supplier: $supplier,
+                fromDate: $this->fromDate,
+                toDate: $this->toDate,
+                agentsIds: $this->agentsIds);
 
         return $tmp;
     }

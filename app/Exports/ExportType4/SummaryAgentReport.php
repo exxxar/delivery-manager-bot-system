@@ -14,14 +14,16 @@ class SummaryAgentReport implements WithMultipleSheets
 
     protected $fromDate;
     protected $toDate;
-    protected $agentId;
+    protected $agentsIds;
+    protected $suppliersIds;
     protected $resultType;
 
-    public function __construct($fromDate = null, $toDate = null, $agentId = null, $resultType)
+    public function __construct($resultType, $fromDate = null, $toDate = null, $agentsIds = [], $suppliersIds = [])
     {
         $this->fromDate = $fromDate;
         $this->toDate = $toDate;
-        $this->agentId = $agentId;
+        $this->agentsIds = $agentsIds;
+        $this->suppliersIds = $suppliersIds;
         $this->resultType = $resultType;
     }
 
@@ -33,22 +35,22 @@ class SummaryAgentReport implements WithMultipleSheets
     public function sheets(): array
     {
         set_time_limit(600);
-        $agents = is_null($this->agentId ?? null) ? Agent::query()->get() : Agent::query()
-            ->where("id", $this->agentId)->get();
+        $agents = empty($this->agentsIds ?? null) ? Agent::query()->get() : Agent::query()
+            ->whereIn("id", $this->agentsIds)->get();
 
         $tmpData = [];
         $tmp = [];
         foreach ($agents as $agent) {
             $data = BusinessLogicFacade::method()
-                ->getAdminsMonthlyByAgentRevenue($agent, $this->fromDate, $this->toDate);
+                ->getAdminsMonthlyByAgentRevenue($agent, $this->fromDate, $this->toDate, $this->suppliersIds);
             $tmpData[] = $data;
             $tmp[] = new RevenueExportSheet($agent->name, $data, $this->resultType);
 
         }
 
 
-        $tmp[] = new SupplierSheet($this->resultType);
-        $tmp[] = new ProductsSheet($this->resultType);
+        $tmp[] = new SupplierSheet($this->resultType, $this->suppliersIds);
+        $tmp[] = new ProductsSheet($this->resultType, $this->suppliersIds);
         $tmp[] = new SummarySheet($tmpData);
 
 

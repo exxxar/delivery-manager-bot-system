@@ -75,8 +75,8 @@ export const useSuppliersStore = defineStore('suppliers', {
             }
         },
         // @ts-ignore
-        async fetchAllByPage(page = 1) {
-            const { data } = await makeAxiosFactory(`${path}?page=${page}`, 'GET')
+        async fetchAllByPage(page = 1, size = 30) {
+            const { data } = await makeAxiosFactory(`${path}?page=${page}&size=${size}`, 'GET')
             this.items = data.data
             this.pagination = data
         },
