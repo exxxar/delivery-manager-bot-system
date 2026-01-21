@@ -90,7 +90,7 @@ class Sale extends Model
     {
 
         $paymentType = ($this->payment_type == 0 ? 'Наличный расчет' : 'Безналичный расчет')
-            .($receiptIsLost ? " (Чек утрачен)":"");
+            . ($receiptIsLost ? " (Чек утрачен)" : "");
 
 
         $status = [
@@ -148,8 +148,18 @@ class Sale extends Model
         $query->when($request->description, fn($q) => $q->where('description', 'like', "%{$request->description}%")
         );
 
-        $query->when($request->status, fn($q) => $q->where('status', $request->status)
-        );
+        if (isset($request->status))
+            $query->where('status', $request->status);
+        else
+            $query->whereIn('status', [
+                "pending",
+                "assigned" ,
+                "delivered",
+                "completed" => "Завершено",
+            ]);
+
+        /*$query->when($request->status, fn($q) => $q->whereIn('status', $request->status)
+        );*/
 
         $query->when($request->payment_type, fn($q) => $q->where('payment_type', $request->payment_type)
         );
@@ -206,6 +216,13 @@ class Sale extends Model
 
         $field = $request->get('sort_field', 'id');
         $direction = $request->get('sort_direction', 'desc');
+
+        // 🔹 Если пользователь НЕ указал поле сортировки — применяем дефолтную
+        if (!$field || $field == "id") {
+            return $query
+                ->orderByRaw("CASE WHEN status = 'completed' THEN 1 ELSE 0 END ASC")
+                ->orderBy('due_date', 'asc');
+        }
 
         if (in_array($field, $allowedFields) && in_array($direction, ['asc', 'desc'])) {
             $query->orderBy($field, $direction);
