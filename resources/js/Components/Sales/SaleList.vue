@@ -363,7 +363,7 @@ export default {
             this.paymentConfirmForm.file = e.target.files[0]
         },
         async fetchData(page = 1) {
-            await this.salesStore.fetchAllByPage(page)
+            await this.salesStore.fetchFiltered()
 
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editSaleModal'))
             if (editModal)
