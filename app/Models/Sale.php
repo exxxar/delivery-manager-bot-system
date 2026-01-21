@@ -221,7 +221,7 @@ class Sale extends Model
         if (!$field || $field == "id") {
             return $query
                 ->orderByRaw("CASE WHEN status = 'completed' THEN 1 ELSE 0 END ASC")
-                ->orderBy('due_date', 'desc');
+                ->orderBy('due_date', 'asc');
         }
 
         if (in_array($field, $allowedFields) && in_array($direction, ['asc', 'desc'])) {
