@@ -155,7 +155,7 @@ class Sale extends Model
                 "pending",
                 "assigned" ,
                 "delivered",
-                "completed" => "Завершено",
+                "completed"
             ]);
 
         /*$query->when($request->status, fn($q) => $q->whereIn('status', $request->status)
