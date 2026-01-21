@@ -115,7 +115,7 @@ class Sale extends Model
             "<b>Клиент:</b> " . ($this->customer?->name ?? '-') . "\n" .
             "<b>Поставщик:</b> " . ($this->supplier?->name ?? '-') . "\n" .
             "<b>Продукт:</b> " . ($this->product?->name ?? '-') . "\n" .
-            "<b>Создан админом:</b> " . ($this->creator?->name ?? '-') . "\n";
+            "<b>Создан админом:</b> " . ($this->creator?->fio_from_telegram ?? '-') . "\n";
     }
 
     public function scopeFilter(Builder $query, $request)

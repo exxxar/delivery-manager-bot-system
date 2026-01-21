@@ -100,7 +100,7 @@ class SaleController extends Controller
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
             $data["payment_document_name"] = $filename;
-            $data["sale_date"] = is_null($date["due_date"] ?? null)? Carbon::now() : Carbon::parse($data["due_date"]);
+            $data["sale_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
         }
 
 
@@ -112,10 +112,10 @@ class SaleController extends Controller
         unset($data["is_already_delivered"]);
         unset($data["file"]);
 
-        if ($isAlreadyDelivered){
+        if ($isAlreadyDelivered) {
             $data["status"] = "completed";
-            $data["sale_date"] = is_null($date["due_date"] ?? null)? Carbon::now() : Carbon::parse($data["due_date"]);
-            $data["actual_delivery_date"] = is_null($date["due_date"] ?? null)? Carbon::now() : Carbon::parse($data["due_date"]);
+            $data["sale_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
+            $data["actual_delivery_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
         }
 
         $product = Product::query()->where("id", $data["product_id"])->first();
@@ -301,6 +301,9 @@ class SaleController extends Controller
     {
         $data = $request->all();
 
+        $needAutomaticNaming = $data["need_automatic_naming"] == "true";
+        unset($data["need_automatic_naming"]);
+
         $botUser = $request->botUser ?? null;
 
         $hasFile = false;
@@ -313,10 +316,23 @@ class SaleController extends Controller
             $hasFile = true;
         }
 
+        if ($needAutomaticNaming) {
 
+            $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
+
+            $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
+            $data["description"] = "Товар " . ($product->name ?? 'товара')
+                . ", поставщик " . ($supplier->name ?? 'поставщика')
+                . ", тип оплаты " . ($data["payment_type"] == 0 ? "наличными" : "безналичный расчет")
+                . ", кол-во " . ($data["quantity"] ?? 0) . "ед."
+                . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
+        }
         $sale = Sale::findOrFail($id);
 
+
         $data["due_date"] = Carbon::parse($data["due_date"] ?? $sale->due_date ?? Carbon::now());
+        $data["mentor_award"] = 0;
+        $data["payment_type"] = isset($data["payment_type"]) ? ($data["payment_type"] ?? 0) : $sale->payment_type;
 
         $priceIsChange = $sale->total_price != ($data["total_price"] ?? 0);
 
@@ -366,12 +382,26 @@ class SaleController extends Controller
             );
         }
 
+        $sale->load(["product", "agent", "customer", "supplier", "creator", "category"]);
         return response()->json($sale);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        Sale::destroy($id);
+        $sale = Sale::query()->find($id);
+
+        $botUser = $request->botUser;
+
+        if (is_null($sale))
+            return response()->json(null, 404);
+
+        $saleInfo = $sale->toTelegramText();
+
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#удаление_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
+        );
+
         return response()->json(null, 204);
     }
 

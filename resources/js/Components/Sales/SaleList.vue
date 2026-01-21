@@ -135,9 +135,7 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li
-                            v-if="(user?.role || 0) >= 3"
-                        ><a class="dropdown-item text-danger" href="javascript:void(0)"
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
                             @click.prevent="confirmDelete(sale)">Удалить</a></li>
                         <li><a class="dropdown-item text-danger" href="javascript:void(0)"
                                @click.prevent="confirmCancelDeal(sale)">Отменить

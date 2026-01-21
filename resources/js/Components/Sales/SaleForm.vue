@@ -9,7 +9,6 @@ const today = new Date().toISOString().split('T')[0]
         <template v-if="tab==='main'">
 
             <div
-                v-if="!isEdit"
                 class="form-check form-switch mb-2">
                 <input
                     v-model="form.need_automatic_naming"
@@ -46,7 +45,8 @@ const today = new Date().toISOString().split('T')[0]
                         readonly>
                     <label for="supplier">Поставщик</label>
                 </div>
-                <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='supplier'">Выбрать
+                <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='supplier'">
+                    Выбрать
                 </button>
             </div>
 
@@ -61,7 +61,8 @@ const today = new Date().toISOString().split('T')[0]
                 </div>
                 <button type="button"
                         :disabled="form.supplier_id == null"
-                        class="btn btn-outline-light text-primary find-btn" @click="tab='product'">Выбрать</button>
+                        class="btn btn-outline-light text-primary find-btn" @click="tab='product'">Выбрать
+                </button>
             </div>
 
             <template v-if="form.supplier_id && form.product_id">
@@ -180,7 +181,8 @@ const today = new Date().toISOString().split('T')[0]
                                readonly>
                         <label for="agent">Администратор</label>
                     </div>
-                    <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='agent'">Выбрать
+                    <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='agent'">
+                        Выбрать
                     </button>
                 </div>
 
@@ -198,7 +200,6 @@ const today = new Date().toISOString().split('T')[0]
                             </button>
                         </div>
             -->
-
 
 
             <template v-if="!isEdit">
@@ -282,9 +283,9 @@ export default {
         }
     },
     watch: {
-
         'form.quantity': function (newVal, oldVal) {
-            this.form.total_price = (this.product.price * this.form.quantity).toFixed(2)
+            if (this.form.total_price === 0)
+                this.form.total_price = (this.product.price * this.form.quantity).toFixed(2)
         },
     },
     computed: {
@@ -335,6 +336,11 @@ export default {
     created() {
         if (this.initialData) {
             this.form = {...this.initialData}
+            this.form.need_automatic_naming = true
+
+            console.log("data=>", this.initialData)
+            this.form.payment_type = "" + this.form.payment_type
+
             this.isEdit = true
             this.agentName = this.initialData.agent?.name || ''
             this.customerName = this.initialData.customer?.name || ''
@@ -364,13 +370,12 @@ export default {
             this.tab = 'main'
         },
         selectSupplier(supplier) {
-            const oldSupplierId =  this.form.supplier_id
+            const oldSupplierId = this.form.supplier_id
             this.form.supplier_id = null
             this.supplierName = null
             this.product_filters.supplier_id = null
 
-            if (oldSupplierId !== supplier.id)
-            {
+            if (oldSupplierId !== supplier.id) {
                 this.form.product_id = null
                 this.product = null
             }

@@ -179,7 +179,7 @@ export const useSalesStore = defineStore('sales', {
             if (file)
                 formData.append('file', file)
 
-            const {data} = await makeAxiosFactory(`${path}/${id}`, 'PUT', formData, {
+            const {data} = await makeAxiosFactory(`${path}/${id}`, 'POST', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
