@@ -8,7 +8,7 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
         <BackBtn/>
 
         <h4 class="mb-3">Список доставок</h4>
-        <SaleList></SaleList>
+        <SaleList v-if="!loading"></SaleList>
 
         <nav
             class="navbar bg-transparent position-fixed bottom-0 start-0 w-100">
@@ -41,22 +41,27 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
 </template>
 <script>
 export default {
-    data(){
-      return {
-          loading:false,
-      }
+    data() {
+        return {
+            loading: false,
+        }
     },
-    methods:{
+    methods: {
         addSale() {
             this.loading = true
-            this.$nextTick(()=>{
+            this.$nextTick(() => {
                 this.loading = false
                 new bootstrap.Modal(document.getElementById('newSaleModal')).show()
             })
 
         },
         async fetchData() {
-            bootstrap.Modal.getInstance(document.getElementById('newSaleModal')).hide()
+            this.loading = true
+            this.$nextTick(() => {
+                this.loading = false
+                bootstrap.Modal.getInstance(document.getElementById('newSaleModal')).hide()
+            })
+
         },
     }
 }
