@@ -56,20 +56,11 @@ export default {
     data() {
         return {
             // локальная копия, чтобы не мутировать проп напрямую
-            localForm: { ...this.modelValue }
+            localForm: {...this.modelValue}
         };
     },
 
     watch: {
-        // если родитель обновил данные — обновляем локальные
-        modelValue: {
-            deep: true,
-            handler(newVal) {
-                this.localForm = { ...newVal };
-            }
-        },
-
-        // если локальные данные изменились — отправляем наверх
         localForm: {
             deep: true,
             handler(newVal) {
@@ -78,6 +69,9 @@ export default {
         }
     },
 
+    mounted() {
+        this.localForm = {...this.modelValue};
+    },
     methods: {
         onSubmit() {
             this.$emit("callback", this.localForm);
