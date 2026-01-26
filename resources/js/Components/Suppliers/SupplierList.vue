@@ -71,7 +71,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
             >
                 <!-- Левая часть -->
                 <div class="flex-grow-1 me-3 text-break" @click="selectSupplier(supplier)">
-                    <div class="fw-bold" @click="toggleSelection(supplier.id)">
+                    <div class="fw-bold" @click="toggleSelection(supplier)">
                     <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
                             supplier.id
                         }}</span>{{ supplier.name }}
@@ -291,7 +291,15 @@ export default {
             })
 
         },
-        toggleSelection(id) {
+        toggleSelection(supplier) {
+
+            if (this.forSelect)
+            {
+                this.selectSupplier(supplier)
+                return
+            }
+
+            let id = supplier.id
             let index = this.selection.findIndex(i => i === id)
             if (index === -1)
                 this.selection.push(id)
