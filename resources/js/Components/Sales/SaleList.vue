@@ -295,7 +295,7 @@ export default {
                 receipt_is_lost: false,
             },
             dealForm: {
-                sale_date: new Date().toISOString().split('T')[0],
+                sale_date: null,
                 quantity: 0,
                 total_price: 0
             }

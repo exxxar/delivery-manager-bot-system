@@ -338,7 +338,6 @@ export default {
             this.form = {...this.initialData}
             this.form.need_automatic_naming = true
 
-            console.log("data=>", this.initialData)
             this.form.payment_type = "" + this.form.payment_type
 
             this.isEdit = true
