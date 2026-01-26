@@ -225,6 +225,73 @@ class SaleController extends Controller
         return response()->noContent();
     }
 
+    public function confirmDeal(Request $request) {
+
+        $request->validate([
+            "id"=>"required",
+            "quantity"=>"required",
+            "sale_date"=>"required",
+            "status"=>"required",
+            "total_price"=>"required",
+        ]);
+
+        $botUser = $request->botUser ?? null;
+
+        $sale = Sale::findOrFail($request->id);
+
+        $priceIsChange = $sale->total_price != $request->total_price;
+
+        if ($priceIsChange) {
+
+            $supplier = Supplier::query()->where("id", $sale->supplier_id)->first();
+            $product = Supplier::query()->where("id", $sale->product_id)->first();
+
+            if (!is_null($product) && !is_null($supplier))
+            {
+                $sale->title = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
+                $sale->description = "Товар " . ($product->name ?? 'товара')
+                    . ", поставщик " . ($supplier->name ?? 'поставщика')
+                    . ", тип оплаты " . ($sale->payment_type == 0 ? "наличными" : "безналичный расчет")
+                    . ", кол-во " . ($request->quantity ?? 0) . "ед."
+                    . ", цена " . ($request->total_price ?? 0) . "руб. ";
+            }
+
+        }
+
+        $sale->status = $request->status ?? 'completed';
+        $sale->sale_date = Carbon::parse($request->sale_date);
+        $sale->save();
+
+        if (!is_null($sale->agent_id ?? null)) {
+            $agent = Agent::query()
+                ->with(["user", "mentor"])
+                ->where("id", $sale->agent_id)
+                ->first();
+
+            if ($agent->in_learning) {
+                $mentorPercent = $agent->mentor->mentor_percent ?? 0;
+                $sale->mentor_award = ($sale->total_price ?? 0) * ($mentorPercent / 100);
+                $sale->save();
+
+                if ($priceIsChange) {
+                    \App\Facades\BotMethods::bot()->sendMessage(
+                        $agent->mentor->telegram_chat_id,
+                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+                    );
+                    sleep(1);
+                }
+            }
+        }
+
+        $saleInfo = $sale->toTelegramText();
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
+        );
+
+        return response()->json($sale);
+    }
+
     public function confirmPayment(Request $request)
     {
         $request->validate([

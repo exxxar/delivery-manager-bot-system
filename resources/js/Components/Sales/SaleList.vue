@@ -3,7 +3,7 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
 import Pagination from "@/Components/Pagination.vue";
 import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 import TaskCard from "@/Components/Sales/TaskCard.vue";
-
+import DealForm from "@/Components/Sales/Forms/DealForm.vue";
 </script>
 <template>
 
@@ -198,24 +198,9 @@ import TaskCard from "@/Components/Sales/TaskCard.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="confirmDeal">
-                        <div class="form-floating mb-2">
-                            <input v-model="dealForm.sale_date" type="date" class="form-control" id="sale_date"
-                                   required>
-                            <label for="sale_date">Дата</label>
-                        </div>
-                        <div class="form-floating mb-2">
-                            <input v-model="dealForm.quantity" type="number" class="form-control" id="quantity"
-                                   placeholder="Количество" required>
-                            <label for="quantity">Количество</label>
-                        </div>
-                        <div class="form-floating mb-2">
-                            <input v-model="dealForm.total_price" type="number" step="0.01" class="form-control"
-                                   id="total_price" placeholder="Сумма" required>
-                            <label for="total_price">Сумма сделки</label>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
-                    </form>
+                    <DealForm
+                        v-if="selectedSale"
+                        v-model="dealForm" @submit="confirmDeal" />
                 </div>
             </div>
         </div>

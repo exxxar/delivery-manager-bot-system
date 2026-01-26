@@ -221,7 +221,7 @@ export const useSalesStore = defineStore('sales', {
             try {
 
                 // @ts-ignore
-                const {data} = await makeAxiosFactory(`${path}/${sale.id}`, 'PUT', {
+                const {data} = await makeAxiosFactory(`${path}/confirm-deal`, 'POST', {
                     ...sale,
                     status: 'completed',
                 })
