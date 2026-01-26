@@ -120,6 +120,9 @@ class SaleController extends Controller
 
         $product = Product::query()->where("id", $data["product_id"])->first();
 
+        if ($data["quantity"] == 0)
+            $data["quantity"] = 1;
+
         $data["product_category_id"] = $product->product_category_id ?? null;
         $data["created_by_id"] = $botUser->id ?? null;
 
@@ -225,14 +228,14 @@ class SaleController extends Controller
         return response()->noContent();
     }
 
-    public function confirmDeal(Request $request) {
+    public function confirmDeal(Request $request)
+    {
 
         $request->validate([
-            "id"=>"required",
-            "quantity"=>"required",
-            "sale_date"=>"required",
-            "status"=>"required",
-            "total_price"=>"required",
+            "id" => "required",
+            "sale_date" => "required",
+            "status" => "required",
+            "total_price" => "required",
         ]);
 
         $botUser = $request->botUser ?? null;
@@ -241,18 +244,25 @@ class SaleController extends Controller
 
         $priceIsChange = $sale->total_price != $request->total_price;
 
+        $quantity = $request->quantity ?? 1;
+
+        if ($quantity == 0) {
+            $quantity = 1;
+            $sale->quantity = $quantity;
+        }
+
+
         if ($priceIsChange) {
 
             $supplier = Supplier::query()->where("id", $sale->supplier_id)->first();
             $product = Supplier::query()->where("id", $sale->product_id)->first();
 
-            if (!is_null($product) && !is_null($supplier))
-            {
+            if (!is_null($product) && !is_null($supplier)) {
                 $sale->title = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
                 $sale->description = "Товар " . ($product->name ?? 'товара')
                     . ", поставщик " . ($supplier->name ?? 'поставщика')
                     . ", тип оплаты " . ($sale->payment_type == 0 ? "наличными" : "безналичный расчет")
-                    . ", кол-во " . ($request->quantity ?? 0) . "ед."
+                    . ", кол-во $quantity ед."
                     . ", цена " . ($request->total_price ?? 0) . "руб. ";
             }
 
@@ -372,6 +382,9 @@ class SaleController extends Controller
         unset($data["need_automatic_naming"]);
 
         $botUser = $request->botUser ?? null;
+
+        if ($data["quantity"] == 0)
+            $data["quantity"] = 1;
 
         $hasFile = false;
         if ($request->hasFile('file')) {
