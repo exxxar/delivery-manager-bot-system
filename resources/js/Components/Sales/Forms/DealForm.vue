@@ -80,7 +80,7 @@ export default {
 
     methods: {
         onSubmit() {
-            this.$emit("submit", this.localForm);
+            this.$emit("callback", this.localForm);
         }
     }
 };

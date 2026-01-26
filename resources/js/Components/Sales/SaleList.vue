@@ -200,7 +200,7 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
                 <div class="modal-body">
                     <DealForm
                         v-if="selectedSale"
-                        v-model="dealForm" @submit="confirmDeal" />
+                        v-model="dealForm" @callback="confirmDeal" />
                 </div>
             </div>
         </div>
