@@ -143,6 +143,11 @@ class SaleController extends Controller
 
         $sale = Sale::query()->create($data);
 
+        if (is_null($sale->agent_id)) {
+            $sale->agent_id = $botUser->agent->id ?? null;
+            $sale->save();
+        }
+
         $saleInfo = $sale->toTelegramText($receiptIsLost);
 
         $userLink = $botUser->getUserTelegramLink();
@@ -302,6 +307,110 @@ class SaleController extends Controller
         return response()->json($sale);
     }
 
+    public function confirmDealPayment(Request $request)
+    {
+        $request->validate([
+            "id" => "required",
+            "payment_type" => "required"
+        ]);
+
+        $botUser = $request->botUser ?? null;
+
+        $receiptIsLost = ($request->receipt_is_lost ?? false) == "true";
+        $sameSaleDeliveryDate = ($request->same_sale_delivery_date ?? false) == "true";
+
+        $sale = Sale::findOrFail($request->id);
+
+        $priceIsChange = $sale->total_price != $request->total_price;
+
+        $quantity = $request->quantity ?? 1;
+
+        if ($quantity == 0) {
+            $quantity = 1;
+            $sale->quantity = $quantity;
+        }
+
+        if (is_null($sale->agent_id)) {
+            $sale->agent_id = $botUser->agent->id ?? null;
+        }
+
+
+        if ($priceIsChange) {
+
+            $supplier = Supplier::query()->where("id", $sale->supplier_id)->first();
+            $product = Supplier::query()->where("id", $sale->product_id)->first();
+
+            if (!is_null($product) && !is_null($supplier)) {
+                $sale->title = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
+                $sale->description = "Товар " . ($product->name ?? 'товара')
+                    . ", поставщик " . ($supplier->name ?? 'поставщика')
+                    . ", тип оплаты " . ($sale->payment_type == 0 ? "наличными" : "безналичный расчет")
+                    . ", кол-во $quantity ед."
+                    . ", цена " . ($request->total_price ?? 0) . "руб. ";
+            }
+
+        }
+
+        $hasFile = false;
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('uploads', $filename);
+            $sale->payment_document_name = $filename;
+            $hasFile = true;
+        }
+
+        $sale->status = $request->status ?? 'completed';
+        $sale->payment_type = $request->payment_type ?? 0;
+        $sale->sale_date = Carbon::parse($request->sale_date);
+
+        $sale->actual_delivery_date = $sameSaleDeliveryDate ?
+            Carbon::parse($request->sale_date) :
+            Carbon::parse($request->actual_delivery_date);
+
+        $sale->save();
+
+        if (!is_null($sale->agent_id ?? null)) {
+            $agent = Agent::query()
+                ->with(["user", "mentor"])
+                ->where("id", $sale->agent_id)
+                ->first();
+
+            if ($agent->in_learning) {
+                $mentorPercent = $agent->mentor->mentor_percent ?? 0;
+                $sale->mentor_award = ($sale->total_price ?? 0) * ($mentorPercent / 100);
+                $sale->save();
+
+                if ($priceIsChange) {
+                    \App\Facades\BotMethods::bot()->sendMessage(
+                        $agent->mentor->telegram_chat_id,
+                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+                    );
+                    sleep(1);
+                }
+            }
+        }
+
+        $saleInfo = $sale->toTelegramText($receiptIsLost);
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
+        );
+
+        if ($hasFile) {
+            $slash = env("APP_DEBUG") ? "\\" : "/";
+            \App\Facades\BotMethods::bot()->sendDocument(
+                env("TELEGRAM_ADMIN_CHANNEL"),
+                "Чек к сделке №" . ($sale->id ?? '-'),
+                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
+                    $sale->payment_document_name
+                )
+            );
+
+        }
+        return response()->json($sale);
+    }
+
     public function confirmPayment(Request $request)
     {
         $request->validate([
@@ -420,6 +529,10 @@ class SaleController extends Controller
 
         if ($product->id != $sale->product_id) {
             $data["product_category_id"] = $product->product_category_id ?? null;
+        }
+
+        if (is_null($sale->agent_id)) {
+            $sale->agent_id = $botUser->agent->id ?? null;
         }
 
         $sale->update($data);

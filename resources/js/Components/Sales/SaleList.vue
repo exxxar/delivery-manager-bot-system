@@ -114,14 +114,13 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
                         </li>
                         <li v-if="sale.status!=='completed'"><a class="dropdown-item text-success"
                                                                 href="javascript:void(0)"
-
                                                                 @click.prevent="openConfirmDeal(sale)">Подтвердить
-                            доставку</a></li>
-                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
+                            оплату и доставка</a></li>
+<!--                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
                                                                              href="javascript:void(0)"
 
                                                                              @click.prevent="openConfirmPayment(sale)">Подтвердить
-                            оплату</a></li>
+                            оплату</a></li>-->
 
                         <template v-if="sale.payment_document_name">
                             <li>
@@ -207,55 +206,6 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
     </div>
 
 
-    <!-- Модалка подтверждения сделки -->
-    <div class="modal fade" id="paymentConfirmForm" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Подтверждение оплаты</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form @submit.prevent="confirmPayment">
-                        <div class="form-floating mb-2">
-                            <select class="form-select"
-                                    v-model="paymentConfirmForm.payment_type"
-                                    id="payment-type" aria-label="Floating label select example">
-                                <option :value="'0'">Наличный расчет</option>
-                                <option :value="'1'">Безналичный расчет</option>
-                            </select>
-                            <label for="payment-type">Тип оплаты</label>
-                        </div>
-
-                        <template v-if="paymentConfirmForm.payment_type==='1'">
-                            <h6>Фотография чека</h6>
-                            <div class="form-floating mb-2">
-
-                                <input
-                                    type="file"
-                                    class="form-control"
-                                    @change="onFileChange"
-                                    accept=".jpg,.png,.pdf"
-                                    :required="!paymentConfirmForm.receipt_is_lost"
-                                />
-                                <label for="payment-type">Прикрепить</label>
-                            </div>
-                            <div
-                                class="form-check form-switch mb-2">
-                                <input
-                                    v-model="paymentConfirmForm.receipt_is_lost"
-                                    class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
-                                <label class="form-check-label" for="need_automatic_naming">Чек был утрачен
-                                </label>
-                            </div>
-
-                        </template>
-                        <button type="submit" class="btn btn-success w-100 p-3">Подтвердить</button>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
 </template>
 
 <script>
@@ -289,15 +239,15 @@ export default {
                 rejected: "Отклонено",
                 delivered: "Доставляется"
             },
-            paymentConfirmForm: {
+            dealForm: {
+                sale_date: null,
+                actual_delivery_date: null,
+                quantity: 0,
+                total_price: 0,
                 file: null,
                 payment_type: 0,
                 receipt_is_lost: false,
-            },
-            dealForm: {
-                sale_date: null,
-                quantity: 0,
-                total_price: 0
+                same_sale_delivery_date: true,
             }
         }
     },
@@ -344,9 +294,7 @@ export default {
             else
                 this.selection.splice(index, 1)
         },
-        onFileChange(e) {
-            this.paymentConfirmForm.file = e.target.files[0]
-        },
+
         async fetchData(page = 1) {
             await this.salesStore.fetchAllByPage(page)
 
@@ -438,15 +386,15 @@ export default {
 
 
         },
-        async confirmPayment() {
+       /* async confirmPayment() {
             this.paymentConfirmForm.id = this.selectedSale.id
             await this.salesStore.confirmPayment(this.paymentConfirmForm)
             bootstrap.Modal.getInstance(document.getElementById('paymentConfirmForm')).hide()
 
-        },
+        },*/
         async confirmDeal() {
             this.dealForm.id = this.selectedSale.id
-            await this.salesStore.confirmDeal(this.dealForm)
+            await this.salesStore.confirmDealAndPayment(this.dealForm)
             bootstrap.Modal.getInstance(document.getElementById('confirmDealModal')).hide()
 
         },

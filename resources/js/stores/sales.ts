@@ -189,6 +189,37 @@ export const useSalesStore = defineStore('sales', {
             if (idx !== -1) this.items[idx] = data
             return data as Sale
         },
+
+
+        async confirmDealAndPayment(sale: object) {
+            try {
+                const formData = new FormData()
+                formData.append("id", sale.id || null)
+                formData.append("payment_type", sale.payment_type || 0)
+                formData.append("sale_date", sale.sale_date || '')
+                formData.append("actual_delivery_date", sale.actual_delivery_date || '')
+                formData.append("quantity", sale.quantity || 1)
+                formData.append("total_price", sale.total_price)
+                formData.append("receipt_is_lost", sale.receipt_is_lost || false)
+                formData.append("same_sale_delivery_date", sale.same_sale_delivery_date || false)
+                formData.append("status", "completed")
+                if (sale.file)
+                    formData.append('file', sale.file)
+
+                const {data} = await makeAxiosFactory(`${path}/confirm-deal-payment`, 'POST', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
+
+                await this.fetchAllByPage(this.pagination?.current_page || 1)
+                return data
+
+            } catch (error: any) {
+                throw error
+            }
+        },
+
         async confirmPayment(sale: object) {
             try {
                 const formData = new FormData()

@@ -116,11 +116,6 @@ Route::get("/upload-suppliers", function () {
     });
 });
 
-
-
-
-
-
 Route::any('/register-webhook', [\App\Http\Controllers\TelegramController::class, "registerWebhooks"]);
 Route::post('/webhook', [\App\Http\Controllers\TelegramController::class, "handler"]);
 Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePage"]);
@@ -305,6 +300,7 @@ Route::prefix("bot-api")
                 Route::post('/accept-all', [SaleController::class, 'acceptAll'])
                     ->middleware(["tg.role:admin"]);
 
+                Route::post('/confirm-deal-payment', [SaleController::class, 'confirmDealPayment']);
                 Route::post('/confirm-payment', [SaleController::class, 'confirmPayment']);
                 Route::post('/confirm-deal', [SaleController::class, 'confirmDeal']);
                 Route::get('/self-sales', [AgentController::class, 'selfSales']);
