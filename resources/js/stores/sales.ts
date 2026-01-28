@@ -1,6 +1,6 @@
 import {defineStore} from 'pinia'
 import {makeAxiosFactory} from './utillites/makeAxiosFactory'
-import axios from "axios/index";
+import axios, {AxiosError} from "axios";
 
 export interface Sale {
     id: number
@@ -27,6 +27,7 @@ export const useSalesStore = defineStore('sales', {
         items: [] as Sale[],
         loading: false,
         filters: null,
+        progress: 0,
         error: null as string | null,
         sort: {field: 'id', direction: 'desc'} as { field: string; direction: 'asc' | 'desc' }
     }),
@@ -202,14 +203,28 @@ export const useSalesStore = defineStore('sales', {
                 formData.append("total_price", sale.total_price)
                 formData.append("receipt_is_lost", sale.receipt_is_lost || false)
                 formData.append("same_sale_delivery_date", sale.same_sale_delivery_date || false)
+                formData.append("additional_comment", sale.additional_comment || '')
+                formData.append("need_additional_comment", sale.need_additional_comment || false)
                 formData.append("status", "completed")
-                if (sale.file)
-                    formData.append('file', sale.file)
+
+                this.progress = 0
+
+                if ((sale.files || []).length > 0)
+                    sale.files.forEach((file, index) => {
+                        formData.append(`files[${index}]`, file)
+                    })
+
 
                 const {data} = await makeAxiosFactory(`${path}/confirm-deal-payment`, 'POST', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
-                    }
+                    },
+                    onUploadProgress: (e) => {
+                        if (e.total ) {
+                            this.progress =
+                                Math.round((e.loaded * 100) / (e.total ));
+                        }
+                    },
                 })
 
                 await this.fetchAllByPage(this.pagination?.current_page || 1)

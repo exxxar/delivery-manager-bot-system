@@ -13,7 +13,7 @@ import BackBtn from "@/Components/BackBtn.vue";
             <button
                 type="button"
                 @click="goTo('UserPage')"
-                class="btn btn-primary p-3 w-100">Добавить администратора
+                class="btn btn-primary p-3 w-100">Добавить старшего администратора
             </button>
         </nav>
     </div>

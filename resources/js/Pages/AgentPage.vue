@@ -12,17 +12,19 @@ import BackBtn from "@/Components/BackBtn.vue";
         <nav class="navbar fixed-bottom p-3">
             <button
                 type="button"
-                data-bs-toggle="modal"
-                data-bs-target="#createCategoryModal"
-                class="btn w-100 p-3 btn-primary"
-            >
-                Добавить администратора
+                @click="goTo('UserPage')"
+                class="btn btn-primary p-3 w-100">Добавить администратора
             </button>
         </nav>
     </div>
 </template>
 <script>
 export default {
+    methods: {
+        goTo(name) {
+            this.$router.push({name: name})
 
+        },
+    }
 }
 </script>

@@ -244,10 +244,12 @@ export default {
                 actual_delivery_date: null,
                 quantity: 0,
                 total_price: 0,
-                file: null,
+                files: [] ,
+                additional_comment: null,
                 payment_type: 0,
                 receipt_is_lost: false,
                 same_sale_delivery_date: true,
+                need_additional_comment: false,
             }
         }
     },
@@ -376,6 +378,7 @@ export default {
         },
         openConfirmDeal(sale) {
             this.selectedSale = null
+            this.salesStore.progress = 0
             this.$nextTick(() => {
                 this.selectedSale = sale
                 this.dealForm.quantity = sale.quantity
@@ -394,7 +397,15 @@ export default {
         },*/
         async confirmDeal() {
             this.dealForm.id = this.selectedSale.id
-            await this.salesStore.confirmDealAndPayment(this.dealForm)
+            await this.salesStore.confirmDealAndPayment(this.dealForm).then(()=>{
+                this.dealForm.files = []
+                this.dealForm.actual_delivery_date = ''
+                this.dealForm.quantity = 1
+                this.dealForm.total_price = 0
+                this.dealForm.same_sale_delivery_date = true
+                this.dealForm.need_additional_comment = false
+                this.dealForm.additional_comment = ''
+            })
             bootstrap.Modal.getInstance(document.getElementById('confirmDealModal')).hide()
 
         },

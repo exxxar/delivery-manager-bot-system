@@ -16,8 +16,8 @@
             class="form-check form-switch mb-2">
             <input
                 v-model="localForm.same_sale_delivery_date"
-                class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
-            <label class="form-check-label" for="need_automatic_naming">Дата доставки и оплаты совпадает
+                class="form-check-input" type="checkbox" role="switch" id="same_sale_delivery_date">
+            <label class="form-check-label" for="same_sale_delivery_date">Дата доставки и оплаты совпадает
             </label>
         </div>
 
@@ -59,7 +59,6 @@
             <label for="total_price">Сумма сделки</label>
         </div>
 
-
             <div class="form-floating mb-2">
                 <select class="form-select"
                         v-model="localForm.payment_type"
@@ -72,28 +71,83 @@
 
             <template v-if="localForm.payment_type==='1'">
                 <h6>Фотография чека</h6>
-                <div class="form-floating mb-2">
 
+                <div class="form-floating mb-2">
                     <input
                         type="file"
+                        multiple
                         class="form-control"
                         @change="onFileChange"
                         accept=".jpg,.png,.pdf"
                         :required="!localForm.receipt_is_lost"
                     />
-                    <label for="payment-type">Прикрепить</label>
+                    <label>Прикрепить</label>
                 </div>
-                <div
-                    class="form-check form-switch mb-2">
+
+                <!-- Список выбранных файлов -->
+                <ul
+                    v-if="localForm.files.length"
+                    class="list-group mb-2"
+                >
+                    <li
+                        v-for="(file, index) in localForm.files"
+                        :key="index"
+                        class="list-group-item d-flex justify-content-between align-items-center"
+                    >
+                        <span class="text-break small lh-1">{{ file.name }}</span>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            @click="removeFile(index)"
+                        >
+                            ✕
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="form-check form-switch mb-2">
                     <input
                         v-model="localForm.receipt_is_lost"
-                        class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
-                    <label class="form-check-label" for="need_automatic_naming">Чек был утрачен
+                        class="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="need_automatic_naming"
+                    >
+                    <label class="form-check-label" for="need_automatic_naming">
+                        Чек был утрачен
                     </label>
                 </div>
 
+
             </template>
 
+        <div
+            class="form-check form-switch mb-2">
+            <input
+                v-model="localForm.need_additional_comment"
+                class="form-check-input" type="checkbox" role="switch" id="need_add_comment">
+            <label class="form-check-label" for="need_add_comment">Дополнительный комментарий к сделке
+            </label>
+        </div>
+
+        <template v-if="localForm.need_additional_comment">
+            <div class="form-floating mb-2">
+                <textarea v-model="localForm.additional_comment" class="form-control" id="additional_comment" placeholder="Дополнительный комментарий"
+                          style="height: 120px" required></textarea>
+                <label for="additional_comment">Комментарий</label>
+            </div>
+        </template>
+
+        <template v-if="salesStore.progress > 0">
+            <div
+                class="w-100 mb-2"
+                style=" background: #eee; height: 10px; border-radius: 4px;">
+                <div
+                    :style="{ width: salesStore.progress + '%', background: '#42b883', height: '10px', borderRadius: '4px' }"
+                ></div>
+            </div>
+            <p class="fst-italic">Уже загружено <span class="fw-bold">{{ salesStore.progress }}%</span></p>
+        </template>
 
         <button type="submit" class="btn btn-success w-100 p-3">
             Подтвердить
@@ -102,6 +156,8 @@
 </template>
 
 <script>
+import {useSalesStore} from "@/stores/sales";
+
 export default {
     name: "DealForm",
 
@@ -113,6 +169,7 @@ export default {
     },
     data() {
         return {
+            salesStore: useSalesStore(),
             // локальная копия, чтобы не мутировать проп напрямую
             localForm: {...this.modelValue}
         };
@@ -132,10 +189,15 @@ export default {
     },
     methods: {
         onFileChange(e) {
-            this.localForm.file = e.target.files[0]
+            const files = e.target.files
+
+            this.localForm.files = Array.from(files)
         },
         onSubmit() {
             this.$emit("callback", this.localForm);
+        },
+        removeFile(index) {
+            this.localForm.files.splice(index, 1)
         }
     }
 };
