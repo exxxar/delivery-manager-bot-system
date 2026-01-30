@@ -114,21 +114,6 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
     </div>
 
 
-    <!-- Модалка редактирования -->
-    <div class="modal fade" id="editUserModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Редактирование пользователя</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <UserForm v-if="selectedUser" :initialData="selectedUser" @saved="fetchUsers"/>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
     <!-- Модалка редактирования -->
     <div class="modal fade" id="roleSwitcherUserModal" tabindex="-1">
@@ -235,12 +220,15 @@ export default {
 
         },
         openEdit(user) {
-            this.selectedUser = user
-            const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewUserModal'))
-            if (viewModal)
-                viewModal.hide()
-            new bootstrap.Modal(document.getElementById('editUserModal')).show()
+            this.selectedUser = null
+            this.$nextTick(()=>{
+                this.selectedUser = user
+                const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewUserModal'))
+                if (viewModal)
+                    viewModal.hide()
+                new bootstrap.Modal(document.getElementById('editUserModal')).show()
 
+            })
         },
 
         confirmDelete(user) {

@@ -40,7 +40,7 @@
             <td style="text-align: right;">{{ $percent }}</td>
             <td style="text-align: right;">{{ number_format($reward, 2, ',', ' ') }}</td>
             <td>
-                {{ $sale->payment_type == 1 ? 'Наличный' : 'Безналичный' }}
+                {{ $sale->payment_type == 1 ? 'Безналичный' : 'Наличный' }}
             </td>
             <td>{{ $sale->supplier?->name }}</td>
             <td>{{ $sale->agent?->name }}</td>
