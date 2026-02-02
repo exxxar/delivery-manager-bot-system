@@ -132,7 +132,6 @@ class SaleController extends Controller
         if ($needAutomaticNaming) {
             $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
 
-
             $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
             $data["description"] = "Товар " . ($product->name ?? 'товара')
                 . ", поставщик " . ($supplier->name ?? 'поставщика')
@@ -279,11 +278,9 @@ class SaleController extends Controller
             $sale->quantity = $quantity;
         }
 
-
         if ($priceIsChange) {
-
             $supplier = Supplier::query()->where("id", $sale->supplier_id)->first();
-            $product = Supplier::query()->where("id", $sale->product_id)->first();
+            $product = Product::query()->where("id", $sale->product_id)->first();
 
             if (!is_null($product) && !is_null($supplier)) {
                 $sale->title = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
@@ -362,7 +359,7 @@ class SaleController extends Controller
         if ($priceIsChange) {
 
             $supplier = Supplier::query()->where("id", $sale->supplier_id)->first();
-            $product = Supplier::query()->where("id", $sale->product_id)->first();
+            $product = Product::query()->where("id", $sale->product_id)->first();
 
             if (!is_null($product) && !is_null($supplier)) {
                 $sale->title = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
@@ -564,9 +561,12 @@ class SaleController extends Controller
             $hasFile = true;
         }
 
-        if ($needAutomaticNaming) {
 
+        $sale = Sale::findOrFail($id);
+
+        if ($needAutomaticNaming) {
             $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
+            $product = Product::query()->where("id", $sale->product_id)->first();
 
             $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
             $data["description"] = "Товар " . ($product->name ?? 'товара')
@@ -575,7 +575,6 @@ class SaleController extends Controller
                 . ", кол-во " . ($data["quantity"] ?? 0) . "ед."
                 . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
         }
-        $sale = Sale::findOrFail($id);
 
 
         $data["due_date"] = Carbon::parse($data["due_date"] ?? $sale->due_date ?? Carbon::now());
