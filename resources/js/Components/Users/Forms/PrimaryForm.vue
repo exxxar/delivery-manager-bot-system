@@ -20,7 +20,7 @@
 
 
         <div class="form-floating mb-2">
-            <input type="email" v-model="form.email" class="form-control" placeholder="Email">
+            <input type="email" v-model="form.email" class="form-control" placeholder="Email" required>
             <label>Email</label>
         </div>
 

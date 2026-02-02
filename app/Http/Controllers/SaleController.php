@@ -141,6 +141,9 @@ class SaleController extends Controller
                 . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
         }
 
+        if (is_null($data["total_price"] ?? null))
+            $data["total_price"] = 0;
+
         $sale = Sale::query()->create($data);
 
         if (is_null($sale->agent_id)) {
@@ -372,8 +375,7 @@ class SaleController extends Controller
 
         }
 
-        if ($needAdditionalComment)
-        {
+        if ($needAdditionalComment) {
             $comment = $request->additional_comment ?? '';
             $sale->description .= "\n<b>Комментарий:</b> <em>$comment</em>";
         }
