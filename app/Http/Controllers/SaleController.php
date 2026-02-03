@@ -344,6 +344,10 @@ class SaleController extends Controller
 
         $priceIsChange = $sale->total_price != $request->total_price;
 
+        $price = ($request->total_price?? 0 ) == 0? $sale->total_price : $request->total_price;
+
+        $sale->totla_price = $price;
+
         $quantity = $request->quantity ?? 1;
 
         if ($quantity == 0) {
@@ -367,7 +371,7 @@ class SaleController extends Controller
                     . ", поставщик " . ($supplier->name ?? 'поставщика')
                     . ", тип оплаты " . ($sale->payment_type == 0 ? "наличными" : "безналичный расчет")
                     . ", кол-во $quantity ед."
-                    . ", цена " . ($request->total_price ?? 0) . "руб. ";
+                    . ", цена " . ($price ?? 0) . "руб. ";
             }
 
         }

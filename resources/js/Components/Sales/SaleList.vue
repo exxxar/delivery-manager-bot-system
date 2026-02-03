@@ -38,9 +38,9 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
 
             v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1}"
             v-for="sale in filteredSales" :key="sale.id"
-            class="list-group-item d-flex justify-content-between align-items-center">
+            class="list-group-item d-flex justify-content-between align-items-start">
             <div>
-                <p class="fw-bold mb-2" @click="toggleSelection(sale.id)">
+                <p class="fw-bold mb-2 small" @click="toggleSelection(sale.id)">
                     <span class="badge"
                           v-bind:class="{'bg-warning':!sale.sale_date, 'bg-success':sale.sale_date}"
                           v-if="sale.payment_type===0">
@@ -54,7 +54,7 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
                           v-if="sale.payment_type===1"><i class="fa-solid fa-credit-card"></i></span>
 
 
-                    <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
+                    <span class="badge bg-primary mx-1" v-if="field_visible?.id||true">#{{
                             sale.id
                         }}</span> {{ sale.title }} </p>
                 <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
@@ -79,12 +79,12 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
                             'bg-danger':sale.status==='rejected',
                         }">{{ saleStatuses[sale.status] }}</span>
                 </small>
-                <p class="mb-2" v-if="field_visible?.description||true">{{ sale.description }}</p>
-                <p class="mb-2" v-if="field_visible?.quantity||false">Доставляемое число товара <span
+                <p class="mb-2 small" v-if="field_visible?.description||true">{{ sale.description }}</p>
+                <p class="mb-2 " v-if="field_visible?.quantity||false">Доставляемое число товара <span
                     class="fw-bold">{{ sale.quantity || 'не указана' }}</span> ед.</p>
                 <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
                     class="fw-bold">{{ sale.total_price }}</span> руб.</p>
-                <p class="mb-2" v-if="field_visible?.agent_id||true">Администратор <span
+                <p class="mb-2 small" v-if="field_visible?.agent_id||true">Оформил заказ <span
                     class="fw-bold">{{ sale.agent?.name || sale.agent_id || '-' }}</span></p>
                 <p class="mb-2" v-if="field_visible?.customer_id||false">Клиент <span
                     class="fw-bold">{{ sale.customer?.name || sale.customer_id || '-' }}</span></p>
