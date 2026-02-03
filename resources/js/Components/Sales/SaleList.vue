@@ -68,7 +68,7 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
                 </p>
                 <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.actual_delivery_date||false">
                     Фактическая дата доставки {{ sale.actual_delivery_date || 'не указана' }}</p>
-                <small class="text-muted" v-if="field_visible?.status||true">Статус:
+                <small class="text-muted small" v-if="field_visible?.status||true">Статус:
                     <span
                         class="badge"
                         v-bind:class="{
@@ -98,7 +98,7 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
 
             <!-- Dropdown -->
             <div class="dropdown">
-                <button class="btn btn-sm" type="button"
+                <button class="btn btn-sm btn-outline-light text-primary" type="button"
                         data-bs-toggle="dropdown">
                     <i class="fas fa-bars"></i>
                 </button>
