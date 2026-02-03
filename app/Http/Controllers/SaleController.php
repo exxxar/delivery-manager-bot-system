@@ -652,6 +652,8 @@ class SaleController extends Controller
 
         $saleInfo = $sale->toTelegramText();
 
+        $sale->delete();
+
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
             "#удаление_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
