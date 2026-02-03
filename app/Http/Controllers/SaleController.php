@@ -346,7 +346,7 @@ class SaleController extends Controller
 
         $price = ($request->total_price?? 0 ) == 0? $sale->total_price : $request->total_price;
 
-        $sale->totla_price = $price;
+        $sale->total_price = $price;
 
         $quantity = $request->quantity ?? 1;
 

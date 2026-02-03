@@ -96,17 +96,40 @@ const today = new Date().toISOString().split('T')[0]
                 <label for="payment-type">Тип оплаты</label>
             </div>
 
+
             <template v-if="form.payment_type==='1'">
                 <h6>Фотография чека</h6>
+
+                <template v-if="form.payment_document_name">
+                    <span
+                        @click="sendPaymentDocumentToTg"
+                        style="cursor:pointer;text-align:left;"
+                        class="mb-2 w-100 badge bg-success text-decoration-underline">
+                        <i style="margin-right:5px;"
+                           class="fa-brands fa-telegram"></i> Чек прикреплен к сделке.
+                    </span>
+                </template>
+
                 <div class="form-floating mb-2">
 
-                    <input
-                        type="file"
-                        class="form-control"
-                        @change="onFileChange"
-                        accept=".jpg,.png,.pdf"
-                        :required="!form.receipt_is_lost"
-                    />
+                    <template v-if="form.payment_document_name">
+                        <input
+                            type="file"
+                            class="form-control"
+                            @change="onFileChange"
+                            accept=".jpg,.png,.pdf"
+                        />
+                    </template>
+                    <template v-else>
+                        <input
+                            type="file"
+                            class="form-control"
+                            @change="onFileChange"
+                            accept=".jpg,.png,.pdf"
+                            :required="!form.receipt_is_lost"
+                        />
+                    </template>
+
                     <label for="payment-type">Прикрепить</label>
                 </div>
 
@@ -355,6 +378,13 @@ export default {
         });
     },
     methods: {
+        async sendPaymentDocumentToTg() {
+            await this.salesStore.sendPaymentDocumentToTg(this.form.id).then(() => {
+                this.alertStore.show("Чек отправлен вам в телеграм бот!");
+            })
+
+
+        },
         onFileChange(e) {
             this.file = e.target.files[0]
         },

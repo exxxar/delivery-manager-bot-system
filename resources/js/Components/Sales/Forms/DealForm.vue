@@ -71,16 +71,37 @@
 
             <template v-if="localForm.payment_type==='1'">
                 <h6>Фотография чека</h6>
+                <template v-if="localForm.payment_document_name">
+                    <span
+                        @click="sendPaymentDocumentToTg"
+                        style="cursor:pointer;text-align:left;"
+                        class="mb-2 w-100 badge bg-success text-decoration-underline">
+                        <i style="margin-right:5px;"
+                           class="fa-brands fa-telegram"></i> Чек прикреплен к сделке.
+                    </span>
+                </template>
 
                 <div class="form-floating mb-2">
-                    <input
-                        type="file"
-                        multiple
-                        class="form-control"
-                        @change="onFileChange"
-                        accept=".jpg,.png,.pdf"
-                        :required="!localForm.receipt_is_lost"
-                    />
+                    <template v-if="localForm.payment_document_name">
+                        <input
+                            type="file"
+                            multiple
+                            class="form-control"
+                            @change="onFileChange"
+                            accept=".jpg,.png,.pdf"
+                        />
+                    </template>
+                    <template v-else>
+                        <input
+                            type="file"
+                            multiple
+                            class="form-control"
+                            @change="onFileChange"
+                            accept=".jpg,.png,.pdf"
+                            :required="!localForm.receipt_is_lost"
+                        />
+                    </template>
+
                     <label>Прикрепить</label>
                 </div>
 
@@ -188,6 +209,13 @@ export default {
         this.localForm = {...this.modelValue};
     },
     methods: {
+        async sendPaymentDocumentToTg() {
+            await this.salesStore.sendPaymentDocumentToTg(this.localForm.id).then(() => {
+                this.alertStore.show("Чек отправлен вам в телеграм бот!");
+            })
+
+
+        },
         onFileChange(e) {
             const files = e.target.files
 

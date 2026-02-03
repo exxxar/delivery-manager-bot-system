@@ -246,7 +246,8 @@ export default {
                 total_price: 0,
                 files: [] ,
                 additional_comment: null,
-                payment_type: 0,
+                payment_document_name: null,
+                payment_type: '0',
                 receipt_is_lost: false,
                 same_sale_delivery_date: true,
                 need_additional_comment: false,
@@ -383,7 +384,9 @@ export default {
                 this.selectedSale = sale
                 this.dealForm.quantity = sale.quantity
                 this.dealForm.id = sale.id
+                this.dealForm.payment_type = ''+sale.payment_type
                 this.dealForm.total_price = sale.total_price
+                this.dealForm.payment_document_name = sale.payment_document_name
                 new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
             })
 
