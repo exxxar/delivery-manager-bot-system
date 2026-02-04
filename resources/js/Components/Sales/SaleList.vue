@@ -94,6 +94,14 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
                     class="fw-bold">{{ sale.creator?.name || sale.created_by_id || '-' }}</span></p>
                 <p class="mb-2" v-if="field_visible?.product_id||false">Товар <span
                     class="fw-bold">{{ sale.product?.name || sale.product_id || '-' }}</span></p>
+
+                <p
+                   v-if="!sale.payment_document_name&&sale.payment_type===1"
+                    style="cursor:pointer;text-align:left;"
+                    class="mb-0 w-100 badge bg-danger">
+                       <i style="margin-right:5px;" class="fa-solid fa-triangle-exclamation"></i> Чек не прикреплен к сделке.
+                    </p>
+
             </div>
 
             <!-- Dropdown -->

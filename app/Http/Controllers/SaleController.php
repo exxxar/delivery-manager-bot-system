@@ -403,11 +403,11 @@ class SaleController extends Controller
 
         $sale->status = $request->status ?? 'completed';
         $sale->payment_type = $request->payment_type ?? 0;
-        $sale->sale_date = Carbon::parse($request->sale_date);
+        $sale->actual_delivery_date = Carbon::parse($request->actual_delivery_date);
 
-        $sale->actual_delivery_date = $sameSaleDeliveryDate ?
-            Carbon::parse($request->sale_date) :
-            Carbon::parse($request->actual_delivery_date);
+        $sale->sale_date = $sameSaleDeliveryDate ?
+            Carbon::parse($request->actual_delivery_date) :
+            Carbon::parse($request->sale_date);
 
         $sale->save();
 
