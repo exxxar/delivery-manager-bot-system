@@ -138,7 +138,7 @@ const today = new Date().toISOString().split('T')[0]
                     <input
                         v-model="form.receipt_is_lost"
                         class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
-                    <label class="form-check-label" for="need_automatic_naming">Чек был утрачен
+                    <label class="form-check-label" for="need_automatic_naming">Чек был утрачен или еще не оплачено
                     </label>
                 </div>
 
