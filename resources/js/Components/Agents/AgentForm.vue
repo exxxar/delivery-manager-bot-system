@@ -33,6 +33,17 @@ import AdminList from "@/Components/Admins/AdminList.vue";
                 <div
                     class="form-check form-switch mb-2">
                     <input
+                        v-model="form.is_test"
+                        class="form-check-input" type="checkbox" role="switch" id="is_test">
+                    <label class="form-check-label" for="is_test">Тестовый агент
+                        <span class="fw-bold text-primary" v-if="form.is_test">включено</span>
+                        <span class="fw-bold text-primary" v-else>выключено</span>
+                    </label>
+                </div>
+
+                <div
+                    class="form-check form-switch mb-2">
+                    <input
                         v-model="form.in_learning"
                         class="form-check-input" type="checkbox" role="switch" id="in_learning">
                     <label class="form-check-label" for="in_learning">На обучении
@@ -124,6 +135,7 @@ export default {
                 start_learning_date:null,
                 end_learning_date:null,
                 in_learning: false,
+                is_test: false,
             },
             mentorName:null,
         }

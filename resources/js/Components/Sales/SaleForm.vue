@@ -156,7 +156,7 @@ const today = new Date().toISOString().split('T')[0]
                 <label for="status">Статус</label>
             </div>
 
-            <div
+<!--            <div
                 class="form-check form-switch mb-2">
                 <input
                     class="form-check-input"
@@ -167,32 +167,48 @@ const today = new Date().toISOString().split('T')[0]
                 <label class="form-check-label" :for="`can-add-past-tasks`">
                     Разрешить вносить за прошедшие дни
                 </label>
-            </div>
+            </div>-->
 
             <!-- Дата задания -->
             <div class="form-floating mb-2">
                 <input v-model="form.due_date"
                        required
-                       :min="can_add_past_assignments?null:today"
                        type="date" class="form-control" id="due_date">
                 <label for="due_date">Дата задания</label>
             </div>
 
-            <!--            <template v-if="isEdit">
-                            &lt;!&ndash; Дата сделки &ndash;&gt;
-                            <div class="form-floating mb-2">
-                                <input v-model="form.sale_date" type="date" class="form-control" id="sale_date">
-                                <label for="sale_date">Дата сделки</label>
-                            </div>
+            <div
+                class="form-check form-switch mb-2">
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    v-model="display_more_dates"
+                    :id="`display_more_dates`"
+                />
+                <label class="form-check-label" :for="`display_more_dates`">
+                    Отображать больше параметров
+                </label>
+            </div>
 
-                            &lt;!&ndash; Дата сделки &ndash;&gt;
-                            <div class="form-floating mb-2">
-                                <input v-model="form.actual_delivery_date" type="date" class="form-control" id="sale_date">
-                                <label for="sale_date">Фактическая дата доставки</label>
-                            </div>
+            <template v-if="display_more_dates">
+
+                <div class="form-floating mb-2">
+                    <input
+                        required
+                        v-model="form.sale_date" type="date" class="form-control" id="sale_date">
+                    <label for="sale_date">Дата оплаты</label>
+                </div>
 
 
-                        </template>-->
+                <div class="form-floating mb-2">
+                    <input
+                        required
+                        v-model="form.actual_delivery_date" type="date" class="form-control" id="actual_delivery_date">
+                    <label for="actual_delivery_date">Фактическая дата доставки</label>
+                </div>
+
+
+            </template>
 
             <template v-if="user?.role>=3">
                 <p class="alert alert-info mb-2">Назначение ответственного по данной задаче</p>
@@ -321,6 +337,7 @@ export default {
     },
     data() {
         return {
+            display_more_dates: false,
             tab: 'main',
             spent_time: 0,
             alertStore: useAlertStore(),
@@ -336,6 +353,7 @@ export default {
                 description: '',
                 status: 'pending',
                 due_date: '',
+                actual_delivery_date: '',
                 sale_date: '',
                 quantity: 0,
                 total_price: 0,

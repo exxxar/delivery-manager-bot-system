@@ -283,9 +283,12 @@ class BusinessLogic
     {
 
         if (empty($agentsIds))
-            $agents = Agent::all();
+            $agents = Agent::query()
+                ->where("is_test", false)->get();
         else
-            $agents = Agent::query()->whereIn("id", $agentsIds)->get();
+            $agents = Agent::query()
+                ->where("is_test", false)
+                ->whereIn("id", $agentsIds)->get();
 
         $daysOfWeek = [
             'Sunday' => 'Воскресенье',

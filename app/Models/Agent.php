@@ -21,6 +21,7 @@ class Agent extends Model
         'mentor_id',
         'name',
         'in_learning',
+        'is_test',
         'favorite_suppliers',
         'phone',
         'email',
@@ -41,6 +42,7 @@ class Agent extends Model
         'user_id' => 'integer',
         'mentor_id' => 'integer',
         'in_learning' => 'boolean',
+        'is_test' => 'boolean',
         'favorite_suppliers' => 'array'
     ];
 

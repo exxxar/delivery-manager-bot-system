@@ -117,6 +117,7 @@ class AgentController extends Controller
         $data = $request->all();
 
         $inLearning = ($data["in_learning"] ?? false) == "true";
+        $isTest= ($data["is_test"] ?? false) == "true";
 
 
         if ($agent->in_learning && !$inLearning) {
@@ -129,6 +130,14 @@ class AgentController extends Controller
         }
 
         $agent->update($data);
+
+        if ($isTest){
+            $user = $request->botUser ?? null;
+
+            \App\Facades\BotMethods::bot()
+                ->sendMessage($user->telegram_chat_id,
+                    "Вас отметили как <b>Администратор-Тестировщик</b>, ваши заявки не пойдут в учет.");
+        }
 
         return response()->json($agent);
     }
