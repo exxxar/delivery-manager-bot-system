@@ -15,17 +15,25 @@ import AdminList from "@/Components/Admins/AdminList.vue";
                 </div>
 
                 <div class="form-floating mb-2">
-                    <input v-model="form.phone" type="tel" class="form-control" id="phone" placeholder="Телефон" required>
+                    <input v-model="form.phone"
+                           v-mask="'+7(###) ###-##-##'"
+                           minlength="3"
+                           type="text" class="form-control" id="phone" placeholder="Телефон" required>
                     <label for="phone">Телефон</label>
                 </div>
 
                 <div class="form-floating mb-2">
-                    <input v-model="form.email" type="email" class="form-control" id="email" placeholder="Email" required>
+                    <input v-model="form.email"
+                           minlength="3"
+                           type="email" class="form-control" id="email" placeholder="Email" required>
                     <label for="email">Email</label>
                 </div>
 
                 <div class="form-floating mb-2">
-                    <input v-model="form.region" type="text" class="form-control" id="region"
+                    <input v-model="form.region"
+                           minlength="3"
+                           required
+                           type="text" class="form-control" id="region"
                            placeholder="Регион">
                     <label for="region">Регион</label>
                 </div>

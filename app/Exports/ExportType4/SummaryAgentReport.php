@@ -3,10 +3,12 @@
 namespace App\Exports\ExportType4;
 
 
+use App\Enums\RoleEnum;
 use App\Exports\ExportType4\RevenueExportSheet;
 use App\Facades\BusinessLogicFacade;
 use App\Models\Agent;
 use App\Models\Supplier;
+use App\Models\User;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class SummaryAgentReport implements WithMultipleSheets
@@ -34,9 +36,21 @@ class SummaryAgentReport implements WithMultipleSheets
      */
     public function sheets(): array
     {
-        set_time_limit(600);
-        $agents = empty($this->agentsIds ?? null) ? Agent::query()->get() : Agent::query()
-            ->whereIn("id", $this->agentsIds)->get();
+
+        if (empty($this->agentsIds)) {
+            $usersIds = User::query()
+                ->where("role", RoleEnum::AGENT->value)
+                ->get()
+                ->pluck("id");
+
+            $agents = Agent::query()
+                ->whereIn("user_id", $usersIds)
+                ->where("is_test", false)
+                ->get();
+        } else
+            $agents = Agent::query()
+                ->whereIn("id", $this->agentsIds)->get();
+
 
         $tmpData = [];
         $tmp = [];

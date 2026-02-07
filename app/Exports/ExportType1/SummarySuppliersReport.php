@@ -3,7 +3,10 @@
 namespace App\Exports\ExportType1;
 
 
+use App\Enums\RoleEnum;
+use App\Models\Agent;
 use App\Models\Supplier;
+use App\Models\User;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class SummarySuppliersReport implements WithMultipleSheets
@@ -20,6 +23,20 @@ class SummarySuppliersReport implements WithMultipleSheets
         $this->toDate = $toDate;
         $this->agentsIds = $agentsIds;
         $this->suppliersIds = $suppliersIds;
+
+        if (empty($this->agentsIds)) {
+            $usersIds = User::query()
+                ->where("role", RoleEnum::AGENT->value)
+                ->get()
+                ->pluck("id");
+
+            $this->agentsIds = Agent::query()
+                ->whereIn("user_id", $usersIds)
+                ->where("is_test", false)
+                ->get()
+                ->pluck("id");
+        }
+
     }
 
     /**
@@ -32,9 +49,9 @@ class SummarySuppliersReport implements WithMultipleSheets
         $tmp = [
             new GeneralSummarySheet(
                 fromDate: $this->fromDate,
-                toDate:  $this->toDate,
+                toDate: $this->toDate,
                 agentsIds: $this->agentsIds,
-                suppliersIds:    $this->suppliersIds),
+                suppliersIds: $this->suppliersIds),
         ];
 
 

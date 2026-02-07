@@ -29,107 +29,108 @@ class BusinessLogic
     public function getGeneralSalesSummaryByAgentsAndSuppliers($defaultPercent = 8, $fromDate = null, $toDate = null, $suppliersIds = [], $agentsIds = []): object
     {
 
-        // Получаем заказы за интересующий период
-        $orders = Sale::with('supplier');
+        $query = Sale::query()
+            ->select([
+                'supplier_id',
+                'total_price',
+                'sale_date',
+            ])
+            ->where('status', 'completed')
+            ->whereNotNull('sale_date')
+            ->orderBy('sale_date');
 
-        if (!is_null($fromDate) && !is_null($toDate))
-            $orders = $orders
-                ->whereBetween('sale_date', [$fromDate, $toDate]);
+        // Фильтры периода
+        if ($fromDate && $toDate) {
+            $query->whereBetween('sale_date', [$fromDate, $toDate]);
+        }
 
-        if (!empty($suppliersIds))
-            $orders = $orders
-                ->whereIn('supplier_id', $suppliersIds);
+        // Фильтр по поставщикам
+        if (!empty($suppliersIds)) {
+            $query->whereIn('supplier_id', $suppliersIds);
+        }
 
-        if (!empty($agentsIds))
-            $orders = $orders
-                ->whereIn('agent_id', $agentsIds);
+        // Фильтр по агентам
+        if (!empty($agentsIds)) {
+            $query->whereIn('agent_id', $agentsIds);
+        }
 
-        $orders = $orders
-            ->where("status", "completed")
-            ->whereNotNull('sale_date') // исключаем заказы без даты продажи
-            ->orderBy('sale_date')
+        // Загружаем только минимально необходимые данные о поставщике
+        $sales = $query
+            ->with(['supplier' => function ($q) {
+                $q->select('id', 'name', 'percent');
+            }])
             ->get();
 
+        // Группируем сразу по поставщику
+        $grouped = $sales->groupBy('supplier_id');
 
-        // Набор месяцев для аналитики
-        /* $months = [
-             'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-             'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-         ];*/
+        $results = [];
+        $totalSum = 0;
+        $totalPercentage = 0;
 
         $months = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
+            1  => 'january',
+            2  => 'february',
+            3  => 'march',
+            4  => 'april',
+            5  => 'may',
+            6  => 'june',
+            7  => 'july',
+            8  => 'august',
+            9  => 'september',
+            10 => 'october',
+            11 => 'november',
+            12 => 'december',
         ];
 
-        // Готовим массив для накопления данных
-        $results = [];
+        foreach ($grouped as $supplierId => $salesBySupplier)
+        {
+            $supplier = $salesBySupplier->first()->supplier;
 
-        foreach ($orders as $order) {
-            // Получаем поставщика и месяц продажи
-            $supplier = $order->supplier->name ?? 'Неизвестный поставщик';
-            $month = Carbon::parse($order->sale_date)->formatLocalized('%B');
+            $supplierName = $supplier?->name ?? 'Неизвестный поставщик';
+            $percent      = $supplier?->percent ?? $defaultPercent;
+            $rate         = $percent / 100;
 
-            // Индекс месяца (нужно перевести в числовой формат)
-            $monthIndex = array_search($month, $months);
+            // Инициализируем все месяцы нулями
+            $monthly = array_fill_keys(array_values($months), 0);
 
-            // Создаём запись для каждого поставщика и месяца
-            if (!isset($results[$supplier])) {
-                $results[$supplier] = array_fill_keys($months, 0);
+            foreach ($salesBySupplier as $sale)
+            {
+                $monthNum = (int) Carbon::parse($sale->sale_date)->format('n');
+                $monthly[$months[$monthNum]] += (float) $sale->total_price;
             }
 
-            if (is_null($results[$supplier][$month] ?? null))
-                $results[$supplier][$month] = 0;
+            $yearTotal = array_sum($monthly);
 
-            // Обновляем доходы по этому поставщику и месяцу
-            $results[$supplier][$month] += $order->total_price;
-            $results[$supplier]["base_percent"] = $order->supplier->percent ?? $defaultPercent;
-            //  $results[$supplier]["payment_type"] = $order->payment_type ?? 0;
+            $yourPercentage = $yearTotal * $rate;
 
-        }
-
-
-        $totalSum = 0;
-        // Приводим данные к удобному виду
-        $formattedResults = [];
-        foreach ($results as $supplier => $monthlyData) {
-
-            $basePercent = ($monthlyData["base_percent"] ?? 0) == 0 ? ($defaultPercent / 100) : ($monthlyData["base_percent"] / 100);
-
-            unset($monthlyData["base_percent"]);
-            $income = array_values($monthlyData); // извлекаем массив доходов
-
-
-            $totalIncome = array_sum($income); // общий доход за год
-            $totalSum += $totalIncome;
-            // Ваш процент от дохода (примерно 10%)
-            $yourPercentage = $totalIncome * $basePercent;
-
-            // Формируем итоговый массив
-            $formattedResults[] = [
-                'supplier' => $supplier,
-                'base_percent' => $basePercent,
-                'percentage' => $yourPercentage,
-                'january' => $income[0],
-                'february' => $income[1],
-                'march' => $income[2],
-                'april' => $income[3],
-                'may' => $income[4],
-                'june' => $income[5],
-                'july' => $income[6],
-                'august' => $income[7],
-                'september' => $income[8],
-                'october' => $income[9],
-                'november' => $income[10],
-                'december' => $income[11],
-                'year' => $totalIncome,
+            $results[] = [
+                'supplier'     => $supplierName,
+                'base_percent' => $rate,               // в долях (0.08 вместо 8)
+                'percentage'   => $yourPercentage,
+                'january'      => $monthly['january'],
+                'february'     => $monthly['february'],
+                'march'        => $monthly['march'],
+                'april'        => $monthly['april'],
+                'may'          => $monthly['may'],
+                'june'         => $monthly['june'],
+                'july'         => $monthly['july'],
+                'august'       => $monthly['august'],
+                'september'    => $monthly['september'],
+                'october'      => $monthly['october'],
+                'november'     => $monthly['november'],
+                'december'     => $monthly['december'],
+                'year'         => $yearTotal,
             ];
+
+            $totalSum += $yearTotal;
+            $totalPercentage += $yourPercentage;
         }
 
-        return (object)[
-            "details" => $formattedResults,
-            "total_sum" => $totalSum,
-            "total_percentage" => array_sum(array_column($formattedResults, 'percentage')),
+        return (object) [
+            'details'          => $results,
+            'total_sum'        => $totalSum,
+            'total_percentage' => $totalPercentage,
         ];
     }
 
@@ -152,126 +153,110 @@ class BusinessLogic
     public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate, $suppliersIds = [])
     {
 
+        $taxPercent     = (float) env('TAX_PERCENT', 8);
+        $transferPercent = (float) env('TRANSFER_PERCENT', 8);
+        $agentPercent   = (float) env('AGENT_PERCENT', 4);
+        $adminBasePercent = (float) env('ADMIN_BASE_PERCENT', 5); // пример
 
-        // Общая сумма продаж
-        $totalSales = Sale::query()
-            ->where("agent_id", $agent->id);
+        // Один запрос — все нужные продажи
+        $sales = Sale::query()
+            ->where('agent_id', $agent->id)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->when($suppliersIds, fn($q) => $q->whereIn('supplier_id', $suppliersIds))
+            ->where('status', 'completed')
+            ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'mentor_award','id')
+            ->with('supplier:id,name,percent')
+            ->get();
 
-        if (!empty($suppliersIds))
-            $totalSales = $totalSales->whereIn("supplier_id", $suppliersIds);
+        $totalSales = $sales->sum('total_price');
 
-        $totalSales = $totalSales->whereBetween('sale_date', [$startDate, $endDate])
-            ->sum('total_price');
+        $taxAmount  = $totalSales * ($taxPercent / 100);
+        $afterTax   = $totalSales - $taxAmount;
 
-        // Налог и переводы
-        $taxPercent = env('TAX_PERCENT', 8); // %
-        $transferPercent = env('TRANSFER_PERCENT', 8); // %
-
-        $taxAmount = $totalSales * ($taxPercent / 100);
-        $afterTax = $totalSales - $taxAmount;
-
-
-        $revenueTotal = 0;
-        $revenueWithoutTaxTotal = 0;
-
+        $revenueTotal = 0.0;
+        $revenueWithoutTaxTotal = 0.0;
         $mentorAwards = [];
 
-        // --- 1. Продажи по датам и поставщикам ---
-        $salesByDateSupplier = Sale::query()
-            ->whereBetween('sale_date', [$startDate, $endDate])
-            ->where("agent_id", $agent->id);
+        $mentorId = $agent->mentor_id; // ← предполагаем relation или поле
 
-        if (!empty($suppliersIds))
-            $salesByDateSupplier = $salesByDateSupplier->whereIn("supplier_id", $suppliersIds);
+        $salesByDateSupplier = $sales->map(function ($sale) use (
+            $taxPercent, $transferPercent, $mentorId, &$revenueTotal, &$revenueWithoutTaxTotal, &$mentorAwards
+        ) {
+            $percent = $sale->supplier?->percent ?? 0;
+            $revenueLocal = $sale->total_price * ($percent / 100);
 
-        $salesByDateSupplier = $salesByDateSupplier->where("status", "completed")
-            ->orderBy('sale_date')
-            ->with('supplier')
-            ->get()
-            ->map(function ($sale) use ($taxPercent, &$revenueTotal, &$revenueWithoutTaxTotal, &$mentorAwards) {
+            $taxOnRevenue = $revenueLocal * ($taxPercent / 100);
+            $revenueAfterTax = $revenueLocal - $taxOnRevenue;
 
-                $transferPercent = env('TRANSFER_PERCENT', 8); // %
+            $revenueTotal += $revenueLocal;
+            $revenueWithoutTaxTotal += $revenueAfterTax;
 
-                $mentorId = (Agent::query()->find($sale->agent_id))->mentor_id ?? null;
+            if ($mentorId !== null && ($sale->mentor_award ?? 0) > 0) {
+                $mentorAwards[$mentorId] = ($mentorAwards[$mentorId] ?? 0) + $sale->mentor_award;
+            }
 
-                if (!is_null($mentorId))
-                    $mentorAwards[$mentorId] = isset($mentorAwards[$mentorId]) ?
-                        $mentorAwards[$mentorId] + $sale->mentor_award :
-                        $sale->mentor_award;
+            return [
+                'date'              => $sale->sale_date,
+                'supplier_id'       => $sale->supplier_id,
+                'supplier_name'     => $sale->supplier?->name ?? 'Неизвестный поставщик',
+                'sale_amount'       => $sale->total_price,
+                'payment_type'      => $sale->payment_type,
+                'id'      => $sale->id,
+                'percent'           => $percent,
+                'transfer'          => $revenueLocal * ($transferPercent / 100),
+                'revenue_total'     => $revenueLocal,
+                'revenue_after_tax' => $revenueAfterTax,
+            ];
+        });
 
-                $percent = $sale->supplier->percent ?? 0;
-                $revenueLocal = $sale->total_price * ($percent / 100);
-                $taxAmount = $revenueLocal * ($taxPercent / 100);
-                $revenueAfterTax = $revenueLocal - $taxAmount;
-
-
-                $revenueTotal += $revenueLocal;
-                $revenueWithoutTaxTotal += $revenueAfterTax;
-                return [
-                    'date' => $sale->sale_date,
-                    'supplier_id' => $sale->supplier_id,
-                    'supplier_name' => $sale->supplier->name ?? 'Неизвестный поставщик',
-                    'sale_amount' => $sale->total_price,
-                    'percent' => $percent,
-                    'transfer' => $revenueLocal * ($transferPercent / 100),
-                    'revenue_total' => $revenueLocal,
-                    'revenue_after_tax' => $revenueAfterTax,
-                ];
-            });
-
-
-        // --- 2. Доход админов ---
+        // Админы — кэшировать в продакшене!
         $adminsRevenue = User::query()
             ->where('is_work', true)
-            ->whereIn("role", [
-                RoleEnum::SUPERADMIN->value,
-                RoleEnum::ADMIN->value
-            ])
-            ->get()
-            ->map(function ($user) use ($taxPercent, $revenueTotal, $revenueWithoutTaxTotal, &$mentorAwards) {
-
+            ->whereIn('role', [RoleEnum::SUPERADMIN->value, RoleEnum::ADMIN->value])
+            ->get(['id', 'fio_from_telegram', 'name', 'percent'])
+            ->map(function ($user) use ($revenueTotal, $revenueWithoutTaxTotal, $mentorAwards, $taxPercent) {
                 $mentorAward = $mentorAwards[$user->id] ?? 0;
-                $mentorAwardWithoutTax = $mentorAward * (1 - ($taxPercent / 100));
+                $mentorAwardAfterTax = $mentorAward * (1 - $taxPercent / 100);
 
-                $incomeTotal = $revenueTotal * ($user->percent / 100);
-                $incomeAfterTax = $revenueWithoutTaxTotal * ($user->percent / 100) + $mentorAwardWithoutTax;
+                $userPercent = $user->percent > 0 ? $user->percent : env('ADMIN_BASE_PERCENT', 4);
+
+                $incomeTotal = $revenueTotal * ($userPercent / 100);
+                $incomeAfterTax = $revenueWithoutTaxTotal * ($userPercent / 100) + $mentorAwardAfterTax;
 
                 return [
-                    'admin_id' => $user->id,
-                    'admin_name' => $user->name,
-                    'percent' => $user->percent,
-                    'mentor_award' => $mentorAwards[$user->id] ?? 0, //снять налог и добавить к сумме
-                    'income_with_award_total' => $incomeTotal + $mentorAward,
-                    'income_with_award_after_text' => $incomeAfterTax + $mentorAwardWithoutTax,
-                    'income_total' => $incomeTotal,
-                    'income_after_tax' => $incomeAfterTax,
+                    'admin_id'                   => $user->id,
+                    'admin_name'                 => $user->fio_from_telegram ?? $user->name ?? '-',
+                    'percent'                    => $userPercent,
+                    'mentor_award'               => $mentorAward,
+                    'income_with_award_total'    => $incomeTotal + $mentorAward,
+                    'income_with_award_after_tax'=> $incomeAfterTax + $mentorAwardAfterTax,
+                    'income_total'               => $incomeTotal,
+                    'income_after_tax'           => $incomeAfterTax,
                 ];
             });
 
-        $agentPercent = env("AGENT_PERCENT", 5);
-
-        $transferFromTotal = $revenueTotal * ($transferPercent / 100);
-        $transferFromAfterTax = $revenueWithoutTaxTotal * ($transferPercent / 100);
+        $transferFromTotal     = $revenueTotal * ($transferPercent / 100);
+        $transferFromAfterTax  = $revenueWithoutTaxTotal * ($transferPercent / 100);
 
         return [
             'agent' => [
-                "id" => $agent->id,
-                "name" => $agent->name,
-                "salary" => $afterTax * ($agentPercent / 100)
+                'id'     => $agent->id,
+                'name'   => $agent->name,
+                'salary' => $afterTax * ($agentPercent / 100),
             ],
             'period' => [
                 'start' => $startDate,
-                'end' => $endDate,
+                'end'   => $endDate,
             ],
             'summary' => [
-                'total_sales' => $totalSales,
-                'tax_percent' => $taxPercent,
-                'tax_amount' => $taxAmount,
-                'after_tax' => $afterTax,
-                'transfer_percent' => $transferPercent,
-                'transfer_from_total' => $transferFromTotal,
-                'transfer_from_after_tax' => $transferFromAfterTax,
-                'revenue_total' => $revenueTotal,
+                'total_sales'               => $totalSales,
+                'tax_percent'               => $taxPercent,
+                'tax_amount'                => $taxAmount,
+                'after_tax'                 => $afterTax,
+                'transfer_percent'          => $transferPercent,
+                'transfer_from_total'       => $transferFromTotal,
+                'transfer_from_after_tax'   => $transferFromAfterTax,
+                'revenue_total'             => $revenueTotal,
                 'revenue_without_tax_total' => $revenueWithoutTaxTotal,
             ],
             'sales_by_date_supplier' => $salesByDateSupplier,
@@ -279,86 +264,108 @@ class BusinessLogic
         ];
     }
 
-    public function getMonthlySalesSummaryForAllAgentsByCurrentSupplier($supplier, $fromDate, $toDate, $agentsIds = []): array
-    {
+    public function getMonthlySalesSummaryForAllAgentsByCurrentSupplier(
+        $supplier,
+        $fromDate,
+        $toDate,
+        $agentsIds = []
+    ): array {
 
-        if (empty($agentsIds))
-            $agents = Agent::query()
-                ->where("is_test", false)->get();
-        else
-            $agents = Agent::query()
-                ->where("is_test", false)
-                ->whereIn("id", $agentsIds)->get();
+        $from = $fromDate->copy()->startOfDay();
+        $to   = $toDate->copy()->endOfDay();
 
-        $daysOfWeek = [
-            'Sunday' => 'Воскресенье',
-            'Monday' => 'Понедельник',
-            'Tuesday' => 'Вторник',
-            'Wednesday' => 'Среда',
-            'Thursday' => 'Четверг',
-            'Friday' => 'Пятница',
-            'Saturday' => 'Суббота'
-        ];
+        // 1. Один агрегирующий запрос
+        $salesQuery = Sale::query()
+            ->where('supplier_id', $supplier->id)
+            ->where('status', 'completed')
+            ->where('total_price', '>', 0)
+            ->whereBetween('sale_date', [$from, $to])
+            ->selectRaw('
+            DATE(sale_date) as sale_day,
+            agent_id,
+            SUM(total_price) as daily_total
+        ')
+            ->groupByRaw('DATE(sale_date), agent_id');
 
-        $currentDate = clone $fromDate;
-
-        // Подготовим отчет для текущего поставщика
-        $supplierReport = [];
-        // Проходим по каждому дню в периоде
-        while ($currentDate <= $toDate) {
-            // Создаем строку для текущих данных
-
-            $day = [];
-            // Пробегаемся по каждому агенту
-            foreach ($agents as $agent) {
-                // Запрашиваем продажи данного агента за текущий день
-                $salesDetails = Sale::query()
-                    ->where('supplier_id', $supplier->id)
-                    ->where('agent_id', $agent->id)
-                    ->where("status", "completed")
-                    ->where("total_price", ">", 0)
-                    ->whereDate('sale_date', "=", $currentDate->format('Y-m-d'))
-                    ->get();
-
-
-                // Формируем объект сделки
-                $saleObject = [
-                    'price' => $salesDetails->sum('total_price'),
-                    'supplier_id' => $supplier->id,
-                    'agent_id' => $agent->id,
-                ];
-
-                // Добавляем объект в таблицу
-                $day[] = $saleObject;
-            }
-
-            // Суммируем продажи за день
-            $totalDailySales = array_sum(array_column($day, 'price'));
-
-
-            $dayName = $daysOfWeek[Carbon::parse($currentDate)->englishDayOfWeek];
-
-            // Добавляем текущую строку в отчет поставщика
-            $supplierReport[] = [
-                'date' => $currentDate->format('d.m.Y'),
-                'total' => $totalDailySales,
-                'day_name' => $dayName,
-                'day_details' => $day,
-            ];;
-
-            // Переходим к следующему дню
-            $currentDate->addDay();
+        if (!empty($agentsIds)) {
+            $salesQuery->whereIn('agent_id', $agentsIds);
         }
 
+        $rawSales = $salesQuery->get();
 
-        return [
-            "id" => $supplier->id,
-            "title" => $supplier->name ?? 'Неизвестный поставщик',
-            'agents' => $agents,
-            "total_sum" => array_sum(array_column($supplierReport, 'total')),
-            "period" => $supplierReport,
+        /*
+         * 2. Строим быстрый lookup-массив:
+         * $salesMap[дата][agent_id] = сумма
+         */
+        $salesMap = [];
+
+        foreach ($rawSales as $sale) {
+            $salesMap[$sale->sale_day][$sale->agent_id] = (float) $sale->daily_total;
+        }
+
+        // 3. Загружаем агентов один раз
+        $agentsQuery = Agent::query()
+            ->where('is_test', false);
+
+        if (!empty($agentsIds)) {
+            $agentsQuery->whereIn('id', $agentsIds);
+        }
+
+        $agents = $agentsQuery->get()->keyBy('id');
+
+        // 4. Генерация периода
+        $period = \Carbon\CarbonPeriod::create($from, $to);
+
+        $report = [];
+        $grandTotal = 0.0;
+
+        $daysOfWeek = [
+            'Sunday'    => 'Воскресенье',
+            'Monday'    => 'Понедельник',
+            'Tuesday'   => 'Вторник',
+            'Wednesday' => 'Среда',
+            'Thursday'  => 'Четверг',
+            'Friday'    => 'Пятница',
+            'Saturday'  => 'Суббота',
         ];
 
+        foreach ($period as $date) {
+
+            $dateStr = $date->format('Y-m-d');
+            $dailySum = 0.0;
+            $dayDetails = [];
+
+            foreach ($agents as $agent) {
+
+                // ⚡ Мгновенный доступ без firstWhere
+                $price = $salesMap[$dateStr][$agent->id] ?? 0.0;
+
+                $dayDetails[] = [
+                    'price'       => $price,
+                    'supplier_id' => $supplier->id,
+                    'agent_id'    => $agent->id,
+                ];
+
+                $dailySum += $price;
+            }
+
+            $report[] = [
+                'date'        => $date->format('d.m.Y'),
+                'total'       => $dailySum,
+                'day_name'    => $daysOfWeek[$date->englishDayOfWeek] ?? '—',
+                'day_details' => $dayDetails,
+            ];
+
+            $grandTotal += $dailySum;
+        }
+
+        return [
+            'id'        => $supplier->id,
+            'title'     => $supplier->name ?? 'Неизвестный поставщик',
+            'agents'    => $agents->values(),
+            'total_sum' => $grandTotal,
+            'period'    => $report,
+        ];
     }
 
     public function getPersonalAgentSales(int $agentId, $fromDate = null, $toDate = null)

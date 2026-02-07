@@ -58,6 +58,8 @@
         <th style="width: 150px;font-weight: bold;">Дата</th>
         <th style="width: 150px;font-weight: bold;">Имя</th>
         <th style="width: 150px;font-weight: bold;">Сумма продажи</th>
+        <th style="width: 80px;font-weight: bold;"># сделки</th>
+        <th style="width: 150px;font-weight: bold;">Тип оплаты</th>
         <th style="width: 150px;font-weight: bold;">Выручка (детально)</th>
         <th style="width: 150px;font-weight: bold;">Админский 4%</th>
 
@@ -82,6 +84,19 @@
             <td>{{ $sale['date'] }}</td>
             <td>{{ $sale['supplier_name'] }}</td>
             <td>{{ !is_null($sale['sale_amount'])?number_format($sale['sale_amount'], 2, ',', ' '):'' }}</td>
+            <td>{{ $sale["id"] ?? '-' }}</td>
+            <td>
+                @isset($sale["payment_type"])
+                    @if ($sale["payment_type"] == 0)
+                        Наличный
+                    @endif
+
+                    @if ($sale["payment_type"] == 1)
+                        Безналичный
+                    @endif
+                @endisset
+
+            </td>
             <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 2, ',', ' '):'' }}</td>
             <td>
                 {{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total']*0.04, 2, ',', ' '):'' }}
@@ -175,6 +190,8 @@
         <td style="font-weight: bold;">Итого</td>
         <td></td>
         <td style="font-weight: bold;">{{ number_format($summary['total_sales'] , 2, ',', ' ') }}</td>
+        <td></td>
+        <td></td>
         <td style="font-weight: bold;">{{ number_format($summary['revenue_total'] , 2, ',', ' ') }}</td>
         <td style="font-weight: bold;">{{number_format($adminSum , 2, ',', ' ')}}</td>
         <td></td>
