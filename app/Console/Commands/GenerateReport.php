@@ -49,7 +49,7 @@ class GenerateReport extends Command
             \Maatwebsite\Excel\Excel::XLSX);
 
         BotMethods::bot()
-            ->sendDocument($channel, "Экспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
+            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
                 InputFile::createFromContents($data, $fileName));
 
         $fileName = "продажи за период $startDate - $endDate.xlsx";
@@ -57,7 +57,7 @@ class GenerateReport extends Command
             \Maatwebsite\Excel\Excel::XLSX);
 
         BotMethods::bot()
-            ->sendDocument($channel, "Экспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
+            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
                 InputFile::createFromContents($data, $fileName));
 
         $fileName = "продажи за год.xlsx";
@@ -67,7 +67,7 @@ class GenerateReport extends Command
         ), \Maatwebsite\Excel\Excel::XLSX);
 
         BotMethods::bot()
-            ->sendDocument($channel, "Экспорт истории продаж за год",
+            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за год",
                 InputFile::createFromContents($data, $fileName));
         //-----------------------------------------------------------
 
@@ -80,7 +80,7 @@ class GenerateReport extends Command
         $fileName = "Отчет по зарплатам $startDate - $endDate.xlsx";
         BotMethods::bot()
             ->sendDocument($channel,
-                "Отчет по зарплатам <b>$startDate</b> - <b>$endDate</b>",
+                "#отчет\nОтчет по зарплатам <b>$startDate</b> - <b>$endDate</b>",
                 InputFile::createFromContents($content, $fileName));
 
 
@@ -95,7 +95,7 @@ class GenerateReport extends Command
         $fileName = "Отчет по поставщикам  $startDate - $endDate.xlsx";
         BotMethods::bot()
             ->sendDocument($channel,
-                "Отчет по поставщикам <b>$startDate</b> - <b>$endDate</b>",
+                "#отчет\nОтчет по поставщикам <b>$startDate</b> - <b>$endDate</b>",
                 InputFile::createFromContents($content, $fileName));
         //-----------------------------------------------------------
 
@@ -105,7 +105,7 @@ class GenerateReport extends Command
                 toDate: Carbon::now("+3")->endOfYear()
             ), \Maatwebsite\Excel\Excel::XLSX);
 
-        $fileName = "Отчет по поставщикам за год.xlsx";
+        $fileName = "#отчет\nОтчет по поставщикам за год.xlsx";
         BotMethods::bot()
             ->sendDocument($channel,
                 "Отчет по поставщикам за год",
