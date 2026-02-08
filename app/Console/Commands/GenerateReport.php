@@ -41,6 +41,17 @@ class GenerateReport extends Command
 
         $channel = env("TELEGRAM_ADMIN_CHANNEL");
 
+        $currentDayStart = Carbon::now("+3")->startOfDay();
+        $currentDayEnd = Carbon::now("+3")->endOfDay();
+
+        $fileName = "продажи за текущий день $currentDayStart - $currentDayEnd.xlsx";
+        $data = Excel::raw(new SalesByAgentReport($currentDayStart, $currentDayEnd),
+            \Maatwebsite\Excel\Excel::XLSX);
+
+        BotMethods::bot()
+            ->sendDocument($channel, "Экспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
+                InputFile::createFromContents($data, $fileName));
+
         $fileName = "продажи за период $startDate - $endDate.xlsx";
         $data = Excel::raw(new SalesByAgentReport($startDate, $endDate),
             \Maatwebsite\Excel\Excel::XLSX);
