@@ -105,10 +105,10 @@ class GenerateReport extends Command
                 toDate: Carbon::now("+3")->endOfYear()
             ), \Maatwebsite\Excel\Excel::XLSX);
 
-        $fileName = "#отчет\nОтчет по поставщикам за год.xlsx";
+        $fileName = "Отчет по поставщикам за год.xlsx";
         BotMethods::bot()
             ->sendDocument($channel,
-                "Отчет по поставщикам за год",
+                "#отчет\nОтчет по поставщикам за год",
                 InputFile::createFromContents($content, $fileName));
 
     }
