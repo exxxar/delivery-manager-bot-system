@@ -49,7 +49,7 @@ class GenerateReport extends Command
             \Maatwebsite\Excel\Excel::XLSX);
 
         BotMethods::bot()
-            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
+            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за период <b>$currentDayStart</b> - <b>$currentDayEnd</b>",
                 InputFile::createFromContents($data, $fileName));
 
         $fileName = "продажи за период $startDate - $endDate.xlsx";
