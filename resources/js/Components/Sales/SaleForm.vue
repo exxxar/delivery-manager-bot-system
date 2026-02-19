@@ -323,8 +323,8 @@ export default {
     },
     watch: {
         'form.quantity': function (newVal, oldVal) {
-            if (this.form.total_price === 0)
-                this.form.total_price = (this.product.price * this.form.quantity).toFixed(2)
+           /* if (this.form.total_price === 0)
+                this.form.total_price = (this.product.price * this.form.quantity).toFixed(2)*/
         },
     },
     computed: {
@@ -440,7 +440,7 @@ export default {
             this.product = product
             this.tab = 'main'
             this.form.quantity = 1
-            this.form.total_price = product.price || 0
+            //this.form.total_price = product.price || 0
         },
 
         async submitForm() {
