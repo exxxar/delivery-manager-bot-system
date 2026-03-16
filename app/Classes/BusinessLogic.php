@@ -34,14 +34,15 @@ class BusinessLogic
                 'supplier_id',
                 'total_price',
                 'sale_date',
+                'actual_delivery_date',
             ])
             ->where('status', 'completed')
-            ->whereNotNull('sale_date')
-            ->orderBy('sale_date');
+            ->whereNotNull('actual_delivery_date')
+            ->orderBy('actual_delivery_date');
 
         // Фильтры периода
         if ($fromDate && $toDate) {
-            $query->whereBetween('sale_date', [$fromDate, $toDate]);
+            $query->whereBetween('actual_delivery_date', [$fromDate, $toDate]);
         }
 
         // Фильтр по поставщикам
@@ -96,7 +97,7 @@ class BusinessLogic
 
             foreach ($salesBySupplier as $sale)
             {
-                $monthNum = (int) Carbon::parse($sale->sale_date)->format('n');
+                $monthNum = (int) Carbon::parse($sale->actual_delivery_date)->format('n');
                 $monthly[$months[$monthNum]] += (float) $sale->total_price;
             }
 
@@ -161,10 +162,10 @@ class BusinessLogic
         // Один запрос — все нужные продажи
         $sales = Sale::query()
             ->where('agent_id', $agent->id)
-            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->whereBetween('actual_delivery_date', [$startDate, $endDate])
             ->when($suppliersIds, fn($q) => $q->whereIn('supplier_id', $suppliersIds))
             ->where('status', 'completed')
-            ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'mentor_award','id')
+            ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'mentor_award','id','actual_delivery_date')
             ->with('supplier:id,name,percent')
             ->get();
 
@@ -196,7 +197,8 @@ class BusinessLogic
             }
 
             return [
-                'date'              => $sale->sale_date,
+                'date'              => $sale->actual_delivery_date,
+                'sale_date'              => $sale->sale_date,
                 'supplier_id'       => $sale->supplier_id,
                 'supplier_name'     => $sale->supplier?->name ?? 'Неизвестный поставщик',
                 'sale_amount'       => $sale->total_price,
@@ -279,13 +281,13 @@ class BusinessLogic
             ->where('supplier_id', $supplier->id)
             ->where('status', 'completed')
             ->where('total_price', '>', 0)
-            ->whereBetween('sale_date', [$from, $to])
+            ->whereBetween('actual_delivery_date', [$from, $to])
             ->selectRaw('
-            DATE(sale_date) as sale_day,
+            DATE(actual_delivery_date) as actual_delivery_day,
             agent_id,
             SUM(total_price) as daily_total
         ')
-            ->groupByRaw('DATE(sale_date), agent_id');
+            ->groupByRaw('DATE(actual_delivery_date), agent_id');
 
         if (!empty($agentsIds)) {
             $salesQuery->whereIn('agent_id', $agentsIds);
@@ -300,7 +302,7 @@ class BusinessLogic
         $salesMap = [];
 
         foreach ($rawSales as $sale) {
-            $salesMap[$sale->sale_day][$sale->agent_id] = (float) $sale->daily_total;
+            $salesMap[$sale->actual_delivery_day][$sale->agent_id] = (float) $sale->daily_total;
         }
 
         // 3. Загружаем агентов один раз
@@ -378,7 +380,7 @@ class BusinessLogic
         $sales = Sale::with('supplier')
             ->where('agent_id', $agentId)
             ->where("status", "completed")
-            ->whereBetween('sale_date', [$fromDate, $toDate])
+            ->whereBetween('actual_delivery_date', [$fromDate, $toDate])
             ->get();
 
         // Массив для хранения итоговых данных
@@ -390,7 +392,7 @@ class BusinessLogic
 
             // Собираем данные для строки отчета
             $result[] = [
-                'sale_date' => Carbon::parse($sale->sale_date)->format('d.m.Y'), // дата продажи
+                'actual_delivery_date' => Carbon::parse($sale->actual_delivery_date)->format('d.m.Y'), // дата продажи
                 'supplier_name' => $supplier->name ?? 'Неизвестный поставщик',               // название поставщика
                 'total_price' => $sale->total_price,              // сумма продажи
                 'percent' => $supplier->percent,              // процент с продажи
@@ -405,11 +407,11 @@ class BusinessLogic
     {
         // выборка по created_by_id и периоду
         $query = Sale::query()->where('created_by_id', $createdById)
-            ->whereBetween('due_date', [
+            ->whereBetween('actual_delivery_date', [
                 Carbon::parse($dateFrom)->startOfDay(),
                 Carbon::parse($dateTo)->endOfDay()
             ])
-            ->orderBy('due_date', 'asc');
+            ->orderBy('actual_delivery_date', 'asc');
 
         $sales = $query->get();
 

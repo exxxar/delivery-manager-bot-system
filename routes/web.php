@@ -1,6 +1,8 @@
 <?php
 
 use App\Exports\ExportType4\RevenueExportSheet;
+use App\Exports\SalesByAgentReport;
+use App\Facades\BotMethods;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\BirthdayController;
@@ -26,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use Telegram\Bot\FileUpload\InputFile;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +40,11 @@ use Maatwebsite\Excel\Facades\Excel;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+use App\Exports\ExportType1\SummarySuppliersReport;
+use App\Exports\ExportType4\SummaryAgentReport;
+use Illuminate\Console\Command;
+
 
 Route::get("/upload-suppliers", function () {
 
@@ -122,6 +130,75 @@ Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePage"]
 Route::get("/blocked", [\App\Http\Controllers\TelegramController::class, "blockedPage"])
     ->name("blocked");
 
+Route::get('/test-report',function(){
+    ini_set('memory_limit', '3000M');
+    ini_set('max_execution_time', 3000); //300 seconds = 5 minutes
+    $startDate = Carbon::parse('2025-11-01');
+    $endDate = Carbon::parse('2025-12-31');
+
+    $channel = env("TELEGRAM_ADMIN_CHANNEL");
+
+
+    $fileName = "продажи за период $startDate - $endDate.xlsx";
+    $data = Excel::raw(new SalesByAgentReport($startDate, $endDate),
+        \Maatwebsite\Excel\Excel::XLSX);
+
+    BotMethods::bot()
+        ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
+            InputFile::createFromContents($data, $fileName));
+
+    $fileName = "продажи за год.xlsx";
+    $data = Excel::raw(new SalesByAgentReport(
+        Carbon::now("+3")->startOfYear(),
+        Carbon::now("+3")->endOfYear()
+    ), \Maatwebsite\Excel\Excel::XLSX);
+
+    BotMethods::bot()
+        ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за год",
+            InputFile::createFromContents($data, $fileName));
+    //-----------------------------------------------------------
+
+    $content = Excel::raw(new SummaryAgentReport(
+        resultType: 0,
+        fromDate: $startDate,
+        toDate: $endDate,
+    ), \Maatwebsite\Excel\Excel::XLSX);
+
+    $fileName = "Отчет по зарплатам $startDate - $endDate.xlsx";
+    BotMethods::bot()
+        ->sendDocument($channel,
+            "#отчет\nОтчет по зарплатам <b>$startDate</b> - <b>$endDate</b>",
+            InputFile::createFromContents($content, $fileName));
+
+
+    //-----------------------------------------------------
+
+    $content =
+        Excel::raw(new SummarySuppliersReport(
+            fromDate: $startDate,
+            toDate: $endDate
+        ), \Maatwebsite\Excel\Excel::XLSX);
+
+    $fileName = "Отчет по поставщикам  $startDate - $endDate.xlsx";
+    BotMethods::bot()
+        ->sendDocument($channel,
+            "#отчет\nОтчет по поставщикам <b>$startDate</b> - <b>$endDate</b>",
+            InputFile::createFromContents($content, $fileName));
+    //-----------------------------------------------------------
+
+    $content =
+        Excel::raw(new SummarySuppliersReport(
+            fromDate: Carbon::now("+3")->startOfYear(),
+            toDate: Carbon::now("+3")->endOfYear()
+        ), \Maatwebsite\Excel\Excel::XLSX);
+
+    $fileName = "Отчет по поставщикам за год.xlsx";
+    BotMethods::bot()
+        ->sendDocument($channel,
+            "#отчет\nОтчет по поставщикам за год",
+            InputFile::createFromContents($content, $fileName));
+
+});
 
 Route::get('/', function () {
     return "ok";

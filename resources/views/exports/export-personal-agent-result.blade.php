@@ -31,7 +31,7 @@
         @php($sale = (object)$sale)
         @php($total += (float)($sale->total_price ?? 0))
         <tr>
-            <td>{{ \Carbon\Carbon::parse($sale->sale_date)->format('Y-m-d') }}</td>
+            <td>{{ \Carbon\Carbon::parse($sale->actual_delivery_date)->format('Y-m-d') }}</td>
             <td>{{ $sale->supplier_name ?? '-' }}</td>
             <td>{{ number_format((float)$sale->total_price, 2, ',', ' ') }}</td>
         </tr>

@@ -97,9 +97,9 @@
                 @endisset
 
             </td>
-            <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 2, ',', ' '):'' }}</td>
+            <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 0, ',', ' '):'' }}</td>
             <td>
-                {{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total']*0.04, 2, ',', ' '):'' }}
+                {{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total']*0.04, 0, ',', ' '):'' }}
 
             </td>
             @if ($step == 0)
@@ -107,7 +107,7 @@
                     Сумма
                 </td>
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($summary['revenue_total'], 2, ',', ' ') }}
+                    {{ number_format($summary['revenue_total'], 0, ',', ' ') }}
                 </td>
 
                 <td style="width: 150px;font-weight: bold;">

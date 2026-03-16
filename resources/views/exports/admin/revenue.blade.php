@@ -31,8 +31,8 @@
     <tr><th colspan="2">Общая сумма продаж</th><td>{{ number_format($summary['total_sales'], 2, ',', ' ') }}</td></tr>
     <tr><th colspan="2">Налог ({{ $summary['tax_percent'] }}%)</th><td>{{ number_format($summary['tax_amount'], 2, ',', ' ') }}</td></tr>
     <tr><th colspan="2">После налога</th><td>{{ number_format($summary['after_tax'], 2, ',', ' ') }}</td></tr>
-    <tr><th colspan="2">Выручка</th><td>{{ number_format($summary['revenue_total'], 2, ',', ' ') }}</td></tr>
-    <tr><th colspan="2">Выручка после налога</th><td>{{ number_format($summary['revenue_without_tax_total'], 2, ',', ' ') }}</td></tr>
+    <tr><th colspan="2">Выручка</th><td>{{ number_format($summary['revenue_total'], 0, ',', ' ') }}</td></tr>
+    <tr><th colspan="2">Выручка после налога</th><td>{{ number_format($summary['revenue_without_tax_total'], 0, ',', ' ') }}</td></tr>
     <tr><th colspan="2">Переводы ({{ $summary['transfer_percent'] }}%) от суммы выручки</th><td>{{ number_format($summary['transfer_from_total'], 2, ',', ' ') }}</td></tr>
     <tr><th colspan="2">Переводы от суммы после налога</th><td>{{ number_format($summary['transfer_from_after_tax'], 2, ',', ' ') }}</td></tr>
 </table>
@@ -57,8 +57,8 @@
             <td>{{ $sale['supplier_name'] }}</td>
             <td>{{ number_format($sale['sale_amount'], 2, ',', ' ') }}</td>
             <td>{{ $sale['percent'] }}%</td>
-            <td>{{ number_format($sale['revenue_total'], 2, ',', ' ') }}</td>
-            <td>{{ number_format($sale['revenue_after_tax'], 2, ',', ' ') }}</td>
+            <td>{{ number_format($sale['revenue_total'], 0, ',', ' ') }}</td>
+            <td>{{ number_format($sale['revenue_after_tax'], 0, ',', ' ') }}</td>
             <td>{{ number_format($sale['transfer'], 2, ',', ' ') }}</td>
         </tr>
         @php

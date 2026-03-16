@@ -34,8 +34,8 @@
             $totalRewardSum += $reward ?? 0;
         @endphp
         <tr>
-            <td>{{ $sale->due_date }}</td>
-            <td>{{ $weekDays[\Carbon\Carbon::parse($sale->due_date)->translatedFormat('l') ?? 'nonset'] }}</td>
+            <td>{{ $sale->actual_delivery_date }}</td>
+            <td>{{ $weekDays[\Carbon\Carbon::parse($sale->actual_delivery_date)->translatedFormat('l') ?? 'nonset'] }}</td>
             <td style="text-align: right;">{{ number_format($sale->total_price, 2, ',', ' ') }}</td>
             <td style="text-align: right;">{{ $percent }}</td>
             <td style="text-align: right;">{{ number_format($reward, 2, ',', ' ') }}</td>

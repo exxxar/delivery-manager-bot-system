@@ -100,7 +100,7 @@ class SaleController extends Controller
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
             $data["payment_document_name"] = $filename;
-            $data["sale_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
+            $data["sale_date"] = is_null($date["sale_date"] ?? null) ? Carbon::now() : Carbon::parse($data["sale_date"]);
         }
 
 
@@ -112,10 +112,12 @@ class SaleController extends Controller
         unset($data["is_already_delivered"]);
         unset($data["file"]);
 
+        $data["due_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
+        $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
+        $data["actual_delivery_date"] = is_null($date["actual_delivery_date"] ?? null) ? null: Carbon::parse($data["actual_delivery_date"]);
+
         if ($isAlreadyDelivered) {
             $data["status"] = "completed";
-            $data["sale_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
-            $data["actual_delivery_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
         }
 
         $product = Product::query()->where("id", $data["product_id"])->first();

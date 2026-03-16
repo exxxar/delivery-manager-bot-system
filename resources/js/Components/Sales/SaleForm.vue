@@ -126,21 +126,22 @@ const today = new Date().toISOString().split('T')[0]
                             class="form-control"
                             @change="onFileChange"
                             accept=".jpg,.png,.pdf"
-                            :required="!form.receipt_is_lost"
                         />
                     </template>
 
-                    <label for="payment-type">Прикрепить</label>
+                    <label for="payment-type">Прикрепить
+                        <span class="text-primary fw-bold">(не обязательно)</span>
+                    </label>
                 </div>
 
-                <div
+<!--                <div
                     class="form-check form-switch mb-2">
                     <input
                         v-model="form.receipt_is_lost"
                         class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
                     <label class="form-check-label" for="need_automatic_naming">Чек был утрачен или еще не оплачено
                     </label>
-                </div>
+                </div>-->
 
             </template>
 
@@ -177,6 +178,22 @@ const today = new Date().toISOString().split('T')[0]
                 <label for="due_date">Дата задания</label>
             </div>
 
+            <div class="form-floating mb-2">
+                <input
+                    v-model="form.sale_date" type="date"
+                    class="form-control" id="sale_date">
+                <label for="sale_date">Дата оплаты</label>
+            </div>
+
+
+            <div class="form-floating mb-2">
+                <input
+                    required
+                    v-model="form.actual_delivery_date" type="date"
+                    class="form-control" id="actual_delivery_date">
+                <label for="actual_delivery_date">Фактическая дата доставки</label>
+            </div>
+<!--
             <div
                 class="form-check form-switch mb-2">
                 <input
@@ -192,23 +209,11 @@ const today = new Date().toISOString().split('T')[0]
 
             <template v-if="display_more_dates">
 
-                <div class="form-floating mb-2">
-                    <input
-                        required
-                        v-model="form.sale_date" type="date" class="form-control" id="sale_date">
-                    <label for="sale_date">Дата оплаты</label>
-                </div>
 
-
-                <div class="form-floating mb-2">
-                    <input
-                        required
-                        v-model="form.actual_delivery_date" type="date" class="form-control" id="actual_delivery_date">
-                    <label for="actual_delivery_date">Фактическая дата доставки</label>
-                </div>
 
 
             </template>
+-->
 
             <template v-if="user?.role>=3">
                 <p class="alert alert-info mb-2">Назначение ответственного по данной задаче</p>
