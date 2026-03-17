@@ -114,7 +114,7 @@ class SaleController extends Controller
 
         $data["due_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
         $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
-        $data["actual_delivery_date"] = is_null($date["actual_delivery_date"] ?? null) ? null: Carbon::parse($data["actual_delivery_date"]);
+        $data["actual_delivery_date"] = is_null($date["actual_delivery_date"] ?? null) ? null : Carbon::parse($data["actual_delivery_date"]);
 
         if ($isAlreadyDelivered) {
             $data["status"] = "completed";
@@ -346,7 +346,7 @@ class SaleController extends Controller
 
         $priceIsChange = $sale->total_price != $request->total_price;
 
-        $price = ($request->total_price?? 0 ) == 0? $sale->total_price : $request->total_price;
+        $price = ($request->total_price ?? 0) == 0 ? $sale->total_price : $request->total_price;
 
         $sale->total_price = $price;
 
@@ -554,7 +554,9 @@ class SaleController extends Controller
 
         $botUser = $request->botUser ?? null;
 
-        if ($data["quantity"] == 0)
+        $data["total_price"] = $data["total_price"] ?? 0;
+
+        if (($data["quantity"] ?? 0) == 0)
             $data["quantity"] = 1;
 
         $hasFile = false;
@@ -578,8 +580,8 @@ class SaleController extends Controller
             $data["description"] = "Товар " . ($product->name ?? 'товара')
                 . ", поставщик " . ($supplier->name ?? 'поставщика')
                 . ", тип оплаты " . ($data["payment_type"] == 0 ? "наличными" : "безналичный расчет")
-                . ", кол-во " . ($data["quantity"] ?? 0) . "ед."
-                . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
+                . ", кол-во " . $data["quantity"] . "ед."
+                . ", цена " . $data["total_price"] . "руб. ";
         }
 
 
@@ -587,7 +589,9 @@ class SaleController extends Controller
         $data["mentor_award"] = 0;
         $data["payment_type"] = isset($data["payment_type"]) ? ($data["payment_type"] ?? 0) : $sale->payment_type;
 
-        $priceIsChange = $sale->total_price != ($data["total_price"] ?? 0);
+
+        $priceIsChange = $sale->total_price != $data["total_price"];
+
 
         $product = Product::query()->where("id", $data["product_id"] ?? $sale->product_id ?? null)->first();
 

@@ -79,6 +79,9 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
+    /**
+     * @throws HttpException
+     */
     public function store(Request $request)
     {
         $data = $request->all();
@@ -106,6 +109,8 @@ class ProductController extends Controller
 
         $data["product_category_id"] = $data["product_category_id"] ?? $category->id ?? null;
 
+        if (is_null($data["supplier_id"]))
+            throw new HttpException("Не выбран поставщик!",403);
 
         $product = Product::query()->firstOrCreate($data);
         $product->load(['supplier', 'category']);
