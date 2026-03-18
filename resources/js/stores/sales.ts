@@ -25,6 +25,7 @@ const path: string = '/bot-api/sales'
 export const useSalesStore = defineStore('sales', {
     state: () => ({
         items: [] as Sale[],
+        bad_items: [] as Sale[],
         loading: false,
         filters: null,
         progress: 0,
@@ -76,6 +77,11 @@ export const useSalesStore = defineStore('sales', {
             const {data} = await makeAxiosFactory(`${path}/self-sales?${params.toString()}`, 'GET')
             this.items = data.data
             this.pagination = data
+            return true
+        },
+        async fetchBadData() {
+            const {data} = await makeAxiosFactory(`${path}/bad-sales`, 'GET')
+            this.bad_items = data
             return true
         },
         async fetchFiltered(page = 1, size = 30) {
@@ -220,9 +226,9 @@ export const useSalesStore = defineStore('sales', {
                         'Content-Type': 'multipart/form-data'
                     },
                     onUploadProgress: (e) => {
-                        if (e.total ) {
+                        if (e.total) {
                             this.progress =
-                                Math.round((e.loaded * 100) / (e.total ));
+                                Math.round((e.loaded * 100) / (e.total));
                         }
                     },
                 })

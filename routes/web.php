@@ -372,6 +372,7 @@ Route::prefix("bot-api")
             ->group(function () {
                 // Список всех продаж
                 Route::get('/', [SaleController::class, 'index']);
+                Route::get('/bad-sales', [SaleController::class, 'getBadSales']);
                 // Создать новую продажу
                 Route::post('/', [SaleController::class, 'store']);
 

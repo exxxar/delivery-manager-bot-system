@@ -34,6 +34,19 @@ class SaleController extends Controller
         return response()->json($sales);
     }
 
+    public function getBadSales(Request $request)
+    {
+        $sales = Sale::query()
+            ->where("status", "completed")
+            ->where(function ($q) {
+                $q->whereNull("sale_date")
+                    ->orWhereNull("actual_delivery_date");
+            })
+            ->get();
+
+        return response()->json($sales);
+    }
+
     public function acceptAll(Request $request)
     {
         $request->validate([
@@ -112,9 +125,10 @@ class SaleController extends Controller
         unset($data["is_already_delivered"]);
         unset($data["file"]);
 
-        $data["due_date"] = is_null($date["due_date"] ?? null) ? Carbon::now() : Carbon::parse($data["due_date"]);
-        $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
-        $data["actual_delivery_date"] = is_null($date["actual_delivery_date"] ?? null) ? null : Carbon::parse($data["actual_delivery_date"]);
+        $data["due_date"] = Carbon::parse($data["due_date"])->format('Y-m-d H:i:s');
+        $data["sale_date"] = Carbon::parse($data["sale_date"])->format('Y-m-d H:i:s');
+        $data["actual_delivery_date"] = Carbon::parse($data["actual_delivery_date"])->format('Y-m-d H:i:s');
+
 
         if ($isAlreadyDelivered) {
             $data["status"] = "completed";

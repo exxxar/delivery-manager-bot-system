@@ -4,6 +4,7 @@ import Pagination from "@/Components/Pagination.vue";
 import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 import TaskCard from "@/Components/Sales/TaskCard.vue";
 import DealForm from "@/Components/Sales/Forms/DealForm.vue";
+import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 </script>
 <template>
 
@@ -33,79 +34,88 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
             v-if="salesStore.pagination">Всего {{salesStore.pagination.total}} ед.</span>
     </div>
 
+    <template v-if="filteredBadSales.length>0">
+        <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Заявки, в которых есть неточности по дате</h6>
+        <ul class="list-group">
+            <li
+
+                v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1, 'bg-danger-subtle':sale.status === 'completed'&&(!sale.sale_date||!sale.actual_delivery_date)}"
+
+                v-for="sale in filteredBadSales" :key="sale.id"
+                class="list-group-item d-flex justify-content-between align-items-start ">
+                <SaleCard
+                    :sale="sale"
+                    :field_visible="field_visible"
+                    :saleStatuses="saleStatuses"
+                    @toggle-selection="toggleSelection"
+                />
+
+                <!-- Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-light text-primary" type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <template v-if="forSelect">
+                            <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a>
+                            </li>
+                        </template>
+                        <template v-if="!forSelect">
+                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">Просмотреть</a>
+                            </li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">Редактировать</a>
+                            </li>
+                            <li v-if="sale.status!=='completed'"><a class="dropdown-item text-success"
+                                                                    href="javascript:void(0)"
+                                                                    @click.prevent="openConfirmDeal(sale)">Подтвердить
+                                оплату и доставка</a></li>
+                            <!--                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
+                                                                                                         href="javascript:void(0)"
+
+                                                                                                         @click.prevent="openConfirmPayment(sale)">Подтвердить
+                                                        оплату</a></li>-->
+
+                            <template v-if="sale.payment_document_name">
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item text-success"
+                                       href="javascript:void(0)"
+                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a></li>
+                            </template>
+
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                                   @click.prevent="confirmDelete(sale)">Удалить</a></li>
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                                   @click.prevent="confirmCancelDeal(sale)">Отменить
+                                сделку</a></li>
+                        </template>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+        <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Все заявки</h6>
+    </template>
+
     <ul class="list-group">
         <li
 
-            v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1}"
+            v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1, 'bg-danger':sale.status === 'completed'&&(!sale.sale_date||!sale.actual_delivery_date)}"
             v-for="sale in filteredSales" :key="sale.id"
             class="list-group-item d-flex justify-content-between align-items-start">
-            <div>
-                <p class="fw-bold mb-2 small" @click="toggleSelection(sale.id)">
-                    <span class="badge"
-                          v-bind:class="{'bg-warning':!sale.sale_date, 'bg-success':sale.sale_date}"
-                          v-if="sale.payment_type===0">
-                        <i class="fa-solid fa-money-bill"></i>
-                        <i class="fa-solid fa-clock"
-                           style="margin-left:8px;"
-                           v-if="!sale.sale_date"></i>
-
-                    </span>
-                    <span class="badge bg-success"
-                          v-if="sale.payment_type===1"><i class="fa-solid fa-credit-card"></i></span>
-
-
-                    <span class="badge bg-primary mx-1" v-if="field_visible?.id||true">#{{
-                            sale.id
-                        }}</span> {{ sale.title }} </p>
-                <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.due_date||true">Дата задания
-                    {{ sale.due_date || 'не указана' }}</p>
-                <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.sale_date||true">Дата продажи
-                    {{ sale.sale_date || 'не указана' }}</p>
-                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.payment_type||false">
-                    Тип оплаты
-                    <span v-if="sale.payment_type===0">Наличный расчет</span>
-                    <span v-if="sale.payment_type===1">Безналичный расчет</span>
-                </p>
-                <p class="fw-bold mb-2" style="font-size:14px;" v-if="field_visible?.actual_delivery_date||false">
-                    Фактическая дата доставки {{ sale.actual_delivery_date || 'не указана' }}</p>
-                <small class="text-muted small" v-if="field_visible?.status||true">Статус:
-                    <span
-                        class="badge"
-                        v-bind:class="{
-                            'bg-warning':sale.status==='pending',
-                            'bg-info':sale.status==='assigned',
-                            'bg-primary':sale.status==='delivered',
-                            'bg-success':sale.status==='completed',
-                            'bg-danger':sale.status==='rejected',
-                        }">{{ saleStatuses[sale.status] }}</span>
-                </small>
-                <p class="mb-2 small" v-if="field_visible?.description||true">{{ sale.description }}</p>
-                <p class="mb-2 " v-if="field_visible?.quantity||false">Доставляемое число товара <span
-                    class="fw-bold">{{ sale.quantity || 'не указана' }}</span> ед.</p>
-                <p class="mb-2" v-if="field_visible?.total_price||false">Сумма заказа <span
-                    class="fw-bold">{{ sale.total_price }}</span> руб.</p>
-                <p class="mb-2 small" v-if="field_visible?.agent_id||true">Оформил заказ <span
-                    class="fw-bold">{{ sale.agent?.name || sale.agent_id || '-' }}</span></p>
-                <p class="mb-2" v-if="field_visible?.customer_id||false">Клиент <span
-                    class="fw-bold">{{ sale.customer?.name || sale.customer_id || '-' }}</span></p>
-                <p class="mb-2" v-if="field_visible?.supplier_id||false">Поставщик <span
-                    class="fw-bold">{{ sale.supplier?.name || sale.supplier_id || '-' }}</span></p>
-                <p class="mb-2" v-if="field_visible?.created_by_id||false">Старший администратор <span
-                    class="fw-bold">{{ sale.creator?.name || sale.created_by_id || '-' }}</span></p>
-                <p class="mb-2" v-if="field_visible?.product_id||false">Товар <span
-                    class="fw-bold">{{ sale.product?.name || sale.product_id || '-' }}</span></p>
-
-                <p
-                   v-if="!sale.payment_document_name&&sale.payment_type===1"
-                    style="cursor:pointer;text-align:left;"
-                    class="mb-0 w-100 badge bg-danger">
-                       <i style="margin-right:5px;" class="fa-solid fa-triangle-exclamation"></i> Чек не прикреплен к сделке.
-                    </p>
-
-            </div>
+            <SaleCard
+                :sale="sale"
+                :field_visible="field_visible"
+                :saleStatuses="saleStatuses"
+                @toggle-selection="toggleSelection"
+            />
 
             <!-- Dropdown -->
-            <div class="dropdown">
+             <div class="dropdown">
                 <button class="btn btn-sm btn-outline-light text-primary" type="button"
                         data-bs-toggle="dropdown">
                     <i class="fas fa-bars"></i>
@@ -268,6 +278,9 @@ export default {
         },
         filteredSales() {
             return this.salesStore.items.filter(s => s.title.toLowerCase().includes(this.search.toLowerCase()))
+        },
+        filteredBadSales(){
+            return this.salesStore.bad_items ?? []
         }
     },
     created() {
@@ -279,6 +292,7 @@ export default {
         })
 
         this.salesStore.fetchFiltered()
+        this.salesStore.fetchBadData()
     },
     methods: {
         async sendPaymentDocumentToTg(id) {
@@ -305,6 +319,7 @@ export default {
             else
                 this.selection.splice(index, 1)
         },
+
 
         async fetchData(page = 1) {
             await this.salesStore.fetchAllByPage(page)
