@@ -36,8 +36,21 @@ class SaleController extends Controller
 
     public function getBadSales(Request $request)
     {
+
+        $botUser = $request->botUser;
+
+        $agent = Agent::where('user_id', $botUser->id)->first();
+
         $sales = Sale::query()
             ->where("status", "completed")
+            ->where(function ($q) use ($botUser, $agent) {
+                if (is_null($agent)) {
+                    $q->where('created_by_id', $botUser->id);
+                } else {
+                    $q->where('agent_id', $agent->id)
+                        ->orWhere('created_by_id', $botUser->id);
+                }
+            })
             ->where(function ($q) {
                 $q->whereNull("sale_date")
                     ->orWhereNull("actual_delivery_date");
