@@ -67,13 +67,13 @@ const today = new Date().toISOString().split('T')[0]
 
             <template v-if="form.supplier_id && form.product_id">
                 <!-- Количество -->
-                <div class="form-floating mb-2">
+<!--                <div class="form-floating mb-2">
                     <input
                         required
                         v-model="form.quantity" type="number" class="form-control" id="quantity"
                         placeholder="Количество">
                     <label for="quantity">Количество</label>
-                </div>
+                </div>-->
 
                 <!-- Сумма -->
                 <div class="form-floating mb-2">
@@ -360,7 +360,7 @@ export default {
                 due_date: '',
                 actual_delivery_date: '',
                 sale_date: '',
-                quantity: 0,
+                quantity: 1,
                 total_price: 0,
                 agent_id: null,
                 customer_id: null,

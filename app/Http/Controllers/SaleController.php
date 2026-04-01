@@ -126,9 +126,8 @@ class SaleController extends Controller
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
             $data["payment_document_name"] = $filename;
-            $data["sale_date"] = is_null($date["sale_date"] ?? null) ? Carbon::now() : Carbon::parse($data["sale_date"]);
+           // $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
         }
-
 
         $needAutomaticNaming = $data["need_automatic_naming"] == "true";
         $isAlreadyDelivered = $data["is_already_delivered"] == "true";

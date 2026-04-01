@@ -34,7 +34,7 @@
             </div>
         </template>
 
-        <div class="form-floating mb-2">
+<!--        <div class="form-floating mb-2">
             <input
                 v-model.number="localForm.quantity"
                 type="number"
@@ -44,7 +44,7 @@
                 required
             />
             <label for="quantity">Количество</label>
-        </div>
+        </div>-->
 
         <div class="form-floating mb-2">
             <input

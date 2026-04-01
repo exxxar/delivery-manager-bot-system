@@ -54,7 +54,8 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                                 Сформировать отчет
                             </button>
                         </li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="openRoleSwitcher(user)">Сменить роль</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="openRoleSwitcher(user)">Сменить роль</a>
+                        </li>
                         <li><a class="dropdown-item" href="#" @click.prevent="openEdit(user)">Редактировать</a></li>
                     </template>
 
@@ -73,7 +74,6 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
     <div v-if="adminsStore.items.length === 0" class="alert alert-info mt-3">
         Администраторов пока нет.
     </div>
-
 
 
     <!-- Модалка -->
@@ -173,13 +173,20 @@ export default {
             this.$emit("select", admin)
         },
         openRoleSwitcher(user) {
-            this.selectedAdmin = user
-            new bootstrap.Modal(document.getElementById('roleSwitcherUserModal')).show()
+
+            this.selectedAdmin = null
+            this.$nextTick(() => {
+                this.selectedAdmin = user
+                new bootstrap.Modal(document.getElementById('roleSwitcherUserModal')).show()
+            })
 
         },
         openEdit(user) {
-            this.selectedAdmin = user
-            new bootstrap.Modal(document.getElementById('editUserModal')).show()
+            this.selectedAdmin = null
+            this.$nextTick(() => {
+                this.selectedAdmin = user
+                new bootstrap.Modal(document.getElementById('editUserModal')).show()
+            })
 
         },
         async changeAdminWorkStatus(user) {
