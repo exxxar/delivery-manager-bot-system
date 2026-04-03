@@ -84,7 +84,9 @@ foreach($data[0]["admins"] as $admin)
             {{ number_format($summaryArray["agent_salary"], 0, ',', '')}}
         </td>
         @foreach($data[0]["admins"] as $admin)
-            <td  style="font-weight: bold;">{{$summaryArray["admin_".$admin["admin_id"]]}}</td>
+            <td  style="font-weight: bold;">
+                {{ number_format($summaryArray["admin_".$admin["admin_id"]], 0, ',', '')}}
+            </td>
         @endforeach
         <td style="font-weight: bold;">
             {{ number_format($summaryArray["transfer_from_after_tax"], 0, ',', '')}}
