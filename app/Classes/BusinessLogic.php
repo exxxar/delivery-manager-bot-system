@@ -167,6 +167,7 @@ class BusinessLogic
             ->where('status', 'completed')
             ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'mentor_award','id','actual_delivery_date')
             ->with('supplier:id,name,percent')
+            ->orderBy('actual_delivery_date')
             ->get();
 
         $totalSales = $sales->sum('total_price');
@@ -176,12 +177,13 @@ class BusinessLogic
 
         $revenueTotal = 0.0;
         $revenueWithoutTaxTotal = 0.0;
+        $rewardTotal = 0.0;
         $mentorAwards = [];
 
         $mentorId = $agent->mentor_id; // ← предполагаем relation или поле
 
         $salesByDateSupplier = $sales->map(function ($sale) use (
-            $taxPercent, $transferPercent, $mentorId, &$revenueTotal, &$revenueWithoutTaxTotal, &$mentorAwards
+            $taxPercent, $transferPercent, $mentorId, &$revenueTotal, &$revenueWithoutTaxTotal, &$mentorAwards, &$rewardTotal, $agentPercent
         ) {
             $percent = $sale->supplier?->percent ?? 0;
             $revenueLocal = $sale->total_price * ($percent / 100);
@@ -196,12 +198,15 @@ class BusinessLogic
                 $mentorAwards[$mentorId] = ($mentorAwards[$mentorId] ?? 0) + $sale->mentor_award;
             }
 
+            $rewardTotal+=$sale->total_price * ($agentPercent ?? 0) / 100;
+
             return [
                 'date'              => $sale->actual_delivery_date,
                 'sale_date'              => $sale->sale_date,
                 'supplier_id'       => $sale->supplier_id,
                 'supplier_name'     => $sale->supplier?->name ?? 'Неизвестный поставщик',
                 'sale_amount'       => $sale->total_price,
+                'reward'       => $sale->total_price * ($agentPercent ?? 0) / 100,
                 'payment_type'      => $sale->payment_type,
                 'id'      => $sale->id,
                 'percent'           => $percent,
@@ -244,6 +249,7 @@ class BusinessLogic
             'agent' => [
                 'id'     => $agent->id,
                 'name'   => $agent->name,
+                'reward'=> $rewardTotal,
                 'salary' => $afterTax * ($agentPercent / 100),
             ],
             'period' => [
@@ -252,6 +258,7 @@ class BusinessLogic
             ],
             'summary' => [
                 'total_sales'               => $totalSales,
+                'total_reward'               => $rewardTotal,
                 'tax_percent'               => $taxPercent,
                 'tax_amount'                => $taxAmount,
                 'after_tax'                 => $afterTax,

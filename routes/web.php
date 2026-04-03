@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\AgentSalesExport;
 use App\Exports\ExportType4\RevenueExportSheet;
 use App\Exports\SalesByAgentReport;
 use App\Facades\BotMethods;
@@ -44,6 +45,43 @@ use Telegram\Bot\FileUpload\InputFile;
 use App\Exports\ExportType1\SummarySuppliersReport;
 use App\Exports\ExportType4\SummaryAgentReport;
 use Illuminate\Console\Command;
+
+Route::get("/test-admin-report", function(){
+    $agentId = 39; //Марина ЮМР
+
+    $fromDate = Carbon::parse("01-03-2026")->startOfDay();
+    $toDate = Carbon::parse("31-03-2026")->endOfDay();
+
+    $agent = Agent::query()->where("id", $agentId )->first();
+
+    $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
+    $data = Excel::raw(new AgentSalesExport(
+        $agent->id ?? null,
+        $fromDate,
+        $toDate
+    ), \Maatwebsite\Excel\Excel::XLSX);
+    \App\Facades\BotMethods::bot()
+        ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
+            "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>"
+            ,
+            \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+
+
+    $content = Excel::raw(new SummaryAgentReport(
+        resultType: 0,
+        fromDate: $fromDate,
+        toDate: $toDate,
+        agentsIds: [$agentId]
+    ), \Maatwebsite\Excel\Excel::XLSX);
+
+    $fileName = "Отчет по зарплатам $fromDate - $toDate.xlsx";
+    BotMethods::bot()
+        ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
+            "#отчет\nОтчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
+            InputFile::createFromContents($content, $fileName));
+});
+
+
 
 
 Route::get("/upload-suppliers", function () {

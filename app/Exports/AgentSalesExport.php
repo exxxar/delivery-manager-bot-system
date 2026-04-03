@@ -21,8 +21,8 @@ class AgentSalesExport implements FromView
         $sales = Sale::with(['agent', 'supplier'])
             ->where('status', 'completed')
             ->where('agent_id', $this->agentId)
-            ->whereBetween('due_date', [$this->dateFrom, $this->dateTo])
-            ->orderBy('due_date')
+            ->whereBetween('actual_delivery_date', [$this->dateFrom, $this->dateTo])
+            ->orderBy('actual_delivery_date')
             ->get();
 
         return view('exports.agent_sales', [

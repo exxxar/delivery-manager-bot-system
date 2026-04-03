@@ -56,9 +56,9 @@
     <thead>
     <tr>
         <th style="width: 150px;font-weight: bold;">Дата</th>
-        <th style="width: 150px;font-weight: bold;">Имя</th>
+        <th style="width: 150px;font-weight: bold;">Имя (# сделки)</th>
         <th style="width: 150px;font-weight: bold;">Сумма продажи</th>
-        <th style="width: 80px;font-weight: bold;"># сделки</th>
+        <th style="width: 80px;font-weight: bold;">Вознаграждение</th>
         <th style="width: 150px;font-weight: bold;">Тип оплаты</th>
         <th style="width: 150px;font-weight: bold;">Выручка (детально)</th>
         <th style="width: 150px;font-weight: bold;">Админский 4%</th>
@@ -82,9 +82,11 @@
     @foreach($rows as $sale)
         <tr>
             <td>{{ $sale['date'] }}</td>
-            <td>{{ $sale['supplier_name'] }}</td>
-            <td>{{ !is_null($sale['sale_amount'])?number_format($sale['sale_amount'], 2, ',', ' '):'' }}</td>
-            <td>{{ $sale["id"] ?? '-' }}</td>
+            <td>{{ $sale['supplier_name'] }} (#{{ $sale["id"] ?? '-' }})</td>
+            <td>{{ !is_null($sale['sale_amount'])?number_format($sale['sale_amount'], 0, ',', ''):'' }}</td>
+            <td>
+                {{ $sale['reward'] }}
+            </td>
             <td>
                 @isset($sale["payment_type"])
                     @if ($sale["payment_type"] == 0)
@@ -97,9 +99,9 @@
                 @endisset
 
             </td>
-            <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 0, ',', ' '):'' }}</td>
+            <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 0, ',', ''):'' }}</td>
             <td>
-                {{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total']*0.04, 0, ',', ' '):'' }}
+                {{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total']*0.04, 0, ',', ''):'' }}
 
             </td>
             @if ($step == 0)
@@ -107,15 +109,15 @@
                     Сумма
                 </td>
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($summary['revenue_total'], 0, ',', ' ') }}
+                    {{ number_format($summary['revenue_total'], 0, ',', '') }}
                 </td>
 
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($adminSum, 2, ',', ' ') }}
+                    {{ number_format($adminSum, 0, ',', '') }}
                 </td>
                 @foreach($admins as $admin)
                     <td style="width: 150px;font-weight: bold;">
-                        {{ number_format($admin['income_total'] , 2, ',', ' ') }}
+                        {{ number_format($admin['income_total'] , 0, ',', '') }}
                     </td>
                 @endforeach
             @endif
@@ -125,14 +127,14 @@
                     Минус налог
                 </td>
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($summary['revenue_without_tax_total'], 2, ',', ' ') }}
+                    {{ number_format($summary['revenue_without_tax_total'], 0, ',', '') }}
                 </td>
                 <td style="width: 150px;font-weight: bold;background:yellow;">
-                    {{ number_format($adminSum - $adminSum*(env("TAX_PERCENT")/100), 2, ',', ' ') }}
+                    {{ number_format($adminSum - $adminSum*(env("TAX_PERCENT")/100), 0, ',', '') }}
                 </td>
                 @foreach($admins as $admin)
                     <td style="width: 150px;font-weight: bold;">
-                        {{ number_format($admin['income_after_tax'] , 2, ',', ' ') }}
+                        {{ number_format($admin['income_after_tax'] , 0, ',', '') }}
                     </td>
                 @endforeach
             @endif
@@ -142,7 +144,7 @@
                     Переводы 8%
                 </td>
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($summary['transfer_from_total'], 2, ',', ' ') }}
+                    {{ number_format($summary['transfer_from_total'], 0, ',', '') }}
                 </td>
             @endif
 
@@ -151,7 +153,7 @@
                     8% минус налог
                 </td>
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($summary['transfer_from_after_tax'], 2, ',', ' ') }}
+                    {{ number_format($summary['transfer_from_after_tax'], 0, ',', '') }}
                 </td>
             @endif
             @if ($step == 5)
@@ -167,7 +169,7 @@
                     Переводы 3%
                 </td>
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($summary['revenue_total']*0.03, 2, ',', ' ')}}
+                    {{ number_format($summary['revenue_total']*0.03, 0, ',', '')}}
                 </td>
 
             @endif
@@ -181,19 +183,19 @@
     {{-- <tr>
          <td>Итого</td>
          <td></td>
-         <td>{{ number_format($salesSum, 2, ',', ' ') }}</td>
+         <td>{{ number_format($salesSum, 0, ',', '') }}</td>
          <td></td>
-         <td>{{ number_format($sum, 2, ',', ' ') }}</td>
-         <td>{{ number_format($sumWithoutTax, 2, ',', ' ') }}</td>
+         <td>{{ number_format($sum, 0, ',', '') }}</td>
+         <td>{{ number_format($sumWithoutTax, 0, ',', '') }}</td>
      </tr>--}}
     <tr>
         <td style="font-weight: bold;">Итого</td>
         <td></td>
-        <td style="font-weight: bold;">{{ number_format($summary['total_sales'] , 2, ',', ' ') }}</td>
+        <td style="font-weight: bold;">{{ number_format($summary['total_sales'] , 0, ',', '') }}</td>
+        <td  style="font-weight: bold;">{{ number_format($summary['total_reward'] , 0, ',', '') }}</td>
         <td></td>
-        <td></td>
-        <td style="font-weight: bold;">{{ number_format($summary['revenue_total'] , 2, ',', ' ') }}</td>
-        <td style="font-weight: bold;">{{number_format($adminSum , 2, ',', ' ')}}</td>
+        <td style="font-weight: bold;">{{ number_format($summary['revenue_total'] , 0, ',', '') }}</td>
+        <td style="font-weight: bold;">{{number_format($adminSum , 0, ',', '')}}</td>
         <td></td>
     </tr>
     </tbody>
