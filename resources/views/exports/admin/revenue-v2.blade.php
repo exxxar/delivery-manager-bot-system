@@ -85,7 +85,7 @@
             <td>{{ $sale['supplier_name'] }} (#{{ $sale["id"] ?? '-' }})</td>
             <td>{{ !is_null($sale['sale_amount'])?number_format($sale['sale_amount'], 0, ',', ''):'' }}</td>
             <td>
-                {{ $sale['reward'] }}
+                {{ $sale['reward'] ?? 0 }}
             </td>
             <td>
                 @isset($sale["payment_type"])

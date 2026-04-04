@@ -154,8 +154,8 @@ class BusinessLogic
     public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate, $suppliersIds = [])
     {
 
-        $taxPercent     = (float) env('TAX_PERCENT', 8);
-        $transferPercent = (float) env('TRANSFER_PERCENT', 8);
+        $taxPercent     = (float) env('TAX_PERCENT', 6);
+        $transferPercent = (float) env('TRANSFER_PERCENT', 6);
         $agentPercent   = (float) env('AGENT_PERCENT', 4);
         $adminBasePercent = (float) env('ADMIN_BASE_PERCENT', 5); // пример
 
