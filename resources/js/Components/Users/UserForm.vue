@@ -1,5 +1,12 @@
 <template>
 
+    <div class="card mb-2">
+        <div class="card-header">
+            <h6 class="mb-0">Инфо</h6>
+        </div>
+        <div class="card-body" v-html="initialData.agent.user_info">
+        </div>
+    </div>
     <form @submit.prevent="submitForm">
 
         <!-- Имя -->
@@ -33,7 +40,8 @@
             <label for="role">Роль</label>
         </div>
 
-        <!-- Процент -->
+<!--
+        &lt;!&ndash; Процент &ndash;&gt;
         <div class="form-floating mb-2">
             <input v-model="form.percent" type="number" step="0.01" class="form-control" id="percent"
                    placeholder="Процент">
@@ -45,6 +53,7 @@
                    placeholder="Процент">
             <label for="mentor_percent">Процент наставника</label>
         </div>
+-->
 
 
 

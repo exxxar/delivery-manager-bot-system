@@ -19,7 +19,7 @@
     $summary = $revenue["summary"]?? null;
     $sales_by_date_supplier = $revenue["sales_by_date_supplier"]?? null;
     $admins = $revenue["admins"]?? null;
-
+    $agentPercent = $revenue["agent"]["percent"] ?? env("AGENT_PERCENT");
 @endphp
 <body>
 
@@ -58,14 +58,15 @@
         <th style="width: 150px;font-weight: bold;">Дата</th>
         <th style="width: 150px;font-weight: bold;">Имя (# сделки)</th>
         <th style="width: 150px;font-weight: bold;">Сумма продажи</th>
-        <th style="width: 80px;font-weight: bold;">Вознаграждение</th>
-        <th style="width: 150px;font-weight: bold;">Тип оплаты</th>
         <th style="width: 150px;font-weight: bold;">Выручка (детально)</th>
-        <th style="width: 150px;font-weight: bold;">Админский 4%</th>
+
+        <th style="width: 150px;font-weight: bold;">Тип оплаты</th>
+        <th style="width: 190px;font-weight: bold;">Вознаграждение админа ({{$agentPercent}}%)</th>
+
 
         <th style="width: 150px;font-weight: bold;"></th>
         <th style="width: 150px;font-weight: bold;">Выручка</th>
-        <th style="width: 150px;font-weight: bold;">Админский 4%</th>
+        <th style="width: 190px;font-weight: bold;">Вознаграждение админа ({{$agentPercent}}%)</th>
 
         @foreach($admins as $admin)
             <th style="width: 150px;font-weight: bold;">
@@ -84,9 +85,8 @@
             <td>{{ $sale['date'] }}</td>
             <td>{{ $sale['supplier_name'] }} (#{{ $sale["id"] ?? '-' }})</td>
             <td>{{ !is_null($sale['sale_amount'])?number_format($sale['sale_amount'], 0, ',', ''):'' }}</td>
-            <td>
-                {{ $sale['reward'] ?? 0 }}
-            </td>
+            <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 0, ',', ''):'' }}</td>
+
             <td>
                 @isset($sale["payment_type"])
                     @if ($sale["payment_type"] == 0)
@@ -99,11 +99,10 @@
                 @endisset
 
             </td>
-            <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 0, ',', ''):'' }}</td>
             <td>
-                {{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total']*0.04, 0, ',', ''):'' }}
-
+                {{ $sale['reward'] ?? 0 }}
             </td>
+
             @if ($step == 0)
                 <td style="width: 150px;font-weight: bold;">
                     Сумма
@@ -113,7 +112,7 @@
                 </td>
 
                 <td style="width: 150px;font-weight: bold;">
-                    {{ number_format($adminSum, 0, ',', '') }}
+                    {{ number_format($summary["total_reward"], 0, ',', '') }}
                 </td>
                 @foreach($admins as $admin)
                     <td style="width: 150px;font-weight: bold;">
@@ -130,7 +129,7 @@
                     {{ number_format($summary['revenue_without_tax_total'], 0, ',', '') }}
                 </td>
                 <td style="width: 150px;font-weight: bold;background:yellow;">
-                    {{ number_format($adminSum - $adminSum*(env("TAX_PERCENT")/100), 0, ',', '') }}
+                    {{ number_format($summary["total_reward"] - $summary["total_reward"]*(env("TAX_PERCENT")/100), 0, ',', '') }}
                 </td>
                 @foreach($admins as $admin)
                     <td style="width: 150px;font-weight: bold;">
@@ -192,10 +191,10 @@
         <td style="font-weight: bold;">Итого</td>
         <td></td>
         <td style="font-weight: bold;">{{ number_format($summary['total_sales'] , 0, ',', '') }}</td>
-        <td  style="font-weight: bold;">{{ number_format($summary['total_reward'] , 0, ',', '') }}</td>
-        <td></td>
         <td style="font-weight: bold;">{{ number_format($summary['revenue_total'] , 0, ',', '') }}</td>
-        <td style="font-weight: bold;">{{number_format($adminSum , 0, ',', '')}}</td>
+
+        <td></td>
+        <td  style="font-weight: bold;">{{ number_format($summary['total_reward'] , 0, ',', '') }}</td>
         <td></td>
     </tr>
     </tbody>

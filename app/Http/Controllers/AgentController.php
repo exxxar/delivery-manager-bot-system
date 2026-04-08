@@ -8,6 +8,7 @@ use App\Http\Requests\AgentStoreRequest;
 use App\Http\Requests\AgentUpdateRequest;
 use App\Models\Agent;
 use App\Models\Sale;
+use App\Models\User;
 use Carbon\Carbon;
 
 use Illuminate\Http\RedirectResponse;
@@ -118,6 +119,7 @@ class AgentController extends Controller
 
         $inLearning = ($data["in_learning"] ?? false) == "true";
         $isTest= ($data["is_test"] ?? false) == "true";
+        $percent= $data["percent"] ?? null;
 
 
         if ($agent->in_learning && !$inLearning) {
@@ -130,6 +132,13 @@ class AgentController extends Controller
         }
 
         $agent->update($data);
+
+        if (!is_null($percent) && $percent!=0)
+        {
+            $user = User::query()->findOrFail($agent->user_id);
+            $user->percent = $percent;
+            $user->save();
+        }
 
         if ($isTest){
             $user = $request->botUser ?? null;

@@ -72,6 +72,8 @@ class User extends Authenticatable
         return $this->agent->phone ?? '';
     }
 
+
+
     public function getUserTelegramLink(): string
     {
         return "\n<a href='tg://user?id=" . $this->telegram_chat_id . "'>Перейти к чату с пользователем</a>";
@@ -113,6 +115,35 @@ class User extends Authenticatable
         foreach ($fields as $label => $value) {
             if (!empty($value)) {
                 $text .= "{$label}: {$value}\n";
+            }
+        }
+
+        return trim($text);
+    }
+
+    public function toHtmlText(): string
+    {
+        $fields = [
+            'Имя' => $this->name,
+            'Email' => $this->email,
+            'ФИО из Telegram' => $this->fio_from_telegram,
+            'Дата рождения' => $this->birthday ?? '-',
+            'ID чата Telegram' => $this->telegram_chat_id,
+            'Роль' => $this->getRoleName(),
+            'Процент' => $this->percent,
+            'Работает' => $this->is_work ? 'Да' : 'Нет',
+            'Email подтверждён' => $this->email_verified_at,
+            'Дата заполнения профиля' => $this->registration_at ?? 'не заполнен',
+            'Дата блокировки' => $this->blocked_at ?? 'не заблокирован',
+            'Сообщение блокировки' => $this->blocked_message,
+            'Создан' => $this->created_at,
+            'Обновлён' => $this->updated_at,
+        ];
+
+        $text = "";
+        foreach ($fields as $label => $value) {
+            if (!empty($value)) {
+                $text .= "<p class='mb-0'><strong>{$label}</strong>: {$value}</p>";
             }
         }
 

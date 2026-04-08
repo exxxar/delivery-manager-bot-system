@@ -15,9 +15,9 @@ import UserFilter from "@/Components/Users/UserFilter.vue";
     <ul class="list-group">
         <li v-for="user in usersStore.items" :key="user.id"
             class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
+            <div @click.prevent="$emit('select', user)">
                 <div class="fw-bold">
-                    <span v-if="field_visible?.name||true">{{ user.name }}</span>
+                    <span v-if="field_visible?.name||true">{{ user.name }} ({{user.fio_from_telegram || ''}})</span>
                     <span v-if="field_visible?.id||false">(#{{ user.id }})</span></div>
                 <p class="text-muted small mb-0" v-if="field_visible?.role||true">Роль <span class="text-primary fw-bold">{{ roles.at(user.role || 0) }}</span></p>
                 <p class="text-muted small mb-0" v-if="field_visible?.email||false">Почта {{ user.email }}</p>

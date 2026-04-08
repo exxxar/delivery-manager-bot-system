@@ -217,11 +217,11 @@ const today = new Date().toISOString().split('T')[0]
 
             <template v-if="user?.role>=3">
                 <p class="alert alert-info mb-2">Назначение ответственного по данной задаче</p>
-                <!-- Агент -->
+
                 <div class="input-group mb-2">
                     <div class="form-floating flex-grow-1">
                         <input type="text" class="form-control" id="agent" :value="agentName"
-                               placeholder="Младший администратор"
+                               placeholder="администратор"
                                readonly>
                         <label for="agent">Администратор</label>
                     </div>

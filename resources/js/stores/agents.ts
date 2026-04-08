@@ -38,6 +38,8 @@ export const useAgentsStore = defineStore('agents', {
                 this.loading = false
             }
         },
+
+
         // @ts-ignore
         async fetchAllByPage(page = 1, size = 20) {
             const {data} = await makeAxiosFactory(`${path}?page=${page}&size=${size}`, 'GET')
@@ -60,14 +62,26 @@ export const useAgentsStore = defineStore('agents', {
                 throw e
             }
         },
-
+        async removePercentage(payload: object) {
+            const {data} = await makeAxiosFactory(`${path}/remove-percentage`, 'POST', payload)
+            return data
+        },
+        async fetchPercentage(payload: object) {
+            const {data} = await makeAxiosFactory(`${path}/percentage`, 'POST', payload)
+            return data
+        },
         async create(payload: object) {
             const {data} = await makeAxiosFactory(`${path}`, 'POST', payload)
             this.items.push(data)
             return data as Agent
         },
 
-
+        async storePercentage(payload: object) {
+            const {data} = await makeAxiosFactory(`${path}/store-percentage`, 'POST', payload)
+            const idx = this.items.findIndex(a => a.id === payload.id)
+            if (idx !== -1) this.items[idx] = data
+            return data as Agent
+        },
 
         async update(id: number, payload: object) {
             const {data} = await makeAxiosFactory(`${path}/${id}`, 'PUT', payload)

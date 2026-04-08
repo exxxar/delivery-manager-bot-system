@@ -70,35 +70,33 @@ class BusinessLogic
         $totalPercentage = 0;
 
         $months = [
-            1  => 'january',
-            2  => 'february',
-            3  => 'march',
-            4  => 'april',
-            5  => 'may',
-            6  => 'june',
-            7  => 'july',
-            8  => 'august',
-            9  => 'september',
+            1 => 'january',
+            2 => 'february',
+            3 => 'march',
+            4 => 'april',
+            5 => 'may',
+            6 => 'june',
+            7 => 'july',
+            8 => 'august',
+            9 => 'september',
             10 => 'october',
             11 => 'november',
             12 => 'december',
         ];
 
-        foreach ($grouped as $supplierId => $salesBySupplier)
-        {
+        foreach ($grouped as $supplierId => $salesBySupplier) {
             $supplier = $salesBySupplier->first()->supplier;
 
             $supplierName = $supplier?->name ?? 'Неизвестный поставщик';
-            $percent      = $supplier?->percent ?? $defaultPercent;
-            $rate         = $percent / 100;
+            $percent = $supplier?->percent ?? $defaultPercent;
+            $rate = $percent / 100;
 
             // Инициализируем все месяцы нулями
             $monthly = array_fill_keys(array_values($months), 0);
 
-            foreach ($salesBySupplier as $sale)
-            {
-                $monthNum = (int) Carbon::parse($sale->actual_delivery_date)->format('n');
-                $monthly[$months[$monthNum]] += (float) $sale->total_price;
+            foreach ($salesBySupplier as $sale) {
+                $monthNum = (int)Carbon::parse($sale->actual_delivery_date)->format('n');
+                $monthly[$months[$monthNum]] += (float)$sale->total_price;
             }
 
             $yearTotal = array_sum($monthly);
@@ -106,31 +104,31 @@ class BusinessLogic
             $yourPercentage = $yearTotal * $rate;
 
             $results[] = [
-                'supplier'     => $supplierName,
+                'supplier' => $supplierName,
                 'base_percent' => $rate,               // в долях (0.08 вместо 8)
-                'percentage'   => $yourPercentage,
-                'january'      => $monthly['january'],
-                'february'     => $monthly['february'],
-                'march'        => $monthly['march'],
-                'april'        => $monthly['april'],
-                'may'          => $monthly['may'],
-                'june'         => $monthly['june'],
-                'july'         => $monthly['july'],
-                'august'       => $monthly['august'],
-                'september'    => $monthly['september'],
-                'october'      => $monthly['october'],
-                'november'     => $monthly['november'],
-                'december'     => $monthly['december'],
-                'year'         => $yearTotal,
+                'percentage' => $yourPercentage,
+                'january' => $monthly['january'],
+                'february' => $monthly['february'],
+                'march' => $monthly['march'],
+                'april' => $monthly['april'],
+                'may' => $monthly['may'],
+                'june' => $monthly['june'],
+                'july' => $monthly['july'],
+                'august' => $monthly['august'],
+                'september' => $monthly['september'],
+                'october' => $monthly['october'],
+                'november' => $monthly['november'],
+                'december' => $monthly['december'],
+                'year' => $yearTotal,
             ];
 
             $totalSum += $yearTotal;
             $totalPercentage += $yourPercentage;
         }
 
-        return (object) [
-            'details'          => $results,
-            'total_sum'        => $totalSum,
+        return (object)[
+            'details' => $results,
+            'total_sum' => $totalSum,
             'total_percentage' => $totalPercentage,
         ];
     }
@@ -151,13 +149,13 @@ class BusinessLogic
         return $finalResult;
     }
 
-    public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate, $suppliersIds = [])
+    public function getAdminsMonthlyByAgentRevenueDeprecated($agent, $startDate, $endDate, $suppliersIds = [])
     {
 
-        $taxPercent     = (float) env('TAX_PERCENT', 6);
-        $transferPercent = (float) env('TRANSFER_PERCENT', 6);
-        $agentPercent   = (float) env('AGENT_PERCENT', 4);
-        $adminBasePercent = (float) env('ADMIN_BASE_PERCENT', 5); // пример
+        $taxPercent = (float)env('TAX_PERCENT', 6);
+        $transferPercent = (float)env('TRANSFER_PERCENT', 6);
+        $agentPercent = (float)env('AGENT_PERCENT', 4);
+        $adminBasePercent = (float)env('ADMIN_BASE_PERCENT', 5); // пример
 
         // Один запрос — все нужные продажи
         $sales = Sale::query()
@@ -165,15 +163,15 @@ class BusinessLogic
             ->whereBetween('actual_delivery_date', [$startDate, $endDate])
             ->when($suppliersIds, fn($q) => $q->whereIn('supplier_id', $suppliersIds))
             ->where('status', 'completed')
-            ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'mentor_award','id','actual_delivery_date')
+            ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'mentor_award', 'id', 'actual_delivery_date')
             ->with('supplier:id,name,percent')
             ->orderBy('actual_delivery_date')
             ->get();
 
         $totalSales = $sales->sum('total_price');
 
-        $taxAmount  = $totalSales * ($taxPercent / 100);
-        $afterTax   = $totalSales - $taxAmount;
+        $taxAmount = $totalSales * ($taxPercent / 100);
+        $afterTax = $totalSales - $taxAmount;
 
         $revenueTotal = 0.0;
         $revenueWithoutTaxTotal = 0.0;
@@ -198,20 +196,20 @@ class BusinessLogic
                 $mentorAwards[$mentorId] = ($mentorAwards[$mentorId] ?? 0) + $sale->mentor_award;
             }
 
-            $rewardTotal+=$sale->total_price * ($agentPercent ?? 0) / 100;
+            $rewardTotal += $sale->total_price * ($agentPercent ?? 0) / 100;
 
             return [
-                'date'              => $sale->actual_delivery_date,
-                'sale_date'              => $sale->sale_date,
-                'supplier_id'       => $sale->supplier_id,
-                'supplier_name'     => $sale->supplier?->name ?? 'Неизвестный поставщик',
-                'sale_amount'       => $sale->total_price,
-                'reward'       => $sale->total_price * ($agentPercent ?? 0) / 100,
-                'payment_type'      => $sale->payment_type,
-                'id'      => $sale->id,
-                'percent'           => $percent,
-                'transfer'          => $revenueLocal * ($transferPercent / 100),
-                'revenue_total'     => $revenueLocal,
+                'date' => $sale->actual_delivery_date,
+                'sale_date' => $sale->sale_date,
+                'supplier_id' => $sale->supplier_id,
+                'supplier_name' => $sale->supplier?->name ?? 'Неизвестный поставщик',
+                'sale_amount' => $sale->total_price,
+                'reward' => $sale->total_price * ($agentPercent ?? 0) / 100,
+                'payment_type' => $sale->payment_type,
+                'id' => $sale->id,
+                'percent' => $percent,
+                'transfer' => $revenueLocal * ($transferPercent / 100),
+                'revenue_total' => $revenueLocal,
                 'revenue_after_tax' => $revenueAfterTax,
             ];
         });
@@ -231,41 +229,41 @@ class BusinessLogic
                 $incomeAfterTax = $revenueWithoutTaxTotal * ($userPercent / 100) + $mentorAwardAfterTax;
 
                 return [
-                    'admin_id'                   => $user->id,
-                    'admin_name'                 => $user->fio_from_telegram ?? $user->name ?? '-',
-                    'percent'                    => $userPercent,
-                    'mentor_award'               => $mentorAward,
-                    'income_with_award_total'    => $incomeTotal + $mentorAward,
-                    'income_with_award_after_tax'=> $incomeAfterTax + $mentorAwardAfterTax,
-                    'income_total'               => $incomeTotal,
-                    'income_after_tax'           => $incomeAfterTax,
+                    'admin_id' => $user->id,
+                    'admin_name' => $user->fio_from_telegram ?? $user->name ?? '-',
+                    'percent' => $userPercent,
+                    'mentor_award' => $mentorAward,
+                    'income_with_award_total' => $incomeTotal + $mentorAward,
+                    'income_with_award_after_tax' => $incomeAfterTax + $mentorAwardAfterTax,
+                    'income_total' => $incomeTotal,
+                    'income_after_tax' => $incomeAfterTax,
                 ];
             });
 
-        $transferFromTotal     = $revenueTotal * ($transferPercent / 100);
-        $transferFromAfterTax  = $revenueWithoutTaxTotal * ($transferPercent / 100);
+        $transferFromTotal = $revenueTotal * ($transferPercent / 100);
+        $transferFromAfterTax = $revenueWithoutTaxTotal * ($transferPercent / 100);
 
         return [
             'agent' => [
-                'id'     => $agent->id,
-                'name'   => $agent->name,
-                'reward'=> $rewardTotal,
+                'id' => $agent->id,
+                'name' => $agent->name,
+                'reward' => $rewardTotal,
                 'salary' => $afterTax * ($agentPercent / 100),
             ],
             'period' => [
                 'start' => $startDate,
-                'end'   => $endDate,
+                'end' => $endDate,
             ],
             'summary' => [
-                'total_sales'               => $totalSales,
-                'total_reward'               => $rewardTotal,
-                'tax_percent'               => $taxPercent,
-                'tax_amount'                => $taxAmount,
-                'after_tax'                 => $afterTax,
-                'transfer_percent'          => $transferPercent,
-                'transfer_from_total'       => $transferFromTotal,
-                'transfer_from_after_tax'   => $transferFromAfterTax,
-                'revenue_total'             => $revenueTotal,
+                'total_sales' => $totalSales,
+                'total_reward' => $rewardTotal,
+                'tax_percent' => $taxPercent,
+                'tax_amount' => $taxAmount,
+                'after_tax' => $afterTax,
+                'transfer_percent' => $transferPercent,
+                'transfer_from_total' => $transferFromTotal,
+                'transfer_from_after_tax' => $transferFromAfterTax,
+                'revenue_total' => $revenueTotal,
                 'revenue_without_tax_total' => $revenueWithoutTaxTotal,
             ],
             'sales_by_date_supplier' => $salesByDateSupplier,
@@ -273,15 +271,138 @@ class BusinessLogic
         ];
     }
 
+    public function getAdminsMonthlyByAgentRevenue($agent, $startDate, $endDate, $suppliersIds = [])
+    {
+        $taxPercent = (float)env('TAX_PERCENT', 6);
+        $transferPercent = (float)env('TRANSFER_PERCENT', 6);
+        $agentPercent = $agent->percent == 0 ? (float)env('AGENT_PERCENT', 4) : $agent->percent;
+
+
+        // Загружаем продажи
+        $sales = Sale::query()
+            ->where('agent_id', $agent->id)
+            ->whereBetween('actual_delivery_date', [$startDate, $endDate])
+            ->when($suppliersIds, fn($q) => $q->whereIn('supplier_id', $suppliersIds))
+            ->where('status', 'completed')
+            ->select('sale_date', 'supplier_id', 'total_price', 'payment_type', 'id', 'actual_delivery_date')
+            ->with('supplier:id,name,percent')
+            ->orderBy('actual_delivery_date')
+            ->get();
+
+        $totalSales = $sales->sum('total_price');
+
+        $taxAmount = $totalSales * ($taxPercent / 100);
+        $afterTax = $totalSales - $taxAmount;
+
+        $revenueTotal = 0.0;
+        $revenueWithoutTaxTotal = 0.0;
+        $rewardTotal = 0.0;
+
+        // Расчёт по продажам
+        $salesByDateSupplier = $sales->map(function ($sale) use (
+            $taxPercent, $transferPercent, &$revenueTotal, &$revenueWithoutTaxTotal, &$rewardTotal, $agentPercent
+        ) {
+            $percent = $sale->supplier?->percent ?? 0;
+            $revenueLocal = $sale->total_price * ($percent / 100);
+
+            $taxOnRevenue = $revenueLocal * ($taxPercent / 100);
+            $revenueAfterTax = $revenueLocal - $taxOnRevenue;
+
+            $revenueTotal += $revenueLocal;
+            $revenueWithoutTaxTotal += $revenueAfterTax;
+
+            $reward = $sale->total_price * ($agentPercent / 100);
+            $rewardTotal += $reward;
+
+            return [
+                'date' => $sale->actual_delivery_date,
+                'sale_date' => $sale->sale_date,
+                'supplier_id' => $sale->supplier_id,
+                'supplier_name' => $sale->supplier?->name ?? 'Неизвестный поставщик',
+                'sale_amount' => $sale->total_price,
+                'reward' => $reward,
+                'payment_type' => $sale->payment_type,
+                'id' => $sale->id,
+                'percent' => $percent,
+                'transfer' => $revenueLocal * ($transferPercent / 100),
+                'revenue_total' => $revenueLocal,
+                'revenue_after_tax' => $revenueAfterTax,
+            ];
+        });
+
+        // Админы по связи percentages
+        $agentAdmins = $agent->percentages()
+            ->with(['user'])
+            ->where('is_active', true)
+           /* ->whereHas('user', function ($q) {
+                $q->where('is_work', true);
+            })*/
+            ->get();
+
+        $adminsRevenue = $agentAdmins->map(function ($item) use ($totalSales, $taxPercent) {
+
+            $admin = $item->user;
+            $percent = (float)$item->percentage;
+
+            $incomeTotal = $totalSales * ($percent / 100);
+
+            $tax = $incomeTotal*($taxPercent/100);
+            $incomeAfterTax = $incomeTotal-$tax;
+
+            return [
+                'admin_id' => $admin->id,
+                'admin_name' => $admin->fio_from_telegram ?? $admin->name ?? '-',
+                'percent' => $percent,
+                'income_total' => $incomeTotal,
+                'income_after_tax' => $incomeAfterTax,
+                'income_with_award_total' => $incomeTotal,
+                'income_with_award_after_tax' => $incomeAfterTax,
+            ];
+        });
+
+        $transferFromTotal = $revenueTotal * ($transferPercent / 100);
+        $transferFromAfterTax = $revenueWithoutTaxTotal * ($transferPercent / 100);
+
+        return [
+            'agent' => [
+                'id' => $agent->id,
+                'name' => $agent->name,
+                'reward' => $rewardTotal,
+                'percent'=>$agentPercent,
+                'salary' => $afterTax * ($agentPercent / 100),
+            ],
+            'period' => [
+                'start' => $startDate,
+                'end' => $endDate,
+            ],
+            'summary' => [
+                'total_sales' => $totalSales,
+                'total_reward' => $rewardTotal,
+                'tax_percent' => $taxPercent,
+                'tax_amount' => $taxAmount,
+                'after_tax' => $afterTax,
+                'transfer_percent' => $transferPercent,
+                'transfer_from_total' => $transferFromTotal,
+                'transfer_from_after_tax' => $transferFromAfterTax,
+                'revenue_total' => $revenueTotal,
+                'revenue_without_tax_total' => $revenueWithoutTaxTotal,
+            ],
+            'sales_by_date_supplier' => $salesByDateSupplier,
+            'admins' => $adminsRevenue,
+        ];
+    }
+
+
     public function getMonthlySalesSummaryForAllAgentsByCurrentSupplier(
         $supplier,
         $fromDate,
         $toDate,
         $agentsIds = []
-    ): array {
+    ): array
+    {
 
         $from = $fromDate->copy()->startOfDay();
-        $to   = $toDate->copy()->endOfDay();
+        $to = $toDate->copy()->endOfDay();
 
         // 1. Один агрегирующий запрос
         $salesQuery = Sale::query()
@@ -309,7 +430,7 @@ class BusinessLogic
         $salesMap = [];
 
         foreach ($rawSales as $sale) {
-            $salesMap[$sale->actual_delivery_day][$sale->agent_id] = (float) $sale->daily_total;
+            $salesMap[$sale->actual_delivery_day][$sale->agent_id] = (float)$sale->daily_total;
         }
 
         // 3. Загружаем агентов один раз
@@ -329,13 +450,13 @@ class BusinessLogic
         $grandTotal = 0.0;
 
         $daysOfWeek = [
-            'Sunday'    => 'Воскресенье',
-            'Monday'    => 'Понедельник',
-            'Tuesday'   => 'Вторник',
+            'Sunday' => 'Воскресенье',
+            'Monday' => 'Понедельник',
+            'Tuesday' => 'Вторник',
             'Wednesday' => 'Среда',
-            'Thursday'  => 'Четверг',
-            'Friday'    => 'Пятница',
-            'Saturday'  => 'Суббота',
+            'Thursday' => 'Четверг',
+            'Friday' => 'Пятница',
+            'Saturday' => 'Суббота',
         ];
 
         foreach ($period as $date) {
@@ -350,18 +471,18 @@ class BusinessLogic
                 $price = $salesMap[$dateStr][$agent->id] ?? 0.0;
 
                 $dayDetails[] = [
-                    'price'       => $price,
+                    'price' => $price,
                     'supplier_id' => $supplier->id,
-                    'agent_id'    => $agent->id,
+                    'agent_id' => $agent->id,
                 ];
 
                 $dailySum += $price;
             }
 
             $report[] = [
-                'date'        => $date->format('d.m.Y'),
-                'total'       => $dailySum,
-                'day_name'    => $daysOfWeek[$date->englishDayOfWeek] ?? '—',
+                'date' => $date->format('d.m.Y'),
+                'total' => $dailySum,
+                'day_name' => $daysOfWeek[$date->englishDayOfWeek] ?? '—',
                 'day_details' => $dayDetails,
             ];
 
@@ -369,11 +490,11 @@ class BusinessLogic
         }
 
         return [
-            'id'        => $supplier->id,
-            'title'     => $supplier->name ?? 'Неизвестный поставщик',
-            'agents'    => $agents->values(),
+            'id' => $supplier->id,
+            'title' => $supplier->name ?? 'Неизвестный поставщик',
+            'agents' => $agents->values(),
             'total_sum' => $grandTotal,
-            'period'    => $report,
+            'period' => $report,
         ];
     }
 

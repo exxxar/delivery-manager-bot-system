@@ -44,11 +44,13 @@ class SummaryAgentReport implements WithMultipleSheets
                 ->pluck("id");
 
             $agents = Agent::query()
+                ->with(["percentages"])
                 ->whereIn("user_id", $usersIds)
                 ->where("is_test", false)
                 ->get();
         } else
             $agents = Agent::query()
+                ->with(["percentages"])
                 ->whereIn("id", $this->agentsIds)->get();
 
 
@@ -65,7 +67,9 @@ class SummaryAgentReport implements WithMultipleSheets
 
         $tmp[] = new SupplierSheet($this->resultType, $this->suppliersIds);
         $tmp[] = new ProductsSheet($this->resultType, $this->suppliersIds);
+
         $tmp[] = new SummarySheet($tmpData);
+
 
 
         return $tmp;

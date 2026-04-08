@@ -12,6 +12,7 @@ use App\Http\Controllers\Forms\AdminJobController;
 use App\Http\Controllers\Forms\AgentJobController;
 use App\Http\Controllers\Forms\ClientJobController;
 use App\Http\Controllers\Forms\SupplierJobController;
+use App\Http\Controllers\PercentageController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -55,7 +56,7 @@ Route::get("/test-admin-report", function(){
     $agent = Agent::query()->where("id", $agentId )->first();
 
     $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-    $data = Excel::raw(new AgentSalesExport(
+   /* $data = Excel::raw(new AgentSalesExport(
         $agent->id ?? null,
         $fromDate,
         $toDate
@@ -64,21 +65,21 @@ Route::get("/test-admin-report", function(){
         ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
             "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>"
             ,
-            \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+            \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));*/
 
 
-    $content = Excel::raw(new SummaryAgentReport(
+    return Excel::download(new SummaryAgentReport(
         resultType: 0,
         fromDate: $fromDate,
         toDate: $toDate,
-        agentsIds: [$agentId]
-    ), \Maatwebsite\Excel\Excel::XLSX);
 
-    $fileName = "Отчет по зарплатам $fromDate - $toDate.xlsx";
+    ), "excel.xlsx",\Maatwebsite\Excel\Excel::XLSX);
+
+  /*  $fileName = "Отчет по зарплатам $fromDate - $toDate.xlsx";
     BotMethods::bot()
         ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
             "#отчет\nОтчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
-            InputFile::createFromContents($content, $fileName));
+            InputFile::createFromContents($content, $fileName));*/
 });
 
 
@@ -286,6 +287,9 @@ Route::prefix("bot-api")
                 Route::get('/', [AgentController::class, 'index']);
                 // Создать нового агента
                 Route::post('/', [AgentController::class, 'store']);
+                Route::post('/percentage', [PercentageController::class, 'list']);
+                Route::post('/remove-percentage', [PercentageController::class, 'remove']);
+                Route::post('/store-percentage', [PercentageController::class, 'store']);
 
                 // Получить конкретного агента по ID
                 Route::get('/{id}', [AgentController::class, 'show']);

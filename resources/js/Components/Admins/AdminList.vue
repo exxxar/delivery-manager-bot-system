@@ -14,9 +14,10 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
                 <div
                     @click="selectAdmin(user)"
                     class="fw-bold">
-                    <span class="badge bg-primary">{{ user.percent }}%</span> {{ user.name }}
+<!--                    <span class="badge bg-primary">{{ user.percent }}%</span> -->
+                    {{ user.name }} ({{user.fio_from_telegram}})
                     <p class="text-muted mb-0 small">{{ user.phone || 'Телефон не указан' }}</p>
-                    <p class="text-muted mb-2 small">{{ user.email }}</p>
+<!--                    <p class="text-muted mb-2 small">{{ user.email }}</p>-->
                 </div>
 
                 <div

@@ -31,15 +31,19 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
         <li
 
             v-for="agent in filteredAgents" :key="agent.id"
-            v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1}"
+            v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1,'bg-danger': !agent.registration_at}"
             class="list-group-item d-flex justify-content-between align-items-center">
             <div @click="selectAgent(agent)">
                 <div class="fw-bold">
-                    <span v-if="agent.in_learning" class="badge bg-success">
+                    <p class="small mb-2">
+                        <span class="badge bg-primary">Общ. {{agent.total_percent || 0}}%</span>
+                        <span class="badge bg-primary-subtle mx-1">Перс. {{agent.percent}}%</span>
+                    </p>
+<!--                    <span v-if="agent.in_learning" class="badge bg-success">
                         <i class="fa-solid fa-user-graduate"></i>
-                    </span>
+                    </span>-->
                     <span @click="toggleSelection(agent.id)">{{ agent.name }}</span>
-                    <span v-if="agent.in_learning&&!forSelect" class="small text-success">
+<!--                    <span v-if="agent.in_learning&&!forSelect" class="small text-success">
                         <template v-if="agent.mentor">
                            <a
                                @click="openEdit(agent.mentor)"
@@ -48,9 +52,9 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                         <template v-else>
                             Наставник не указан
                         </template>
-                    </span>
+                    </span>-->
                 </div>
-                <small class="text-muted">{{ agent.phone }} | {{ agent.email }}</small>
+                <small class="text-muted">{{ agent.phone || 'телефон не указан'}}</small>
             </div>
 
             <!-- Dropdown кнопка -->
@@ -119,7 +123,9 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <AgentInfo :agent="selectedAgent" v-if="selectedAgent"></AgentInfo>
+                    <AgentInfo
+                        v-on:edit="openEditAgent"
+                        :agent="selectedAgent" v-if="selectedAgent"></AgentInfo>
                 </div>
             </div>
         </div>

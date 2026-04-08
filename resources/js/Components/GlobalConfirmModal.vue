@@ -4,8 +4,8 @@ const modal = useModalStore()
 </script>
 
 <template>
-    <div class="modal fade" tabindex="-1" :class="{ show: modal.show }" style="display: block;" v-if="modal.show">
-        <div class="modal-dialog">
+    <div class="modal fade" tabindex="-1" :class="{ show: modal.show }" style="display: block;z-index: 2000;" v-if="modal.show">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Подтверждение</h5>
@@ -23,6 +23,12 @@ const modal = useModalStore()
     </div>
 </template>
 <script>
-export default {}
+export default {
+}
 </script>
 
+<style scoped>
+.modal-backdrop {
+    z-index: 1990 !important;
+}
+</style>

@@ -29,13 +29,21 @@
 
     </ul>
 
+    <h6 class="fw-bold my-2">Начисление процентов</h6>
+    <PercentageList
+        class="mb-3"
+        :for-select="false"
+        :agent-id="agent.id"></PercentageList>
 
     <button class="btn btn-primary p-3 w-100" @click="$emit('edit', agent)">Редактировать</button>
 </template>
 
 <script>
+
+import PercentageList from "@/Components/Percentage/PercentageList.vue";
 export default {
     name: 'AgentInfo',
+    components:{PercentageList},
     props: {
         agent: {
             type: Object,
