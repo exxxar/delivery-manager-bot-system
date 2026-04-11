@@ -83,7 +83,11 @@
     @foreach($rows as $sale)
         <tr>
             <td>{{ $sale['date'] }}</td>
-            <td>{{ $sale['supplier_name'] }} (#{{ $sale["id"] ?? '-' }})</td>
+            <td>
+                @if(!empty($sale['supplier_name']))
+                    {{ $sale['supplier_name'] }} (#{{ $sale["id"] ?? '-' }})
+                @endif
+            </td>
             <td>{{ !is_null($sale['sale_amount'])?number_format($sale['sale_amount'], 0, ',', ''):'' }}</td>
             <td>{{ !is_null($sale['revenue_total'])?number_format($sale['revenue_total'], 0, ',', ''):'' }}</td>
 
@@ -194,7 +198,7 @@
         <td style="font-weight: bold;">{{ number_format($summary['revenue_total'] , 0, ',', '') }}</td>
 
         <td></td>
-        <td  style="font-weight: bold;">{{ number_format($summary['total_reward'] , 0, ',', '') }}</td>
+        <td style="font-weight: bold;">{{ number_format($summary['total_reward'] , 0, ',', '') }}</td>
         <td></td>
     </tr>
     </tbody>
