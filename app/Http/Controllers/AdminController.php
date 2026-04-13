@@ -43,6 +43,8 @@ class AdminController extends Controller
             "endDate" => "required",
         ]);
 
+        $botUser = $request->botUser;
+
         $fromDate = Carbon::parse($request->startDate)->startOfDay();
         $toDate = Carbon::parse($request->endDate)->endOfDay();
 
@@ -56,7 +58,7 @@ class AdminController extends Controller
 
           $fileName = "Отчет по зарплатам $fromDate - $toDate.xlsx";
           BotMethods::bot()
-              ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
+              ->sendDocument($botUser->telegram_chat_id ?? env("TELEGRAM_ADMIN_CHANNEL"),
                   "#отчет\nОтчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
                   InputFile::createFromContents($content, $fileName));
     }
