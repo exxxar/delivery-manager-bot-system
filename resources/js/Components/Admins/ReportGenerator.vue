@@ -31,6 +31,7 @@ import AgentList from "@/Components/Agents/AgentList.vue";
 
 
 
+<!--
             <div
                 class="form-check form-switch mb-2">
                 <input
@@ -43,6 +44,7 @@ import AgentList from "@/Components/Agents/AgentList.vue";
                    Больше параметров отчета
                 </label>
             </div>
+-->
 
             <template v-if="need_more_options">
 

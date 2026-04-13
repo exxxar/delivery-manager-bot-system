@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\RoleEnum;
 use App\Exports\AgentSalesExport;
 use App\Exports\ExportType4\RevenueExportSheet;
+use App\Exports\ExportType4\SummaryAgentReport;
+use App\Facades\BotMethods;
 use App\Facades\BusinessLogicFacade;
 use App\Http\Requests\SupplierStoreRequest;
 use App\Http\Requests\SupplierUpdateRequest;
@@ -17,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Writer;
+use Telegram\Bot\FileUpload\InputFile;
 
 class AdminController extends Controller
 {
@@ -35,7 +38,27 @@ class AdminController extends Controller
 
     public function downloadReport(Request $request)
     {
+        $validate = $request->validate([
+            "startDate" => "required",
+            "endDate" => "required",
+        ]);
 
+        $fromDate = Carbon::parse($request->startDate)->startOfDay();
+        $toDate = Carbon::parse($request->endDate)->endOfDay();
+
+
+        $content =  Excel::raw(new SummaryAgentReport(
+            resultType: 0,
+            fromDate: $fromDate,
+            toDate: $toDate,
+
+        ), \Maatwebsite\Excel\Excel::XLSX);
+
+          $fileName = "Отчет по зарплатам $fromDate - $toDate.xlsx";
+          BotMethods::bot()
+              ->sendDocument(env("TELEGRAM_ADMIN_CHANNEL"),
+                  "#отчет\nОтчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
+                  InputFile::createFromContents($content, $fileName));
     }
 
 

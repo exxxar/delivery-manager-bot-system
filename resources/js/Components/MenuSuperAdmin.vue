@@ -100,7 +100,7 @@ export default {
             modal.hide()
 
 
-            this.reportStore.exportFull(payload)
+            this.reportStore.exportSalary(payload)
         }
 
     }
