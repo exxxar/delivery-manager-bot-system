@@ -186,7 +186,7 @@ class SaleController extends Controller
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
 
-            $fileLink = env("APP_URL") . "/storage/app/uploads/$path";
+            $fileLink = env("APP_URL") . "/storage/app/$path";
 
             $data["payment_document_name"] = $filename;
             // $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
@@ -329,7 +329,7 @@ class SaleController extends Controller
                        continue;
                    }*/
 
-                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
+                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/$filename";
 
                 /*    \App\Facades\BotMethods::bot()->sendDocument(
                         $user->telegram_chat_id,
@@ -555,7 +555,7 @@ class SaleController extends Controller
                        continue; // если файл вдруг не найден — просто пропускаем
                    }*/
 
-                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
+                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/$filename";
                 /*\App\Facades\BotMethods::bot()->sendDocument(
                     env("TELEGRAM_ADMIN_CHANNEL"),
                     "Чек $index/$total к сделке №" . ($sale->id ?? '-'),
@@ -600,7 +600,7 @@ class SaleController extends Controller
 
             $hasFile = true;
 
-            $fileLink = env("APP_URL") . "/storage/app/uploads/$path";
+            $fileLink = env("APP_URL") . "/storage/app/$path";
         }
 
         $sale->status = 'pending';
@@ -674,7 +674,7 @@ class SaleController extends Controller
             $data["sale_date"] = Carbon::now();
             $hasFile = true;
 
-            $fileLink = env("APP_URL") . "/storage/app/uploads/$path";
+            $fileLink = env("APP_URL") . "/storage/app/$path";
         }
 
 
