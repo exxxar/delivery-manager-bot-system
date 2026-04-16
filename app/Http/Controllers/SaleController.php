@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RoleEnum;
 use App\Exports\ProductsExport;
 use App\Exports\SalesExport;
+use App\Facades\BotMethods;
 use App\Http\Requests\SaleStoreRequest;
 use App\Http\Requests\SaleUpdateRequest;
 use App\Models\Agent;
@@ -30,6 +31,65 @@ class SaleController extends Controller
             ->filter($request)
             ->sort($request)
             ->paginate($request->get('per_page', $request->size ?? 10));
+
+        return response()->json($sales);
+    }
+
+    public function approve(Request $request, $id){
+        $sale = Sale::query()
+            ->findOrFail($id);
+
+        $sale->verified_at = Carbon::now();
+        $sale->save();
+
+        $agent = Agent::query()
+            ->with(["user"])
+            ->where("id", $sale->agent_id)
+            ->first();
+
+       BotMethods::bot()->sendMessage(
+            $agent->user->telegram_chat_id,
+            "✅ Старший администратор подтвердил оплату по вашей заявке №$sale->id"
+        );
+
+        return response()->noContent();
+
+    }
+
+    public function decline(Request $request, $id){
+        $sale = Sale::query()
+            ->findOrFail($id);
+
+        $agent = Agent::query()
+            ->with(["user"])
+            ->where("id", $sale->agent_id)
+            ->first();
+
+        BotMethods::bot()->sendMessage(
+            $agent->user->telegram_chat_id,
+            "❌ Старший администратор выявил ошибку в вашей заявке №$sale->id ($sale->total_price руб.)"
+        );
+
+        return response()->noContent();
+    }
+
+    public function notVerified(Request $request)
+    {
+        $sales = Sale::query()
+            ->where("payment_type", 1)
+            ->whereNull("verified_at");
+
+        if ($request->date_from || $request->date_to) {
+            $sales = $sales->whereBetween('actual_delivery_date', [
+                    $request->date_from ?? '1900-01-01',
+                    $request->date_to ?? now()->toDateString()
+            ]);
+        }
+
+        $sales = $sales
+            ->orderBy("actual_delivery_date","desc")
+            ->paginate($request->get('per_page',
+                $request->size ?? 50));
 
         return response()->json($sales);
     }
@@ -120,13 +180,16 @@ class SaleController extends Controller
         $botUser = $request->botUser;
 
         $data = $request->all();
-
+        $fileLink = "";
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
+
+            $fileLink = env("APP_URL") . "/storage/app/uploads/$path";
+
             $data["payment_document_name"] = $filename;
-           // $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
+            // $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
         }
 
         $needAutomaticNaming = $data["need_automatic_naming"] == "true";
@@ -214,20 +277,20 @@ class SaleController extends Controller
 
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
-            "#создание_сделки\n$saleInfo" . $userLink
+            "#создание_сделки\n$saleInfo" . $userLink . (!is_null($sale->payment_document_name ?? null) ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
         );
 
-        if (!is_null($sale->payment_document_name ?? null)) {
+        /*  if (!is_null($sale->payment_document_name ?? null)) {
 
-            $slash = env("APP_DEBUG") ? "\\" : "/";
-            \App\Facades\BotMethods::bot()->sendDocument(
-                env("TELEGRAM_ADMIN_CHANNEL"),
-                "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
-                    $sale->payment_document_name
-                )
-            );
-        }
+              $slash = env("APP_DEBUG") ? "\\" : "/";
+              \App\Facades\BotMethods::bot()->sendDocument(
+                  env("TELEGRAM_ADMIN_CHANNEL"),
+                  "Чек к сделке №" . ($sale->id ?? '-'),
+                  InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
+                      $sale->payment_document_name
+                  )
+              );
+          }*/
 
 
         return response()->json($sale, 201);
@@ -244,10 +307,11 @@ class SaleController extends Controller
         $sale = Sale::findOrFail($id);
         $user = $request->botUser;
 
+        $fileLinks = "";
         if (!empty($sale->payment_document_name)) {
 
-            $slash = env('APP_DEBUG') ? "\\" : "/";
-            $basePath = storage_path("app{$slash}uploads{$slash}");
+            /* $slash = env('APP_DEBUG') ? "\\" : "/";
+             $basePath = storage_path("app{$slash}uploads{$slash}");*/
 
             // строка → массив (один или несколько файлов)
             $files = str_contains($sale->payment_document_name, ',')
@@ -259,20 +323,27 @@ class SaleController extends Controller
 
             foreach ($files as $filename) {
 
-                $filePath = $basePath . $filename;
+                // $filePath = $basePath . $filename;
 
-                if (!file_exists($filePath)) {
-                    continue;
-                }
+                /*   if (!file_exists($filePath)) {
+                       continue;
+                   }*/
 
-                \App\Facades\BotMethods::bot()->sendDocument(
-                    $user->telegram_chat_id,
-                    "Чек $index/$total к сделке №" . ($sale->id ?? '-'),
-                    InputFile::create($filePath, $filename)
-                );
+                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
+
+                /*    \App\Facades\BotMethods::bot()->sendDocument(
+                        $user->telegram_chat_id,
+                        "Чек $index/$total к сделке №" . ($sale->id ?? '-'),
+                        InputFile::create($filePath, $filename)
+                    );*/
 
                 $index++;
             }
+
+            \App\Facades\BotMethods::bot()->sendMessage(
+                $user->telegram_chat_id,
+                "Чек к сделке №" . ($sale->id ?? '-') . ($total > 0 ? $fileLinks : "")
+            );
 
         } else {
             \App\Facades\BotMethods::bot()->sendMessage(
@@ -461,16 +532,12 @@ class SaleController extends Controller
             }
         }
 
-        $saleInfo = $sale->toTelegramText($receiptIsLost);
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
-        );
 
+        $fileLinks = "";
         if ($hasFile && !empty($sale->payment_document_name)) {
 
-            $slash = env('APP_DEBUG') ? "\\" : "/";
-            $basePath = storage_path("app{$slash}uploads{$slash}");
+            /*  $slash = env('APP_DEBUG') ? "\\" : "/";
+              $basePath = storage_path("app{$slash}uploads{$slash}");*/
 
             // превращаем строку в массив (1 или несколько файлов)
             $files = str_contains($sale->payment_document_name, ',')
@@ -482,21 +549,29 @@ class SaleController extends Controller
 
             foreach ($files as $filename) {
 
-                $filePath = $basePath . $filename;
+                //  $filePath = $basePath . $filename;
 
-                if (!file_exists($filePath)) {
-                    continue; // если файл вдруг не найден — просто пропускаем
-                }
+                /*   if (!file_exists($filePath)) {
+                       continue; // если файл вдруг не найден — просто пропускаем
+                   }*/
 
-                \App\Facades\BotMethods::bot()->sendDocument(
+                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
+                /*\App\Facades\BotMethods::bot()->sendDocument(
                     env("TELEGRAM_ADMIN_CHANNEL"),
                     "Чек $index/$total к сделке №" . ($sale->id ?? '-'),
                     InputFile::create($filePath, $filename)
-                );
+                );*/
                 $index++;
                 sleep(1);
             }
         }
+
+        $saleInfo = $sale->toTelegramText($receiptIsLost);
+        \App\Facades\BotMethods::bot()->sendMessage(
+            env("TELEGRAM_ADMIN_CHANNEL"),
+            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile && !empty($sale->payment_document_name) ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLinks" : "")
+        );
+
         return response()->json($sale);
     }
 
@@ -516,6 +591,7 @@ class SaleController extends Controller
         $priceIsChange = $sale->total_price != $request->total_price;
 
         $hasFile = false;
+        $fileLink = "";
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
@@ -523,6 +599,8 @@ class SaleController extends Controller
             $sale->payment_document_name = $filename;
 
             $hasFile = true;
+
+            $fileLink = env("APP_URL") . "/storage/app/uploads/$path";
         }
 
         $sale->status = 'pending';
@@ -554,20 +632,20 @@ class SaleController extends Controller
         $saleInfo = $sale->toTelegramText($receiptIsLost);
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
-            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
+            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
         );
 
-        if ($hasFile) {
-            $slash = env("APP_DEBUG") ? "\\" : "/";
-            \App\Facades\BotMethods::bot()->sendDocument(
-                env("TELEGRAM_ADMIN_CHANNEL"),
-                "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
-                    $sale->payment_document_name
-                )
-            );
+        /* if ($hasFile) {
+             $slash = env("APP_DEBUG") ? "\\" : "/";
+             \App\Facades\BotMethods::bot()->sendDocument(
+                 env("TELEGRAM_ADMIN_CHANNEL"),
+                 "Чек к сделке №" . ($sale->id ?? '-'),
+                 InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
+                     $sale->payment_document_name
+                 )
+             );
 
-        }
+         }*/
         return response()->json($sale);
 
     }
@@ -587,6 +665,7 @@ class SaleController extends Controller
             $data["quantity"] = 1;
 
         $hasFile = false;
+        $fileLink = "";
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
@@ -594,6 +673,8 @@ class SaleController extends Controller
             $data["payment_document_name"] = $filename;
             $data["sale_date"] = Carbon::now();
             $hasFile = true;
+
+            $fileLink = env("APP_URL") . "/storage/app/uploads/$path";
         }
 
 
@@ -656,19 +737,19 @@ class SaleController extends Controller
         $saleInfo = $sale->toTelegramText();
         \App\Facades\BotMethods::bot()->sendMessage(
             env("TELEGRAM_ADMIN_CHANNEL"),
-            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
+            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
         );
 
-        if ($hasFile) {
-            $slash = env("APP_DEBUG") ? "\\" : "/";
-            \App\Facades\BotMethods::bot()->sendDocument(
-                env("TELEGRAM_ADMIN_CHANNEL"),
-                "Чек к сделке №" . ($sale->id ?? '-'),
-                InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
-                    $sale->payment_document_name
-                )
-            );
-        }
+        /* if ($hasFile) {
+             $slash = env("APP_DEBUG") ? "\\" : "/";
+             \App\Facades\BotMethods::bot()->sendDocument(
+                 env("TELEGRAM_ADMIN_CHANNEL"),
+                 "Чек к сделке №" . ($sale->id ?? '-'),
+                 InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
+                     $sale->payment_document_name
+                 )
+             );
+         }*/
 
         $sale->load(["product", "agent", "customer", "supplier", "creator", "category"]);
         return response()->json($sale);

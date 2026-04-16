@@ -39,6 +39,7 @@ class Sale extends Model
         'created_by_id',
         'created_at',
         'updated_at',
+        'verified_at',
     ];
 
     protected $casts = [
@@ -180,7 +181,7 @@ class Sale extends Model
 
         // 🔹 Даты
         if ($request->date_from || $request->date_to) {
-            $query->whereBetween('due_date', [
+            $query->whereBetween('actual_delivery_date', [
                     $request->date_from ?? '1900-01-01',
                     $request->date_to ?? now()->toDateString()
             ]);

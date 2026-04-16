@@ -26,6 +26,7 @@ export const useSalesStore = defineStore('sales', {
     state: () => ({
         items: [] as Sale[],
         bad_items: [] as Sale[],
+        not_verified_items: [] as Sale[],
         loading: false,
         filters: null,
         progress: 0,
@@ -36,6 +37,33 @@ export const useSalesStore = defineStore('sales', {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+
+        async fetchNotVerified(payload = {size:50, page: 1, date_from: null, date_to: null}) {
+            this.loading = true
+            this.error = null
+
+            let size = payload.size || 50
+            let page = payload.page || 1
+
+            let date_from = payload.date_from || null
+            let date_to = payload.date_to || null
+
+            try {
+                const {data} = await makeAxiosFactory(`${path}/not-verified?page=${page}&size=${size}`, 'POST',{
+                    date_from: date_from,
+                    date_to: date_to
+                })
+
+                this.not_verified_items = [...this.not_verified_items, ...data.data]
+                delete data.data
+                this.not_verified_pagination = data
+
+            } catch (e: any) {
+                this.error = e?.message || 'Failed to load sales'
+            } finally {
+                this.loading = false
+            }
+        },
         // @ts-ignore
         async fetchAll() {
             this.loading = true
@@ -140,6 +168,26 @@ export const useSalesStore = defineStore('sales', {
         async fetchOne(id: number) {
             try {
                 const {data} = await makeAxiosFactory(`${path}/${id}`, 'GET')
+                return data as Sale
+            } catch (e: any) {
+                this.error = e?.message || 'Failed to load sale'
+                throw e
+            }
+        },
+
+        async approveSale(id: number) {
+            try {
+                const {data} = await makeAxiosFactory(`${path}/approve/${id}`, 'GET')
+                return data as Sale
+            } catch (e: any) {
+                this.error = e?.message || 'Failed to load sale'
+                throw e
+            }
+        },
+
+        async declineSale(id: number) {
+            try {
+                const {data} = await makeAxiosFactory(`${path}/decline/${id}`, 'GET')
                 return data as Sale
             } catch (e: any) {
                 this.error = e?.message || 'Failed to load sale'

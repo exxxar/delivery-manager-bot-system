@@ -259,7 +259,7 @@ const today = new Date().toISOString().split('T')[0]
 
             <!-- Кнопка -->
             <button
-                :disabled="spent_time>0"
+                :disabled="spent_time>0||salesStore.loading"
                 type="submit" class="btn btn-primary w-100 p-3">
                 <span v-if="spent_time>0">{{ spent_time }} сек.</span>
                 <span v-else>

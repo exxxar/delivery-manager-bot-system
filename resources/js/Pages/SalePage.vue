@@ -1,5 +1,6 @@
 <script setup>
 import SaleList from "@/Components/Sales/SaleList.vue";
+import NotVerifiedSaleList from "@/Components/Sales/NotVerifiedSaleList.vue";
 import BackBtn from "@/Components/BackBtn.vue";
 import SaleForm from "@/Components/Sales/SaleForm.vue";
 </script>
@@ -7,6 +8,11 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
     <div class="container-fluid p-3">
         <BackBtn/>
 
+        <template v-if="user?.role>=3">
+            <button
+                @click="openVerifyModal"
+                class="btn btn-danger w-100 p-3 mb-2"><i class="fa-solid fa-list-check"></i> Заявки на проверку</button>
+        </template>
         <h4 class="mb-3">Список доставок</h4>
         <SaleList v-if="!loading"></SaleList>
 
@@ -21,6 +27,20 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
                 </button>
             </div>
         </nav>
+    </div>
+
+    <!-- Модалка создания -->
+    <div class="modal fade" id="verifiedSales" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Проверка заявок</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <NotVerifiedSaleList v-if="!loading"></NotVerifiedSaleList>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Модалка создания -->
@@ -40,13 +60,29 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
     </div>
 </template>
 <script>
+import {useUsersStore} from "@/stores/users.ts";
+
 export default {
     data() {
         return {
+            userStore: useUsersStore(),
             loading: false,
         }
     },
+    computed:{
+        user() {
+            return this.userStore.self || null
+        },
+    },
     methods: {
+        openVerifyModal() {
+            this.loading = true
+            this.$nextTick(() => {
+                this.loading = false
+                new bootstrap.Modal(document.getElementById('verifiedSales')).show()
+            })
+
+        },
         addSale() {
             this.loading = true
             this.$nextTick(() => {

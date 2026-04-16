@@ -418,6 +418,14 @@ Route::prefix("bot-api")
                 Route::get('/bad-sales', [SaleController::class, 'getBadSales']);
                 // Создать новую продажу
                 Route::post('/', [SaleController::class, 'store']);
+                Route::post('/not-verified', [SaleController::class, 'notVerified'])
+                    ->middleware(["tg.role:admin"]);
+
+                Route::get('/approve/{id}', [SaleController::class, 'approve'])
+                    ->middleware(["tg.role:admin"]);
+
+                Route::get('/decline/{id}', [SaleController::class, 'decline'])
+                    ->middleware(["tg.role:admin"]);
 
                 Route::post('/accept-all', [SaleController::class, 'acceptAll'])
                     ->middleware(["tg.role:admin"]);
