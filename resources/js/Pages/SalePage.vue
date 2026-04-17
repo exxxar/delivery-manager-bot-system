@@ -29,7 +29,7 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
         </nav>
     </div>
 
-    <!-- Модалка создания -->
+    <!-- Модалка верификации -->
     <div class="modal fade" id="verifiedSales" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
@@ -37,7 +37,9 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <NotVerifiedSaleList v-if="!loading"></NotVerifiedSaleList>
+                    <template v-if="user?.role>=3">
+                        <NotVerifiedSaleList v-if="!loading"></NotVerifiedSaleList>
+                    </template>
                 </div>
             </div>
         </div>
