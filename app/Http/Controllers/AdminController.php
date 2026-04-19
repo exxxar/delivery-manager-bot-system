@@ -61,6 +61,24 @@ class AdminController extends Controller
               ->sendDocument($botUser->telegram_chat_id ?? env("TELEGRAM_ADMIN_CHANNEL"),
                   "#отчет\nОтчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
                   InputFile::createFromContents($content, $fileName));
+
+
+        \App\Facades\BotMethods::bot()
+            ->sendMessage($botUser->telegram_chat_id,
+                "Внимание! Готовим отчет по поставщикам, это займет какое-то время (минут 10-15)!"
+            );
+        $content =
+            Excel::raw(new \App\Exports\ExportType1\SummarySuppliersReport(
+                fromDate: $fromDate ?? Carbon::now()->startOfMonth(),
+                toDate: $toDate ?? Carbon::now()->endOfMonth(),
+            ), \Maatwebsite\Excel\Excel::XLSX);
+
+        $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
+        \App\Facades\BotMethods::bot()
+            ->sendDocument($botUser->telegram_chat_id,
+                "Отчет по поставщикам <b>$fromDate</b> - <b>$toDate</b>",
+                \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
+
     }
 
 
