@@ -329,7 +329,7 @@ class SaleController extends Controller
                        continue;
                    }*/
 
-                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/$filename";
+                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
 
                 /*    \App\Facades\BotMethods::bot()->sendDocument(
                         $user->telegram_chat_id,
@@ -555,7 +555,7 @@ class SaleController extends Controller
                        continue; // если файл вдруг не найден — просто пропускаем
                    }*/
 
-                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/$filename";
+                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
                 /*\App\Facades\BotMethods::bot()->sendDocument(
                     env("TELEGRAM_ADMIN_CHANNEL"),
                     "Чек $index/$total к сделке №" . ($sale->id ?? '-'),

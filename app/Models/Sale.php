@@ -113,7 +113,7 @@ class Sale extends Model
             "<b>Сумма заказа:</b> {$this->total_price}\n" .
             "<b>Тип оплаты:</b> {$paymentType}\n" .
             "<b>Отвественный:</b> " . ($this->agent?->name ?? '-') . "\n" .
-            "<b>Клиент:</b> " . ($this->customer?->name ?? '-') . "\n" .
+          //  "<b>Клиент:</b> " . ($this->customer?->name ?? '-') . "\n" .
             "<b>Поставщик:</b> " . ($this->supplier?->name ?? '-') . "\n" .
             "<b>Продукт:</b> " . ($this->product?->name ?? '-') . "\n" .
             "<b>Создан админом:</b> " . ($this->creator?->fio_from_telegram ?? '-') . "\n";

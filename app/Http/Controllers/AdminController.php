@@ -65,7 +65,7 @@ class AdminController extends Controller
 
         \App\Facades\BotMethods::bot()
             ->sendMessage($botUser->telegram_chat_id,
-                "Внимание! Готовим отчет по поставщикам, это займет какое-то время (минут 10-15)!"
+                "Внимание! Готовим отчет по поставщикам, это займет какое-то время (минут 5)!"
             );
         $content =
             Excel::raw(new \App\Exports\ExportType1\SummarySuppliersReport(
