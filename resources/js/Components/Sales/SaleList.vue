@@ -101,67 +101,149 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
         <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Все заявки</h6>
     </template>
 
-    <ul class="list-group">
-        <li
+    <div class="container-fluid">
+        <div class="row g-3">
 
-            v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1, 'bg-danger':sale.status === 'completed'&&(!sale.sale_date||!sale.actual_delivery_date)}"
-            v-for="sale in filteredSales" :key="sale.id"
-            class="list-group-item d-flex justify-content-between align-items-start">
-            <SaleCard
-                :sale="sale"
-                :field_visible="field_visible"
-                :saleStatuses="saleStatuses"
-                @toggle-selection="toggleSelection"
-            />
+            <div
+                v-for="sale in filteredSales"
+                :key="sale.id"
+                class="col-12 col-md-6 col-xxl-4"
+            >
 
-            <!-- Dropdown -->
-             <div class="dropdown">
-                <button class="btn btn-sm btn-outline-light text-primary" type="button"
-                        data-bs-toggle="dropdown">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <template v-if="forSelect">
-                        <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a>
-                        </li>
-                    </template>
-                    <template v-if="!forSelect">
-                        <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">Просмотреть</a>
-                        </li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">Редактировать</a>
-                        </li>
-                        <li v-if="sale.status!=='completed'"><a class="dropdown-item text-success"
-                                                                href="javascript:void(0)"
-                                                                @click.prevent="openConfirmDeal(sale)">Подтвердить
-                            оплату и доставка</a></li>
-<!--                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
-                                                                             href="javascript:void(0)"
+                <div
+                    class="card shadow-sm h-100 sale-card position-relative"
 
-                                                                             @click.prevent="openConfirmPayment(sale)">Подтвердить
-                            оплату</a></li>-->
+                    :class="{
+                    'border-primary border-3': selection.indexOf(sale.id)!==-1,
+                    'bg-danger-subtle':
+                        sale.status === 'completed' &&
+                        (!sale.sale_date || !sale.actual_delivery_date)
+                }"
+                >
 
-                        <template v-if="sale.payment_document_name">
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-success"
-                                   href="javascript:void(0)"
-                                   @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a></li>
-                        </template>
+                    <!-- Dropdown -->
+                    <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
 
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
-                            @click.prevent="confirmDelete(sale)">Удалить</a></li>
-                        <li><a class="dropdown-item text-danger" href="javascript:void(0)"
-                               @click.prevent="confirmCancelDeal(sale)">Отменить
-                            сделку</a></li>
-                    </template>
-                </ul>
+                        <button
+                            class="btn btn-sm btn-light border"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                        >
+                            <i class="fas fa-bars text-primary"></i>
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end">
+
+                            <template v-if="forSelect">
+
+                                <li>
+                                    <a
+                                        class="dropdown-item"
+                                        href="#"
+                                        @click.prevent="$emit('select', sale)"
+                                    >
+                                        Выбрать
+                                    </a>
+                                </li>
+
+                            </template>
+
+                            <template v-if="!forSelect">
+
+                                <li>
+                                    <a
+                                        class="dropdown-item"
+                                        href="javascript:void(0)"
+                                        @click.prevent="openView(sale)"
+                                    >
+                                        Просмотреть
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a
+                                        class="dropdown-item"
+                                        href="javascript:void(0)"
+                                        @click.prevent="openEdit(sale)"
+                                    >
+                                        Редактировать
+                                    </a>
+                                </li>
+
+                                <li v-if="sale.status !== 'completed'">
+                                    <a
+                                        class="dropdown-item text-success"
+                                        href="javascript:void(0)"
+                                        @click.prevent="openConfirmDeal(sale)"
+                                    >
+                                        Подтвердить оплату и доставку
+                                    </a>
+                                </li>
+
+                                <template v-if="sale.payment_document_name">
+
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+
+                                    <li>
+                                        <a
+                                            class="dropdown-item text-success"
+                                            href="javascript:void(0)"
+                                            @click.prevent="sendPaymentDocumentToTg(sale.id)"
+                                        >
+                                            Отправить документ в чат
+                                        </a>
+                                    </li>
+
+                                </template>
+
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+
+                                <li>
+                                    <a
+                                        class="dropdown-item text-danger"
+                                        href="javascript:void(0)"
+                                        @click.prevent="confirmDelete(sale)"
+                                    >
+                                        Удалить
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a
+                                        class="dropdown-item text-danger"
+                                        href="javascript:void(0)"
+                                        @click.prevent="confirmCancelDeal(sale)"
+                                    >
+                                        Отменить сделку
+                                    </a>
+                                </li>
+
+                            </template>
+
+                        </ul>
+                    </div>
+
+                    <!-- Контент карточки -->
+                    <div class="card-body">
+
+                        <SaleCard
+                            :sale="sale"
+                            :field_visible="field_visible"
+                            :saleStatuses="saleStatuses"
+                            @toggle-selection="toggleSelection"
+                        />
+
+                    </div>
+
+                </div>
             </div>
-        </li>
-    </ul>
+
+        </div>
+    </div>
 
     <Pagination
         v-if="salesStore.items.length > 0"

@@ -35,8 +35,10 @@ import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
 
     <GlobalAlert></GlobalAlert>
     <GlobalConfirmModal></GlobalConfirmModal>
-    <slot/>
 
+    <div class="container-lg py-3">
+        <slot/>
+    </div>
 
     <footer class="text-body-secondary" style="padding:0px 0px 90px 0px;">
 

@@ -4,34 +4,117 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
 </script>
 <template>
 
-    <button
-        type="button"
-        v-if="!userStore.self?.registration_at && userStore.self?.role > 0"
-        @click="openPrimaryRegistration"
-        class="btn btn-success p-3 w-100 mb-2">Заполнить данные о себе
-    </button>
-    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
-        <button type="button"
-                @click="goTo('SalePage')"
-                class="btn btn-outline-primary p-3">Мои доставки
-        </button>
-        <button type="button"
-                data-bs-toggle="modal" :data-bs-target="'#reportModal'"
-                class="btn btn-outline-primary p-3">Сформировать отчет
-        </button>
-    </div>
+    <div class="container-fluid">
+        <div class="row g-2">
 
-    <hr>
-    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
-        <button type="button"
-                @click="goTo('SupplierPage')"
-                class="btn btn-outline-primary p-3">Список поставщиков
-        </button>
+            <!-- Заполнить данные -->
+            <div class="col-12 col-md-6 col-xl-3"
+                 v-if="!userStore.self?.registration_at && userStore.self?.role > 0">
 
-        <button type="button"
-                @click="goTo('ProductPage')"
-                class="btn btn-outline-primary p-3">Работа с товаром
-        </button>
+                <div class="card border-success shadow-sm h-100 menu-card"
+                     @click="openPrimaryRegistration"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-id-card fa-3x text-success mb-3"></i>
+
+                        <h5 class="card-title">
+                            Заполнить данные
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Введите информацию о себе
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Мои доставки -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-primary shadow-sm h-100 menu-card"
+                     @click="goTo('SalePage')"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-truck-fast fa-3x text-primary mb-3"></i>
+
+                        <h5 class="card-title">
+                            Мои доставки
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Просмотр доставок
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Отчет -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-info shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     :data-bs-target="'#reportModal'"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-file-lines fa-3x text-info mb-3"></i>
+
+                        <h5 class="card-title">
+                            Сформировать отчет
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Генерация отчетности
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Поставщики -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-warning shadow-sm h-100 menu-card"
+                     @click="goTo('SupplierPage')"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-truck fa-3x text-warning mb-3"></i>
+
+                        <h5 class="card-title">
+                            Поставщики
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Управление поставщиками
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Товары -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-danger shadow-sm h-100 menu-card"
+                     @click="goTo('ProductPage')"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-box-open fa-3x text-danger mb-3"></i>
+
+                        <h5 class="card-title">
+                            Работа с товаром
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Управление товарами
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <!-- Модалка -->

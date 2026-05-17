@@ -6,23 +6,127 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
 </script>
 <template>
 
-    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню действий">
-        <button type="button"
-                @click="goTo('SalePage')"
-                class="btn btn-outline-primary p-3">Список доставок</button>
-        <button type="button"
-                data-bs-toggle="modal" :data-bs-target="'#newSaleModal'"
-                class="btn btn-outline-primary p-3">Внести доставку</button>
-        <button type="button"
-                data-bs-toggle="modal" :data-bs-target="'#reportModal'"
-                class="btn btn-outline-primary p-3">Сформировать отчет</button>
-        <button type="button"
-                @click="goTo('ProductPage')"
-                class="btn btn-outline-primary p-3">Работа с товаром
-        </button>
-        <button type="button"
-                @click="goTo('SupplierPage')"
-                class="btn btn-outline-primary p-3">Список поставщиков</button>
+    <div class="container-fluid">
+        <div class="row g-2">
+
+            <!-- Список доставок -->
+            <div class="col-12 col-md-6 col-xl-4">
+
+                <div class="card border-primary shadow-sm h-100 menu-card"
+                     @click="goTo('SalePage')"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-truck-fast fa-3x text-primary mb-3"></i>
+
+                        <h5 class="card-title">
+                            Список доставок
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Просмотр всех доставок
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Внести доставку -->
+            <div class="col-12 col-md-6 col-xl-4">
+
+                <div class="card border-success shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     :data-bs-target="'#newSaleModal'"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-plus-circle fa-3x text-success mb-3"></i>
+
+                        <h5 class="card-title">
+                            Внести доставку
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Добавление новой доставки
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Отчет -->
+            <div class="col-12 col-md-6 col-xl-4">
+
+                <div class="card border-info shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     :data-bs-target="'#reportModal'"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-file-lines fa-3x text-info mb-3"></i>
+
+                        <h5 class="card-title">
+                            Сформировать отчет
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Генерация отчетности
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Работа с товаром -->
+            <div class="col-12 col-md-6 col-xl-4">
+
+                <div class="card border-danger shadow-sm h-100 menu-card"
+                     @click="goTo('ProductPage')"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-box-open fa-3x text-danger mb-3"></i>
+
+                        <h5 class="card-title">
+                            Работа с товаром
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Управление товарами
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Поставщики -->
+            <div class="col-12 col-md-6 col-xl-4">
+
+                <div class="card border-warning shadow-sm h-100 menu-card"
+                     @click="goTo('SupplierPage')"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-truck fa-3x text-warning mb-3"></i>
+
+                        <h5 class="card-title">
+                            Список поставщиков
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Управление поставщиками
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
 

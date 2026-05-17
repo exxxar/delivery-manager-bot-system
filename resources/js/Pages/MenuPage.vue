@@ -12,7 +12,7 @@ const { t } = useI18n();
 <template>
 
 
-    <div class="container-fluid p-3" v-if="user">
+    <template v-if="user">
         <template v-if="user.role === 0">
             <MenuUser></MenuUser>
         </template>
@@ -36,7 +36,7 @@ const { t } = useI18n();
         </template>
 
         <RoleSwitcher v-if="user.base_role===4"></RoleSwitcher>
-    </div>
+    </template>
 
 </template>
 <script>

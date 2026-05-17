@@ -152,7 +152,9 @@ export const useSalesStore = defineStore('sales', {
         },
         // @ts-ignore
         async fetchByUrl(url: string) {
-            const {data} = await makeAxiosFactory(url, 'GET')
+
+            const {data} = await makeAxiosFactory(`${url}`, 'GET')
+
             this.items = data.data
             this.pagination = data
         },

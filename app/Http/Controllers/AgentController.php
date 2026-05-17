@@ -13,6 +13,7 @@ use Carbon\Carbon;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -173,10 +174,22 @@ class AgentController extends Controller
             throw new HttpException("Пользователь не авторизован", 403);
 
         $fileName = "export-agent-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new \App\Exports\AgentsExport(), \Maatwebsite\Excel\Excel::XLSX);
+       // $data = Excel::raw(new \App\Exports\AgentsExport(), \Maatwebsite\Excel\Excel::XLSX);
+
+        $data = Excel::raw(
+            new \App\Exports\AgentsExport(),
+            \Maatwebsite\Excel\Excel::XLSX
+        );
+
+        $path = "exports/" . $fileName;
+// Сохранение файла
+        Storage::put($path, $data);
+
+        $fileLink = url("/storage/app/" . $path);
+
+ //
         \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "Экспорт списка торговых представителей",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+            ->sendMessage($user->telegram_chat_id, "Экспорт списка торговых представителей: $fileLink");
         return response()->noContent();
     }
 }

@@ -7,27 +7,141 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
 <template>
 
-    <button
-        @click="requestInvite"
-        :disabled="spent_time>0"
-        type="button" class="btn btn-primary p-3 mb-2 w-100">
-        <span v-if="spent_time>0">{{ spent_time }} сек.</span>
-        <span v-else>Я уже являюсь сотрудником</span>
-    </button>
+    <div class="container-fluid">
+        <div class="row g-2">
 
-    <div class="btn-group-vertical w-100" role="group" aria-label="Вертикальное меню">
-        <button type="button" data-bs-toggle="modal" data-bs-target="#adminJobModal"
-                class="btn btn-outline-primary p-3">Стать старшим администратором
-        </button>
-        <button type="button" data-bs-toggle="modal" data-bs-target="#agentJobModal"
-                class="btn btn-outline-primary p-3">Стать администратором
-        </button>
-        <button type="button" data-bs-toggle="modal" data-bs-target="#supplierJobModal"
-                class="btn btn-outline-primary p-3">Стать поставщиком
-        </button>
-        <button type="button" data-bs-toggle="modal" data-bs-target="#clientJobModal"
-                class="btn btn-outline-primary p-3">Стать клиентом (сотрудничество)
-        </button>
+            <!-- Уже сотрудник -->
+            <div class="col-12">
+
+                <div class="card border-primary shadow-sm menu-card">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-user-check fa-3x text-primary mb-3"></i>
+
+                        <h5 class="card-title mb-3">
+                            Подтверждение сотрудника
+                        </h5>
+
+                        <button
+                            @click="requestInvite"
+                            :disabled="spent_time > 0"
+                            type="button"
+                            class="btn btn-primary btn-lg w-100">
+
+                        <span v-if="spent_time > 0">
+                            <i class="fa-solid fa-clock me-2"></i>
+                            {{ spent_time }} сек.
+                        </span>
+
+                            <span v-else>
+                            <i class="fa-solid fa-check me-2"></i>
+                            Я уже являюсь сотрудником
+                        </span>
+
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Старший администратор -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-danger shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     data-bs-target="#adminJobModal"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-crown fa-3x text-danger mb-3"></i>
+
+                        <h5 class="card-title">
+                            Старший администратор
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Получение расширенных прав
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Администратор -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-primary shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     data-bs-target="#agentJobModal"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-user-shield fa-3x text-primary mb-3"></i>
+
+                        <h5 class="card-title">
+                            Администратор
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Работа с системой
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Поставщик -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-warning shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     data-bs-target="#supplierJobModal"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-truck fa-3x text-warning mb-3"></i>
+
+                        <h5 class="card-title">
+                            Поставщик
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Сотрудничество по поставкам
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Клиент -->
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card border-success shadow-sm h-100 menu-card"
+                     data-bs-toggle="modal"
+                     data-bs-target="#clientJobModal"
+                     style="cursor:pointer;">
+
+                    <div class="card-body text-center p-4">
+
+                        <i class="fa-solid fa-handshake fa-3x text-success mb-3"></i>
+
+                        <h5 class="card-title">
+                            Клиент
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+                            Сотрудничество с компанией
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
 

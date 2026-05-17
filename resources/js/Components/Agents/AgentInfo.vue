@@ -19,7 +19,7 @@
         <li v-if="agent.in_learning" class="list-group-item">
             <strong>Обучается у: </strong>
             <template v-if="agent.mentor">
-                    {{ agent.mentor?.name || '-' }}
+                {{ agent.mentor?.name || '-' }}
             </template>
             <template v-else>
                 Наставник не указан
@@ -35,16 +35,24 @@
         :for-select="false"
         :agent-id="agent.id"></PercentageList>
 
-    <button class="btn btn-primary p-3 w-100" @click="$emit('edit', agent)">Редактировать</button>
+    <template v-if="edit">
+        <button class="btn btn-primary p-3 w-100" @click="$emit('edit', agent)">Редактировать</button>
+    </template>
 </template>
 
 <script>
 
 import PercentageList from "@/Components/Percentage/PercentageList.vue";
+
 export default {
     name: 'AgentInfo',
-    components:{PercentageList},
+    components: {PercentageList},
     props: {
+        edit: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
         agent: {
             type: Object,
             required: true

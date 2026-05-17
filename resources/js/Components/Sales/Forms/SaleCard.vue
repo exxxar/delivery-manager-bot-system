@@ -31,9 +31,9 @@
             {{ sale.title }}
         </p>
 
-        <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.due_date || true">
+<!--        <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.due_date || true">
             Дата задания {{ sale.due_date || 'не указана' }}
-        </p>
+        </p>-->
 
         <p class="fw-bold mb-0 small" style="font-size:14px;" v-if="field_visible?.sale_date || true">
             Дата продажи {{ sale.sale_date || 'не указана' }}

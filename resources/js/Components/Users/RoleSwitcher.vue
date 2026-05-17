@@ -1,28 +1,103 @@
 <template>
 
 
-        <div class="form-floating my-2 w-100">
+    <div class="container-fluid">
+        <!-- Кнопка открытия -->
+        <button
+            class="btn btn-outline-primary w-100 my-2 p-3"
+            data-bs-toggle="modal"
+            data-bs-target="#roleModal"
+        >
+            <i class="fa-solid fa-user-gear me-2"></i>
+            Сменить роль
+        </button>
+    </div>
 
-            <select
-                id="roleSelect"
-                class="form-select"
-                v-model="selectedRole"
-                @change="changeRole"
-            >
-                <option :value="0">Пользователь</option>
-                <option :value="1">Администратор</option>
-                <option :value="3">Старший администратор</option>
-                <option :value="4">Суперадмин</option>
-            </select>
 
-            <label for="roleSelect" class="form-label">Сменить роль</label>
+    <!-- Модалка -->
+    <div class="modal fade"
+         id="roleModal"
+         tabindex="-1"
+         aria-labelledby="roleModalLabel"
+         aria-hidden="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+
+                <!-- Заголовок -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roleModalLabel">
+                        <i class="fa-solid fa-users-gear me-2"></i>
+                        Выбор роли
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"></button>
+                </div>
+
+                <!-- Тело -->
+                <div class="modal-body">
+
+                    <!-- Текущая роль -->
+                    <div class="alert alert-primary text-center mb-2">
+                        Текущая роль:
+                        <strong>{{ roleLabel }}</strong>
+                    </div>
+
+                    <!-- Базовая роль -->
+                    <div class="alert alert-secondary text-center mb-2"
+                         v-if="roleLabel !== baseRoleLabel">
+
+                        Базовая роль:
+                        <strong>{{ baseRoleLabel }}</strong>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="d-grid gap-2 mt-4">
+
+                        <button
+                            class="btn btn-outline-secondary p-3"
+                            :class="{ 'active': selectedRole === 0 }"
+                            @click="selectedRole = 0; changeRole()">
+
+                            <i class="fa-solid fa-user me-2"></i>
+                            Пользователь
+                        </button>
+
+                        <button
+                            class="btn btn-outline-primary p-3"
+                            :class="{ 'active': selectedRole === 1 }"
+                            @click="selectedRole = 1; changeRole()">
+
+                            <i class="fa-solid fa-user-shield me-2"></i>
+                            Администратор
+                        </button>
+
+                        <button
+                            class="btn btn-outline-warning p-3"
+                            :class="{ 'active': selectedRole === 3 }"
+                            @click="selectedRole = 3; changeRole()">
+
+                            <i class="fa-solid fa-user-tie me-2"></i>
+                            Старший администратор
+                        </button>
+
+                        <button
+                            class="btn btn-outline-danger p-3"
+                            :class="{ 'active': selectedRole === 4 }"
+                            @click="selectedRole = 4; changeRole()">
+
+                            <i class="fa-solid fa-crown me-2"></i>
+                            Суперадмин
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
         </div>
-        <p class="mt-2">
-            Текущая роль: <strong>{{ roleLabel }}</strong>
-        </p>
-        <p class="mt-2" v-if="roleLabel!==baseRoleLabel">
-            Базовая роль роль: <strong>{{ baseRoleLabel }}</strong>
-        </p>
+    </div>
 
 
 </template>

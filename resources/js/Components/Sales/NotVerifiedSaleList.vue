@@ -8,6 +8,51 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 </script>
 <template>
 
+    <!-- Progress -->
+    <transition name="fade">
+
+        <div
+            v-if="processingQueue > 0"
+            class="mb-3"
+        >
+
+            <div class="d-flex justify-content-between small mb-1">
+
+            <span>
+                <i class="fa-solid fa-paper-plane me-1"></i>
+                Обработка заявок
+            </span>
+
+                <span>
+                {{ processingQueue }} ед.
+            </span>
+
+            </div>
+
+            <div
+                class="progress"
+                style="height: 12px;"
+            >
+
+                <div
+                    class="progress-bar progress-bar-striped progress-bar-animated"
+                    role="progressbar"
+
+                    :style="{
+                    width: progressPercent + '%'
+                }"
+                >
+                </div>
+
+            </div>
+
+            <div class="alert alert-danger my-2">
+                Внимание! Дождитесь завершения процесса обработки заявок!
+            </div>
+        </div>
+
+    </transition>
+
     <div
         class="form-check form-switch mb-2">
         <input
@@ -82,12 +127,18 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 #{{ sale.id }}
             </span>
 
-               {{ sale.title }}
+               {{ sale.title }} (<a href="javascript:void(0)"
+               @click="$emit('agent-info', sale.creator)"
+               class="fw-bold text-decoration-underline">{{ sale.creator?.name || sale.created_by_id || '-' }}</a>)
            </p>
 
             <p class="mb-2 small" >
                 Сумма заказа
                 <span class="fw-bold">{{ sale.total_price }}</span> руб.
+            </p>
+
+            <p class="fw-bold mb-0 small" style="font-size:14px;">
+                Дата продажи {{ sale.sale_date || 'не указана' }}
             </p>
 
             <div class="w-100 btn-group btn-group-sm">
@@ -132,6 +183,9 @@ export default {
         return {
             alertStore: useAlertStore(),
             actual_delivery_date_filter: false,
+            processingQueue: 0,
+            processingTotal: 0,
+
             filters:{
                 date_to:null,
                 date_from:null,
@@ -144,28 +198,114 @@ export default {
         user() {
             return this.userStore.self || null
         },
+        progressPercent() {
 
+            if (this.processingTotal === 0)
+                return 0
+
+            return (
+                (this.processingQueue / this.processingTotal) * 100
+            )
+        }
     },
     created() {
 
         this.salesStore.fetchNotVerified()
     },
     methods: {
-        approve(item){
-            item.verified_at = new Date()
-            this.salesStore.approveSale(item.id).then(()=>{
-                this.alertStore.show("Продажа успешно подтверждена!");
-            }).catch(()=>{
-                item.verified_at = null
-                this.alertStore.show("Ошибка подтверждения!","error");
-            })
+        approve(item) {
+
+            // удаляем из списка
+            this.salesStore.not_verified_items =
+                this.salesStore.not_verified_items.filter(
+                    sale => sale.id !== item.id
+                )
+
+            // добавляем в очередь
+            this.processingQueue++
+            this.processingTotal++
+
+            this.salesStore.approveSale(item.id)
+
+                .then(() => {
+
+                    this.alertStore.show(
+                        "Продажа успешно подтверждена!"
+                    )
+
+                })
+
+                .catch(() => {
+
+                    // возвращаем обратно
+                    this.salesStore.not_verified_items.unshift(item)
+
+                    this.alertStore.show(
+                        "Ошибка подтверждения!",
+                        "error"
+                    )
+
+                })
+
+                .finally(() => {
+
+                    // уменьшаем очередь
+                    this.processingQueue--
+
+                    // если всё завершено — сбрасываем
+                    if (this.processingQueue <= 0) {
+
+                        this.processingQueue = 0
+                        this.processingTotal = 0
+
+                    }
+
+                })
         },
-        decline(item){
-            this.salesStore.declineSale(item.id).then(()=>{
-                this.alertStore.show("Продажа отклонена. Администратор оповещен!");
-            }).catch(()=>{
-                this.alertStore.show("Ошибка отклонения продажи!","error");
-            })
+
+        decline(item) {
+
+            this.salesStore.not_verified_items =
+                this.salesStore.not_verified_items.filter(
+                    sale => sale.id !== item.id
+                )
+
+            this.processingQueue++
+            this.processingTotal++
+
+            this.salesStore.declineSale(item.id)
+
+                .then(() => {
+
+                    this.alertStore.show(
+                        "Продажа отклонена!"
+                    )
+
+                })
+
+                .catch(() => {
+
+                    this.salesStore.not_verified_items.unshift(item)
+
+                    this.alertStore.show(
+                        "Ошибка отклонения!",
+                        "error"
+                    )
+
+                })
+
+                .finally(() => {
+
+                    this.processingQueue--
+
+                    if (this.processingQueue <= 0) {
+
+                        this.processingQueue = 0
+                        this.processingTotal = 0
+
+                    }
+
+                })
         },
         async fetchData(page = 1, reload = false) {
             if (reload)
@@ -189,5 +329,16 @@ p {
     overflow-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: 0.25s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+    transform: translateY(-5px);
 }
 </style>
