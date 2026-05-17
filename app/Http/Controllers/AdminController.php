@@ -132,14 +132,12 @@ class AdminController extends Controller
             "endDate" => "required",
         ]);
 
-
+        $admin = $request->botUser;
 
         $fromDate = Carbon::parse($validate["startDate"])->startOfDay();
         $toDate = Carbon::parse($validate["endDate"])->endOfDay();
 
-        $agent = Agent::query()
-            ->with(["user"])
-            ->where("id", $agentId )->first();
+        $agent = Agent::query()->where("id", $agentId )->first();
 
         $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
 
@@ -159,7 +157,7 @@ class AdminController extends Controller
         $fileLink = url("/storage/app/" . $path);
 
         \App\Facades\BotMethods::bot()
-            ->sendMessage($agent->user->telegram_chat_id, "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>: $fileLink");
+            ->sendMessage($admin->telegram_chat_id, "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>: $fileLink");
 
 
         return response()->noContent();

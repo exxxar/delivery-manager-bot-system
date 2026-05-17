@@ -42,7 +42,7 @@ import {useBaseExports} from "@/stores/baseExports";
 
 export default {
     name: 'ReportIndividualGenerator',
-    props:["agentId"],
+    props: ["agentId"],
     data() {
         return {
             reportStore: useBaseExports(),
@@ -63,7 +63,9 @@ export default {
             }
 
             this.reportStore.exportIndividual(payload)
-            this.$emit('generate-report', payload)
+
+            if (!this.agentId)
+                this.$emit('generate-report', payload)
 
 
         }
