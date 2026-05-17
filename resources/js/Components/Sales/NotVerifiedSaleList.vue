@@ -5,115 +5,135 @@ import SaleFilterForm from '@/components/Sales/SaleFilterForm.vue'
 import TaskCard from "@/Components/Sales/TaskCard.vue";
 import DealForm from "@/Components/Sales/Forms/DealForm.vue";
 import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
+import AgentList from "@/Components/Agents/AgentList.vue";
 </script>
 <template>
 
-    <!-- Progress -->
-    <transition name="fade">
+    <template v-if="tab==='main'">
+        <!-- Progress -->
+        <transition name="fade">
 
-        <div
-            v-if="processingQueue > 0"
-            class="mb-3"
-        >
+            <div
+                v-if="processingQueue > 0"
+                class="mb-3"
+            >
 
-            <div class="d-flex justify-content-between small mb-1">
+                <div class="d-flex justify-content-between small mb-1">
 
             <span>
                 <i class="fa-solid fa-paper-plane me-1"></i>
                 Обработка заявок
             </span>
 
-                <span>
+                    <span>
                 {{ processingQueue }} ед.
             </span>
 
-            </div>
-
-            <div
-                class="progress"
-                style="height: 12px;"
-            >
-
-                <div
-                    class="progress-bar progress-bar-striped progress-bar-animated"
-                    role="progressbar"
-
-                    :style="{
-                    width: progressPercent + '%'
-                }"
-                >
                 </div>
 
+                <div
+                    class="progress"
+                    style="height: 12px;"
+                >
+
+                    <div
+                        class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+
+                        :style="{
+                    width: progressPercent + '%'
+                }"
+                    >
+                    </div>
+
+                </div>
+
+                <div class="alert alert-danger my-2">
+                    Внимание! Дождитесь завершения процесса обработки заявок!
+                </div>
             </div>
 
-            <div class="alert alert-danger my-2">
-                Внимание! Дождитесь завершения процесса обработки заявок!
+        </transition>
+
+
+        <div
+            class="form-check form-switch mb-2">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                v-model="actual_delivery_date_filter"
+                :id="`actual_delivery_date_filter`"
+            />
+            <label class="form-check-label" :for="`actual_delivery_date_filter`">
+                Фильтры
+            </label>
+        </div>
+
+        <template v-if="actual_delivery_date_filter">
+            <div class="form-floating mb-2">
+                <input type="date"
+                       v-model="filters.date_from"
+                       class="form-control" id="dateFromInput"/>
+                <label for="dateFromInput">Дата от</label>
             </div>
-        </div>
 
-    </transition>
+            <div class="form-floating mb-2">
+                <input type="date"
+                       v-model="filters.date_to"
+                       class="form-control" id="dateToInput"/>
+                <label for="dateToInput">Дата до</label>
+            </div>
 
-    <div
-        class="form-check form-switch mb-2">
-        <input
-            class="form-check-input"
-            type="checkbox"
-            v-model="actual_delivery_date_filter"
-            :id="`actual_delivery_date_filter`"
-        />
-        <label class="form-check-label" :for="`actual_delivery_date_filter`">
-            Фильтры
-        </label>
-    </div>
+            <div class="input-group mb-0">
+                <div class="form-floating flex-grow-1">
+                    <input type="text" class="form-control" id="agent" :value="filters.agentName"
+                           placeholder="администратор"
+                           readonly>
+                    <label for="agent">Администратор</label>
+                </div>
+                <button type="button" class="btn btn-outline-light text-primary find-btn" @click="tab='agent'">
+                    Выбрать
+                </button>
+            </div>
+            <a
+                @click="agentClear"
+                href="javascript:void(0)"
+                v-if="filters.agent_id"
+                class="small fst-italic">Очистить администратора <i class="fa-solid fa-xmark text-danger"></i></a>
 
-    <template v-if="actual_delivery_date_filter">
-        <div class="form-floating mb-2">
-            <input type="date"
-                   v-model="filters.date_from"
-                   class="form-control" id="dateFromInput"/>
-            <label for="dateFromInput">Дата от</label>
-        </div>
+            <div class="form-floating my-2">
+                <select
+                    id="itemsPerPage"
+                    class="form-select"
+                    v-model="size"
+                >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                    <option value="5000">5000</option>
+                </select>
+                <label for="itemsPerPage">Элементов на странице</label>
+            </div>
 
-        <div class="form-floating mb-2">
-            <input type="date"
-                   v-model="filters.date_to"
-                   class="form-control" id="dateToInput"/>
-            <label for="dateToInput">Дата до</label>
-        </div>
-
-        <div class="form-floating mb-2">
-            <select
-                id="itemsPerPage"
-                class="form-select"
-                v-model="size"
-            >
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="500">500</option>
-                <option value="1000">1000</option>
-                <option value="5000">5000</option>
-            </select>
-            <label for="itemsPerPage">Элементов на странице</label>
-        </div>
-
-        <button
-            :disabled="salesStore.loading"
-            type="button"
-            class="btn btn-primary w-100 p-3 mb-2"
-            @click="fetchData(1, true)">
-            Применить фильтр
-        </button>
-    </template>
+            <button
+                :disabled="salesStore.loading"
+                type="button"
+                class="btn btn-primary w-100 p-3 mb-2"
+                @click="fetchData(1, true)">
+                Применить фильтр
+            </button>
+        </template>
 
 
-
-    <ul class="list-group mb-2">
-        <li class="list-group-item"
-            v-bind:class="{'bg-light': sale.verified_at}"
-            v-for="sale in salesStore.not_verified_items">
-           <p class="fw-bold mb-2 small">
+        <tempalte v-if="salesStore.not_verified_items.length>0">
+            <ul class="list-group mb-2">
+                <li class="list-group-item"
+                    v-bind:class="{'bg-light': sale.verified_at}"
+                    v-for="sale in salesStore.not_verified_items">
+                    <p class="fw-bold mb-2 small">
 
                <span
                    class="badge bg-success"
@@ -122,50 +142,70 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 <i class="fa-solid fa-credit-card"></i>
             </span>
 
-                  <span
-                      class="badge bg-primary mx-1">
+                        <span
+                            class="badge bg-primary mx-1">
                 #{{ sale.id }}
             </span>
 
-               {{ sale.title }} (<a href="javascript:void(0)"
-               @click="$emit('agent-info', sale.creator)"
-               class="fw-bold text-decoration-underline">{{ sale.creator?.name || sale.created_by_id || '-' }}</a>)
-           </p>
+                        {{ sale.title }} (<a href="javascript:void(0)"
+                                             @click="$emit('agent-info', sale.creator)"
+                                             class="fw-bold text-decoration-underline">{{
+                            sale.creator?.name || sale.created_by_id || '-'
+                        }}</a>)
+                    </p>
 
-            <p class="mb-2 small" >
-                Сумма заказа
-                <span class="fw-bold">{{ sale.total_price }}</span> руб.
-            </p>
+                    <p class="mb-2 small">
+                        Сумма заказа
+                        <span class="fw-bold">{{ sale.total_price }}</span> руб.
+                    </p>
 
-            <p class="fw-bold mb-0 small" style="font-size:14px;">
-                Дата продажи {{ sale.sale_date || 'не указана' }}
-            </p>
+                    <p class="fw-bold mb-0 small" style="font-size:14px;">
+                        Дата продажи {{ sale.sale_date || 'не указана' }}
+                    </p>
 
-            <div class="w-100 btn-group btn-group-sm">
+                    <div class="w-100 btn-group btn-group-sm">
+                        <button
+                            :disabled="sale.verified_at"
+                            type="button"
+                            @click="approve(sale)"
+                            class="btn btn-success">Да
+                        </button>
+                        <button
+                            :disabled="sale.verified_at"
+                            @click="decline(sale)"
+                            class="btn btn-danger">Нет
+                        </button>
+                    </div>
+                </li>
+            </ul>
+
+            <template
+                v-if="salesStore.not_verified_pagination?.current_page<salesStore.not_verified_pagination?.last_page">
                 <button
-                    :disabled="sale.verified_at"
+                    :disabled="salesStore.loading"
                     type="button"
-                    @click="approve(sale)"
-                    class="btn btn-success">Да</button>
-                <button
-                    :disabled="sale.verified_at"
-                    @click="decline(sale)"
-                    class="btn btn-danger">Нет</button>
-            </div>
-        </li>
-    </ul>
+                    class="btn btn-primary w-100 p-3 small"
+                    @click="fetchData(salesStore.not_verified_pagination.current_page+1)">
+                    Загрузить еще <span
+                    class="fw-bold small">{{ salesStore.not_verified_pagination.current_page }}</span> /
+                    <span class="fw-bold small">{{ salesStore.not_verified_pagination.last_page }}</span>
+                </button>
+            </template>
+        </tempalte>
 
-    <template v-if="salesStore.not_verified_pagination?.current_page<salesStore.not_verified_pagination?.last_page">
-        <button
-            :disabled="salesStore.loading"
-            type="button"
-            class="btn btn-primary w-100 p-3 small"
-            @click="fetchData(salesStore.not_verified_pagination.current_page+1)">
-            Загрузить еще <span class="fw-bold small">{{salesStore.not_verified_pagination.current_page}}</span> /
-            <span class="fw-bold small">{{salesStore.not_verified_pagination.last_page}}</span>
-        </button>
+        <p class="alert alert-info" v-else>
+            По вашему запросу ничего не найдено
+        </p>
+
+
     </template>
-
+    <template v-if="tab==='agent'">
+        <button
+            @click="tab='main'"
+            class="btn btn-light text-secondary mb-3" style="position: sticky; top:0px; z-index: 100;">Назад
+        </button>
+        <AgentList :for-select="true" @select="selectAgent"/>
+    </template>
 </template>
 
 <script>
@@ -181,16 +221,19 @@ export default {
     name: 'NotVerifiedSaleList',
     data() {
         return {
+            tab: 'main',
             alertStore: useAlertStore(),
             actual_delivery_date_filter: false,
             processingQueue: 0,
             processingTotal: 0,
 
-            filters:{
-                date_to:null,
-                date_from:null,
+            filters: {
+                agentName: null,
+                agent_id: null,
+                date_to: null,
+                date_from: null,
             },
-            size:50,
+            size: 50,
             salesStore: useSalesStore(),
         }
     },
@@ -213,8 +256,16 @@ export default {
         this.salesStore.fetchNotVerified()
     },
     methods: {
-        approve(item) {
 
+        selectAgent(agent) {
+            this.filters.agent_id = agent.id
+            this.filters.agentName = agent.name
+            this.tab = 'main'
+        },
+        approve(item) {
+            this.alertStore.show(
+                "Добавлено в очередь на оповещение!"
+            )
             // удаляем из списка
             this.salesStore.not_verified_items =
                 this.salesStore.not_verified_items.filter(
@@ -230,7 +281,8 @@ export default {
                 .then(() => {
 
                     this.alertStore.show(
-                        "Продажа успешно подтверждена!"
+                        "Продажа успешно подтверждена!",
+                        "success"
                     )
 
                 })
@@ -264,7 +316,9 @@ export default {
         },
 
         decline(item) {
-
+            this.alertStore.show(
+                "Добавлено в очередь на оповещение!"
+            )
             this.salesStore.not_verified_items =
                 this.salesStore.not_verified_items.filter(
                     sale => sale.id !== item.id
@@ -278,7 +332,8 @@ export default {
                 .then(() => {
 
                     this.alertStore.show(
-                        "Продажа отклонена!"
+                        "Продажа отклонена!",
+                        "success"
                     )
 
                 })
@@ -315,10 +370,15 @@ export default {
                 page: page,
                 size: this.size,
                 date_from: this.filters.date_from || null,
-                date_to: this.filters.date_to || null
+                date_to: this.filters.date_to || null,
+                agent_id: this.filters.agent_id || null
             })
         },
 
+        agentClear(){
+         this.filters.agent_id = null
+         this.filters.agentName = null
+        }
 
 
     }

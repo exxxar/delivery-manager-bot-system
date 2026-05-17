@@ -38,21 +38,16 @@ export const useSalesStore = defineStore('sales', {
     },
     actions: {
 
-        async fetchNotVerified(payload = {size:50, page: 1, date_from: null, date_to: null}) {
+        async fetchNotVerified(payload = {size:50, page: 1, date_from: null, date_to: null, agent_id:null}) {
             this.loading = true
             this.error = null
 
             let size = payload.size || 50
             let page = payload.page || 1
 
-            let date_from = payload.date_from || null
-            let date_to = payload.date_to || null
 
             try {
-                const {data} = await makeAxiosFactory(`${path}/not-verified?page=${page}&size=${size}`, 'POST',{
-                    date_from: date_from,
-                    date_to: date_to
-                })
+                const {data} = await makeAxiosFactory(`${path}/not-verified?page=${page}&size=${size}`, 'POST',payload)
 
                 this.not_verified_items = [...this.not_verified_items, ...data.data]
                 delete data.data

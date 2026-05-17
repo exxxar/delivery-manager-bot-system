@@ -16,6 +16,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Writer;
@@ -139,16 +140,25 @@ class AdminController extends Controller
         $agent = Agent::query()->where("id", $agentId )->first();
 
         $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new AgentSalesExport(
-            $agent->id ?? null,
-            $fromDate,
-            $toDate
-        ), \Maatwebsite\Excel\Excel::XLSX);
+
+        $data = Excel::raw(
+            new AgentSalesExport(
+                $agent->id ?? null,
+                $fromDate,
+                $toDate
+            ),
+            \Maatwebsite\Excel\Excel::XLSX
+        );
+
+        $path = "exports/" . $fileName;
+// Сохранение файла
+        Storage::put($path, $data);
+
+        $fileLink = url("/storage/app/" . $path);
+
         \App\Facades\BotMethods::bot()
-            ->sendDocument($admin->telegram_chat_id,
-                "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>"
-                ,
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
+            ->sendMessage($admin->telegram_chat_id, "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>: $fileLink");
+
 
         return response()->noContent();
     }
