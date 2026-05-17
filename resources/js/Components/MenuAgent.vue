@@ -4,7 +4,7 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
 </script>
 <template>
 
-    <div class="container-fluid">
+    <div class="container-fluid py-0 px-0">
         <div class="row g-2">
 
             <!-- Заполнить данные -->

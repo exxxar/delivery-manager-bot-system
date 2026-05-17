@@ -7,7 +7,7 @@ import SupplierJobForm from "@/Components/Users/Forms/SupplierJobForm.vue";
 
 <template>
 
-    <div class="container-fluid">
+    <div class="container-fluid py-0 px-0">
         <div class="row g-2">
 
             <!-- Уже сотрудник -->

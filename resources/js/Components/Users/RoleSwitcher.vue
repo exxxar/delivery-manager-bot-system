@@ -1,7 +1,7 @@
 <template>
 
 
-    <div class="container-fluid">
+    <div class="container-fluid px-0 py-0">
         <!-- Кнопка открытия -->
         <button
             class="btn btn-outline-primary w-100 my-2 p-3"

@@ -1,9 +1,9 @@
 
 <template>
-    <div class="container-fluid p-3">
+    <div class="container-fluid px-0 py-0">
         <BackBtn/>
 
-        <div class="container-fluid position-relative">
+        <div class="position-relative">
 
             <!-- Глобальный overlay -->
             <div v-if="jobStore.loading"

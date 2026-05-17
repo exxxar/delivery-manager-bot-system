@@ -35,7 +35,11 @@ const { t } = useI18n();
             <MenuSuperAdmin></MenuSuperAdmin>
         </template>
 
-        <RoleSwitcher v-if="user.base_role===4"></RoleSwitcher>
+        <template v-if="user.base_role===4">
+            <hr>
+            <RoleSwitcher ></RoleSwitcher>
+        </template>
+
     </template>
 
 </template>

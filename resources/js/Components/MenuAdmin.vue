@@ -6,7 +6,7 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
 </script>
 <template>
 
-    <div class="container-fluid">
+    <div class="container-fluid py-0 px-0">
         <div class="row g-2">
 
             <!-- Список доставок -->

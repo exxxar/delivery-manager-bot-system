@@ -6,7 +6,7 @@ import SaleForm from "@/Components/Sales/SaleForm.vue";
 import AgentInfo from "@/Components/Agents/AgentInfo.vue";
 </script>
 <template>
-    <div class="container-fluid p-3">
+    <div class="container-fluid py-3 px-0">
         <BackBtn/>
 
         <template v-if="user?.role>=3">

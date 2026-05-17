@@ -3,7 +3,7 @@ import ReportGenerator from "@/Components/Admins/ReportGenerator.vue";
 </script>
 <template>
 
-    <div class="container-fluid">
+    <div class="container-fluid py-0 px-0">
         <div class="row g-2">
 
             <!-- Сформировать отчет -->

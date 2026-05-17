@@ -101,8 +101,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
         <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Все заявки</h6>
     </template>
 
-    <div class="container-fluid">
-        <div class="row g-1">
+    <div class="container-fluid px-0">
+        <div class="row g-2">
 
             <div
                 v-for="sale in filteredSales"
