@@ -205,7 +205,7 @@ class SaleController extends Controller
         unset($data["is_already_delivered"]);
         unset($data["file"]);
 
-        $data["due_date"] = Carbon::parse($data["due_date"])->format('Y-m-d H:i:s');
+        $data["due_date"] = Carbon::now("+3")->format('Y-m-d H:i:s');
         if (!is_null($data["sale_date"] ?? null))
             $data["sale_date"] = Carbon::parse($data["sale_date"])->format('Y-m-d H:i:s');
         if (!is_null($data["actual_delivery_date"] ?? null))
