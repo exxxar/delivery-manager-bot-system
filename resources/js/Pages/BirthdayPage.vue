@@ -3,7 +3,7 @@ import BackBtn from "@/Components/BackBtn.vue";
 import BirthdayList from "@/Components/Birthdays/BirthdayList.vue";
 </script>
 <template>
-    <div class="container-fluid p-3">
+    <div class="container-fluid py-0 px-0">
         <BackBtn/>
         <BirthdayList></BirthdayList>
 

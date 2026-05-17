@@ -3,7 +3,7 @@ import AgentList from "@/Components/Agents/AgentList.vue";
 import BackBtn from "@/Components/BackBtn.vue";
 </script>
 <template>
-    <div class="container-fluid p-3">
+    <div class="container-fluid py-0 px-0">
         <BackBtn/>
         <h4 class="mb-3">Список администраторов</h4>
 

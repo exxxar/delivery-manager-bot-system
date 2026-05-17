@@ -1,5 +1,6 @@
 <template>
 
+    {{agent.user_info}}
     <ul class="list-group list-group-flush">
         <li class="list-group-item">
             <strong>ID:</strong> {{ agent.id }}

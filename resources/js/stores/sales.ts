@@ -147,8 +147,23 @@ export const useSalesStore = defineStore('sales', {
         },
         // @ts-ignore
         async fetchByUrl(url: string) {
+            const params = new URLSearchParams()
 
-            const {data} = await makeAxiosFactory(`${url}`, 'GET')
+            // фильтры
+            // @ts-ignore
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    params.append(key, String(value))
+                }
+            })
+
+            // сортировка
+            params.append('sort_field', this.sort.field)
+            params.append('sort_direction', this.sort.direction)
+
+            params.delete("page")
+
+            const {data} = await makeAxiosFactory(`${url}&${params.toString()}`, 'GET')
 
             this.items = data.data
             this.pagination = data

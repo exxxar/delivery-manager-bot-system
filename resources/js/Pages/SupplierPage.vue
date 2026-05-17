@@ -4,7 +4,7 @@ import BackBtn from "@/Components/BackBtn.vue";
 import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 </script>
 <template>
-    <div class="container-fluid p-3">
+    <div class="container-fluid py-0 px-0">
         <BackBtn/>
         <h4 class="mb-3">Список поставщиков</h4>
         <SupplierList></SupplierList>
