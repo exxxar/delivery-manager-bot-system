@@ -102,7 +102,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
     </template>
 
     <div class="container-fluid">
-        <div class="row g-3">
+        <div class="row g-1">
 
             <div
                 v-for="sale in filteredSales"
