@@ -139,7 +139,7 @@ class AdminController extends Controller
 
         $agent = Agent::query()->where("id", $agentId )->first();
 
-        $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
+        $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
 
         $data = Excel::raw(
             new AgentSalesExport(
