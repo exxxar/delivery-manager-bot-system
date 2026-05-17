@@ -1,6 +1,6 @@
 <template>
 
-    {{agent.user_info}}
+
     <ul class="list-group list-group-flush">
         <li class="list-group-item">
             <strong>ID:</strong> {{ agent.id }}
@@ -29,6 +29,14 @@
 
 
     </ul>
+
+    <template v-if="agent.agent?.user_info">
+        <h6 class="fw-bold">Данные пользователя</h6>
+        <p v-html="agent.agent.user_info">
+
+        </p>
+    </template>
+
 
     <h6 class="fw-bold my-2">Начисление процентов</h6>
     <PercentageList

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -124,20 +125,20 @@ class User extends Authenticatable
     public function toHtmlText(): string
     {
         $fields = [
-            'Имя' => $this->name,
-            'Email' => $this->email,
+            //'Имя' => $this->name,
+           // 'Email' => $this->email,
             'ФИО из Telegram' => $this->fio_from_telegram,
-            'Дата рождения' => $this->birthday ?? '-',
+            'Дата рождения' => !is_null($this->birthday) ? Carbon::parse($this->birthday)->format('Y-m-d') : '-',
             'ID чата Telegram' => $this->telegram_chat_id,
             'Роль' => $this->getRoleName(),
-            'Процент' => $this->percent,
-            'Работает' => $this->is_work ? 'Да' : 'Нет',
-            'Email подтверждён' => $this->email_verified_at,
-            'Дата заполнения профиля' => $this->registration_at ?? 'не заполнен',
-            'Дата блокировки' => $this->blocked_at ?? 'не заблокирован',
-            'Сообщение блокировки' => $this->blocked_message,
-            'Создан' => $this->created_at,
-            'Обновлён' => $this->updated_at,
+         //   'Процент' => $this->percent,
+        //    'Работает' => $this->is_work ? 'Да' : 'Нет',
+        //    'Email подтверждён' => $this->email_verified_at,
+        //    'Дата заполнения профиля' => $this->registration_at ?? 'не заполнен',
+        //    'Дата блокировки' => $this->blocked_at ?? 'не заблокирован',
+       //     'Сообщение блокировки' => $this->blocked_message,
+       //     'Создан' => $this->created_at,
+        //    'Обновлён' => $this->updated_at,
         ];
 
         $text = "";

@@ -58,7 +58,7 @@ class Agent extends Model
         if (!is_null($user))
             return $user->toHtmlText();
         else
-            return "";
+            return "123123";
     }
 
     public function getPercentAttribute(){
