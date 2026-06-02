@@ -112,6 +112,10 @@ export default {
     watch: {},
     created() {
         this.userStore.fetchSelf().then(() => {
+
+            if (this.userStore.self.blocked_at != null)
+                this.$router.push({name: 'BlockedPage'})
+
             if (!this.userStore.self.registration_at && this.userStore.self.role > 0)
                 new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
         })

@@ -20,7 +20,8 @@
 
 
         <div class="form-floating mb-2">
-            <input type="email" v-model="form.email" class="form-control" placeholder="Email" required>
+            <input type="email"
+                   v-model="form.email" class="form-control" placeholder="Email" required>
             <label>Email</label>
         </div>
 
@@ -32,13 +33,12 @@
         </div>
 
 
-        <!-- AGENT BLOCK -->
-        <template v-if="selectedRole === 1" >
-            <div class="form-floating mb-2">
-                <input type="text" v-model="form.agent.region" class="form-control" placeholder="Регион">
-                <label>Регион</label>
-            </div>
-        </template>
+
+        <div class="form-floating mb-2">
+            <input type="text" v-model="form.region" class="form-control" placeholder="Регион">
+            <label>Регион</label>
+        </div>
+
 
         <div class="alert alert-light mb-2 border-primary">
             <p class="mb-2">

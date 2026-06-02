@@ -1,6 +1,7 @@
 <template>
 
 
+
     <ul class="list-group list-group-flush">
         <li class="list-group-item">
             <strong>ID:</strong> {{ agent.id }}
@@ -9,13 +10,30 @@
             <strong>Имя:</strong> {{ agent.name }}
         </li>
         <li class="list-group-item">
-            <strong>Телефон:</strong> {{ agent.phone }}
+            <strong>Имя из телеграм:</strong> {{ agent.fio_from_telegram }}
+        </li>
+
+        <li class="list-group-item">
+            <strong>Id из телеграм:</strong> {{ agent.telegram_chat_id }}
+        </li>
+
+        <li class="list-group-item">
+            <strong>Роль:</strong> {{ roleName }}
+        </li>
+
+
+        <li class="list-group-item">
+            <strong>Дата рождения:</strong> {{ formattedBirthday }}
+        </li>
+
+        <li class="list-group-item">
+            <strong>Телефон:</strong> {{ agent.agent.phone }}
         </li>
         <li class="list-group-item">
-            <strong>Email:</strong> {{ agent.email }}
+            <strong>Email:</strong> {{ agent.agent.email }}
         </li>
         <li class="list-group-item">
-            <strong>Регион:</strong> {{ agent.region }}
+            <strong>Регион:</strong> {{ agent.agent.region }}
         </li>
         <li v-if="agent.in_learning" class="list-group-item">
             <strong>Обучается у: </strong>
@@ -30,12 +48,7 @@
 
     </ul>
 
-    <template v-if="agent.agent?.user_info">
-        <h6 class="fw-bold">Данные пользователя</h6>
-        <p v-html="agent.agent.user_info">
 
-        </p>
-    </template>
 
 
     <h6 class="fw-bold my-2">Начисление процентов</h6>
@@ -52,6 +65,7 @@
 <script>
 
 import PercentageList from "@/Components/Percentage/PercentageList.vue";
+import moment from "moment/moment.js";
 
 export default {
     name: 'AgentInfo',
@@ -66,6 +80,26 @@ export default {
             type: Object,
             required: true
         }
-    }
+    },
+    mounted() {
+        console.log("agent",this.agent)
+    },
+    computed:{
+        roleName() {
+            switch (this.agent.role) {
+                case 0: return 'Пользователь'
+                case 1: return 'Администратор'
+                case 2: return 'Поставщик'
+                case 3: return 'Старший администратор'
+                case 4: return 'Суперадмин'
+                default: return 'Неизвестно'
+            }
+        },
+        formattedBirthday(){
+            return this.agent?.birthday
+                ? moment(this.agent.birthday).format('DD.MM.YYYY')
+                : 'не указана';
+        }
+    },
 }
 </script>

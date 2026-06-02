@@ -35,7 +35,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
     </div>
 
     <template v-if="filteredBadSales.length>0">
-        <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Заявки, в которых есть неточности по дате</h6>
+        <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i>
+            Заявки на проверку</h6>
         <ul class="list-group">
             <li
 

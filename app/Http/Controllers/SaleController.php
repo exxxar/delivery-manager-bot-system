@@ -80,7 +80,7 @@ class SaleController extends Controller
             ->whereNull("verified_at");
 
         if ($request->date_from || $request->date_to) {
-            $sales = $sales->whereBetween('sale_date', [
+            $sales = $sales->whereBetween('actual_delivery_date', [
                     $request->date_from ?? '1900-01-01',
                     $request->date_to ?? now()->toDateString()
             ]);
@@ -92,7 +92,7 @@ class SaleController extends Controller
         }
 
         $sales = $sales
-            ->orderBy("sale_date","desc")
+            ->orderBy("actual_delivery_date","desc")
             ->paginate($request->get('per_page',
                 $request->size ?? 50));
 
@@ -117,8 +117,7 @@ class SaleController extends Controller
                 }
             })
             ->where(function ($q) {
-                $q->whereNull("sale_date")
-                    ->orWhereNull("actual_delivery_date");
+                $q->orWhereNull("actual_delivery_date");
             })
             ->get();
 

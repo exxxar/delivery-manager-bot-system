@@ -7,18 +7,22 @@
             <strong>Имя из Telegram:</strong> {{ user.fio_from_telegram || 'не указано' }}
         </li>
         <li class="list-group-item">
-            <strong>Email:</strong> {{ user.email }}
+            <strong>Email:</strong> {{ user.agent?.email || 'не указан' }}
         </li>
         <li class="list-group-item">
-            <strong>Telegram Chat ID:</strong> {{ user.telegram_chat_id || 'не указан' }}
+            <strong>Телефон:</strong> {{ user.agent?.phone || 'не указан' }}
         </li>
+        <li class="list-group-item">
+            <strong>Id чата телеграм:</strong> {{ user.telegram_chat_id || 'не указан' }}
+        </li>
+
         <li class="list-group-item">
             <strong>Роль:</strong> {{ roleName(user.role) }}
         </li>
-        <li class="list-group-item">
-            <strong>Процент:</strong> {{ user.percent }}%
-        </li>
 
+        <li class="list-group-item">
+            <strong>Дата рождения:</strong> {{ formattedBirthday }}
+        </li>
 
 
     </ul>
@@ -28,12 +32,20 @@
 </template>
 
 <script>
+import moment from 'moment';
 export default {
     name: 'UserCard',
     props: {
         user: {
             type: Object,
             required: true
+        }
+    },
+    computed:{
+        formattedBirthday(){
+            return this.user?.birthday
+                ? moment(this.user.birthday).format('DD.MM.YYYY')
+                : 'не указана';
         }
     },
     methods: {

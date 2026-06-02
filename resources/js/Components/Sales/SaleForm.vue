@@ -178,12 +178,14 @@ const today = new Date().toISOString().split('T')[0]
                 <label for="due_date">Дата задания</label>
             </div>-->
 
+<!--
             <div class="form-floating mb-2">
                 <input
                     v-model="form.sale_date" type="date"
                     class="form-control" id="sale_date">
                 <label for="sale_date">Дата оплаты</label>
             </div>
+-->
 
 
             <div class="form-floating mb-2">

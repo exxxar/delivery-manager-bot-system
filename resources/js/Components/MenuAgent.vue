@@ -7,27 +7,6 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
     <div class="container-fluid py-0 px-0">
         <div class="row g-2">
 
-            <!-- Заполнить данные -->
-            <div class="col-12 col-md-6 col-xl-3"
-                 v-if="!userStore.self?.registration_at && userStore.self?.role > 0">
-
-                <div class="card border-success shadow-sm h-100 menu-card"
-                     @click="openPrimaryRegistration"
-                     style="cursor:pointer;">
-
-                    <div class="card-body text-center p-4">
-                        <i class="fa-solid fa-id-card fa-3x text-success mb-3"></i>
-
-                        <h5 class="card-title">
-                            Заполнить данные
-                        </h5>
-
-                        <p class="text-muted small mb-0">
-                            Введите информацию о себе
-                        </p>
-                    </div>
-                </div>
-            </div>
 
             <!-- Мои доставки -->
             <div class="col-12 col-md-6 col-xl-3">
@@ -149,9 +128,7 @@ export default {
         }
     },
     methods: {
-        openPrimaryRegistration() {
-            new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
-        },
+
         goTo(name) {
             this.$router.push({name: name})
 

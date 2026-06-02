@@ -15,17 +15,32 @@
             <label for="name">Имя</label>
         </div>
 
+        <div class="form-floating mb-2">
+            <input type="text"
+                   required
+                   v-mask="'+7(###) ###-##-##'"
+                   v-model="form.phone" class="form-control" placeholder="Телефон">
+            <label>Телефон</label>
+        </div>
+
         <!-- Email -->
         <div class="form-floating mb-2">
             <input v-model="form.email" type="email" class="form-control" id="email" placeholder="Email" required>
             <label for="email">Email</label>
         </div>
 
-        <!-- Telegram Chat ID -->
         <div class="form-floating mb-2">
-            <input v-model="form.telegram_chat_id" type="text" class="form-control" id="telegram_chat_id"
-                   placeholder="Telegram Chat ID">
-            <label for="telegram_chat_id">Telegram Chat ID</label>
+            <input
+                required
+                type="date" v-model="form.birthday" class="form-control">
+            <label>Дата рождения</label>
+        </div>
+
+
+
+        <div class="form-floating mb-2">
+            <input type="text" v-model="form.region" class="form-control" placeholder="Регион">
+            <label>Регион</label>
         </div>
 
         <!-- Роль -->
@@ -74,7 +89,7 @@
 <script>
 import axios from 'axios'
 import {useUsersStore} from "@/stores/users";
-
+import moment from 'moment';
 export default {
     name: 'UserForm',
     props: {
@@ -87,13 +102,13 @@ export default {
         return {
             userStore: useUsersStore(),
             form: {
-                name: '',
-                email: '',
-                telegram_chat_id: '',
+                name: "",
+                email: "",
+                birthday: "",
+                password: "",
+                phone: "",
+                region: "",
                 role: 0,
-                percent: 0,
-                mentor_percent: 0,
-                password: ''
             },
             isEdit: false
         }
@@ -101,6 +116,10 @@ export default {
     created() {
         if (this.initialData) {
             this.form = {...this.initialData}
+            this.form.phone = this.initialData.agent.phone || ''
+            this.form.email = this.initialData.agent.email || ''
+            this.form.region = this.initialData.agent.region || ''
+            this.form.birthday = new Date( this.form.birthday).toISOString().slice(0, 10)
             this.isEdit = true
         }
     },

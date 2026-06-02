@@ -112,8 +112,41 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
-        $user->update($request->all());
+        $user = User::query()
+            ->with(["agent"])
+            ->findOrFail($id);
+
+
+        $data = $request->all();
+
+        $name = $data["name"] ?? null;
+        $role = $data["role"] ?? RoleEnum::USER->value;
+        $region = $data["region"] ?? null;
+        $phone = $data["phone"] ?? null;
+        $email = $data["email"] ?? null;
+
+        if (!is_null($phone))
+            unset($data["phone"]);
+
+        if (!is_null($region))
+            unset($data["region"]);
+
+        if (!is_null($email))
+            unset($data["email"]);
+
+        $user->update([
+            "name"=>$name,
+            "role"=>$role,
+        ]);
+
+        $agent = $user->agent;
+
+        $agent->update([
+            'name' => $name ?? $user->fio_from_telegram,
+            'phone' => $phone ?? '',
+            'email' => $email ?? '',
+            'region' => $region ?? '',
+        ]);
 
         $tmpUserLink = $user->getUserTelegramLink();
 
@@ -211,6 +244,9 @@ class UserController extends Controller
 
         if (!is_null($region))
             unset($data["region"]);
+
+        if (!is_null($email))
+            unset($data["email"]);
 
         $data["registration_at"] = Carbon::now();
         $user->update($data);

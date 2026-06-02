@@ -17,21 +17,23 @@ const { t } = useI18n();
             <MenuUser></MenuUser>
         </template>
 
+        <template v-if="user.role>0">
+            <!-- Заполнить данные -->
+           <div class="row g-2 mb-2">
+               <div class="col-12 col-md-6 col-xl-3">
+                   <button
+                       @click="openPrimaryRegistration"
+                       class="btn btn-success w-100">Редактировать свой профиль</button>
+               </div>
+           </div>
+
+
+        </template>
+
         <MenuAdmin v-if="user.role === 3"></MenuAdmin>
         <MenuAgent v-if="user.role === 1"></MenuAgent>
 
         <template v-if="user.role === 4">
-<!--            <h1>{{ t("customer.title") }}</h1>
-            <p>{{ t("customer.name") }}: Иван</p>
-            <button>{{ t("common.save") }}</button>
-
-            <p>{{ t("common.hello", { name: "Алексей" }) }}</p>
-
-            &lt;!&ndash; Подстановка числа &ndash;&gt;
-            <p>{{ t("common.items", { count: 5 }) }}</p>
-
-            &lt;!&ndash; Несколько переменных &ndash;&gt;
-            <p>{{ t("common.order", { id: 123, date: "10.12.2025" }) }}</p>-->
             <MenuSuperAdmin></MenuSuperAdmin>
         </template>
 
@@ -60,7 +62,16 @@ export default {
             return this.userStore.self || null
         },
     },
-    methods: {}
+    mounted() {
+        if (this.userStore.self?.blocked_at != null)
+            this.$router.push({name: 'BlockedPage'})
+
+    },
+    methods: {
+        openPrimaryRegistration() {
+            new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
+        },
+    }
 
 }
 </script>

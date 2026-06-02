@@ -70,7 +70,6 @@ class AgentController extends Controller
     }
 
 
-
     public function selfSales(Request $request)
     {
 
@@ -119,8 +118,8 @@ class AgentController extends Controller
         $data = $request->all();
 
         $inLearning = ($data["in_learning"] ?? false) == "true";
-        $isTest= ($data["is_test"] ?? false) == "true";
-        $percent= $data["percent"] ?? null;
+        $isTest = ($data["is_test"] ?? false) == "true";
+        $percent = $data["percent"] ?? null;
 
 
         if ($agent->in_learning && !$inLearning) {
@@ -134,14 +133,13 @@ class AgentController extends Controller
 
         $agent->update($data);
 
-        if (!is_null($percent) && $percent!=0)
-        {
+        if (!is_null($percent) && $percent != 0) {
             $user = User::query()->findOrFail($agent->user_id);
             $user->percent = $percent;
             $user->save();
         }
 
-        if ($isTest){
+        if ($isTest) {
             $user = $request->botUser ?? null;
 
             \App\Facades\BotMethods::bot()
@@ -154,7 +152,23 @@ class AgentController extends Controller
 
     public function destroy($id)
     {
-        Agent::destroy($id);
+        $agent = Agent::query()
+            ->with(["user"])
+            ->findOrFail($id);
+
+
+        $user = $agent->user ?? null;
+
+        $agent->delete();
+
+        if (!is_null($user)) {
+            $user->blocked_at = Carbon::now();
+            $user->blocked_message = "Ваша учетная запись была удалена администратором. Доступ ограничен";
+            $user->save();
+            $user->delete();
+        }
+
+
         return response()->json(null, 204);
     }
 
@@ -174,7 +188,7 @@ class AgentController extends Controller
             throw new HttpException("Пользователь не авторизован", 403);
 
         $fileName = "export-agent-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-       // $data = Excel::raw(new \App\Exports\AgentsExport(), \Maatwebsite\Excel\Excel::XLSX);
+        // $data = Excel::raw(new \App\Exports\AgentsExport(), \Maatwebsite\Excel\Excel::XLSX);
 
         $data = Excel::raw(
             new \App\Exports\AgentsExport(),
@@ -187,7 +201,7 @@ class AgentController extends Controller
 
         $fileLink = url("/storage/app/" . $path);
 
- //
+        //
         \App\Facades\BotMethods::bot()
             ->sendMessage($user->telegram_chat_id, "Экспорт списка торговых представителей: $fileLink");
         return response()->noContent();
