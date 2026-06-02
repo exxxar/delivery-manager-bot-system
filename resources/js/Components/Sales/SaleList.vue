@@ -118,7 +118,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                     'border-primary border-3': selection.indexOf(sale.id)!==-1,
                     'bg-danger-subtle':
                         sale.status === 'completed' &&
-                        (!sale.sale_date || !sale.actual_delivery_date)
+                        (!sale.actual_delivery_date)
                 }"
                 >
 
