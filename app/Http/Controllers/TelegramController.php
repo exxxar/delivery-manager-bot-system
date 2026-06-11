@@ -199,13 +199,19 @@ class TelegramController extends Controller
                 ],
             ],
         ];
+
         \App\Facades\BotManager::bot()
-            ->replyInlineKeyboard("<b>Ваш логин и пароль для входа в мобверсию:</b>\n"
+            ->replyInlineKeyboard("Система управления доставками"
+                , $keyboard);
+
+        \App\Facades\BotManager::bot()
+            ->reply("<b>Ваш логин и пароль для входа в мобверсию:</b>\n"
                 . "Логин <code>". ($botUser->email ?? '-') . "</code>\n"
                 . "Пароль <code>". ($botUser->telegram_chat_id ?? '-') . "</code>\n"
-                . "Ссылка для входа <code>" . env("APP_URL") . "/pwa</code>\n"
-                . "Система управления доставками"
-                , $keyboard);
+                . "Ссылка для входа <code>" . env("APP_URL") . "/pwa</code>"
+                );
+
+
     }
 
     public function startWithParam(...$data)
