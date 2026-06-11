@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -29,23 +30,30 @@ class AuthController extends Controller
                 'password' => 'required'
             ]);
 
-
-
-
+            Log::info("auth data".print_r([
+                    'email' => $request->login,
+                    'password' => $request->password
+                ], true);
             if (!Auth::attempt([
                 'email' => $request->login,
                 'password' => $request->password
             ])) {
+
+                Log::info("errror login");
                 return response()->json([
                     'message' => 'Неверный логин или пароль'
                 ], 401);
             }
-
+            Log::info("success login");
             $user = User::query()->where("email",  $request->login)
                 ->first();
 
+            Log::info("user login".print_r($user->toArray(), true));
+
             Auth::login($user);
             $request->session()->regenerate();
+
+            Log::info("auth check".print_r(Auth::check() ? 'true':'false', true));
         }
 
 
