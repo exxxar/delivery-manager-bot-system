@@ -76,6 +76,9 @@ class SaleController extends Controller
     public function notVerified(Request $request)
     {
         $sales = Sale::query()
+            ->without([
+                "product", "agent", "customer", "supplier", "creator", "category"
+            ])
             ->where("payment_type", 1)
             ->whereNull("verified_at");
 
