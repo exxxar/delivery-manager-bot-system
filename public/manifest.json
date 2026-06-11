@@ -1,9 +1,9 @@
 {
-    "id": "МойПроцент",
+    "id": "/pwa/",
     "name": "МойПроцент | Система управления доставками",
     "short_name": "МойПроцент",
-    "start_url": "/pwa?source=pwa",
-    "scope": "/pwa",
+    "start_url": "/pwa/?source=pwa",
+    "scope": "/pwa/",
     "display": "standalone",
     "display_override": ["window-controls-overlay"],
     "orientation": "portrait-primary",
@@ -49,14 +49,12 @@
     "protocol_handlers": [
         {
             "protocol": "web+myprocent",
-            "url": "/app?url=%s"
+            "url": "/pwa/?url=%s"
         }
     ],
-    "description": "Расчитываем своё процент за работу",
+    "description": "Рассчитываем свой процент за работу",
     "categories": [
         "public services",
-        "feedback",
-        "community",
         "utilities"
     ],
     "lang": "ru"
