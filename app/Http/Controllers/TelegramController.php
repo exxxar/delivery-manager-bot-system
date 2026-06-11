@@ -182,6 +182,9 @@ class TelegramController extends Controller
 
         $keyboard = [
             [
+                ["text" => "📲Вход в моб. версию", "url" => env("APP_URL")],
+            ],
+            [
                 ["text" => "🎓Инструкция", "web_app" => [
                     "url" => "https://telegra.ph/Instrukciya-dlya-Administratora-01-08"]
                 ],
