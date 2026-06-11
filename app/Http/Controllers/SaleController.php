@@ -77,7 +77,7 @@ class SaleController extends Controller
     {
         $sales = Sale::query()
             ->without([
-                "product", "agent", "customer", "supplier", "creator", "category"
+                "product",  "customer", "supplier", "creator", "category"
             ])
             ->where("payment_type", 1)
             ->whereNull("verified_at");
