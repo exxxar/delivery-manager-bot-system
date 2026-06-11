@@ -30,7 +30,7 @@ class AuthController extends Controller
             ]);
 
             if (!Auth::attempt([
-                'email' => $request->login.'@'.env("APP_EMAIL_DOMAIN"),
+                'email' => $request->login,
                 'password' => $request->password
             ])) {
                 return response()->json([
