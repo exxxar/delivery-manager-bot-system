@@ -30,3 +30,30 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 //     forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https',
 //     enabledTransports: ['ws', 'wss'],
 // });
+
+let deferredPrompt = null
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt = e
+
+    // Показываем кнопку "Установить"
+    const modal = new bootstrap.Modal(document.getElementById('installPwaModal'))
+    if (modal)
+        modal.show()
+})
+
+window.installPWA = ()=> {
+    if (!deferredPrompt) return
+
+    deferredPrompt.prompt()
+
+    deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null
+
+        // Закрываем модалку после установки
+        const modal = bootstrap.Modal.getInstance(document.getElementById('installPwaModal'))
+        if (modal)
+            modal.hide()
+    })
+}
