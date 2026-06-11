@@ -16,7 +16,8 @@ use Telegram\Bot\FileUpload\InputFile;
 
 class TelegramController extends Controller
 {
-    public function getSelf(Request $request) {
+    public function getSelf(Request $request)
+    {
 
 
         if (env("APP_DEBUG")) {
@@ -153,8 +154,8 @@ class TelegramController extends Controller
             return redirect("/login");
 
         Inertia::setRootView("pwa");
-        return Inertia::render('Main',[
-            "api_type"=>"api"
+        return Inertia::render('Main', [
+            "api_type" => "api"
         ]);
     }
 
@@ -172,13 +173,16 @@ class TelegramController extends Controller
              throw new HttpException(404, "Ошибочка");*/
 
         Inertia::setRootView("bot");
-        return Inertia::render('Main',[
-            "api_type"=>"bot-api"
+        return Inertia::render('Main', [
+            "api_type" => "bot-api"
         ]);
     }
 
     public function startCommand()
     {
+
+        $botUser = BotManager::bot()
+            ->currentBotUser();
 
         $keyboard = [
             [
@@ -196,7 +200,9 @@ class TelegramController extends Controller
             ],
         ];
         \App\Facades\BotManager::bot()
-            ->replyInlineKeyboard("Система управления доставками", $keyboard);
+            ->replyInlineKeyboard("<b>Ваш логин и пароль для входа в моб. версию:</b>\n
+<code>" . $botUser->telegram_chat_id . "</code>\n\n
+Система управления доставками", $keyboard);
     }
 
     public function startWithParam(...$data)
