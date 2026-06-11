@@ -17,7 +17,7 @@ export async function makeAxiosFactory(
     }
 
     axios.defaults.withCredentials = true;
-    axios.defaults.baseURL = 'http://127.0.0.1:8000';
+    //axios.defaults.baseURL = 'http://127.0.0.1:8000';
 
     const tgData = (window as any).Telegram?.WebApp.initData || null;
 
