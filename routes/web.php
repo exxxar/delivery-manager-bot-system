@@ -247,13 +247,7 @@ Route::get('/test-report',function(){
 });
 
 Route::get('/', function () {
-    return "ok";
-   /* return Inertia::render('Default/Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);*/
+    return redirect("/pwa");
 });
 
 /*Route::get('/dashboard', function () {
