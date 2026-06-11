@@ -68,10 +68,10 @@ import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
             <template v-if="self">
                 <div class="alert alert-light border-primary border my-3">
                     <p
-                        @click="copy"
-                        class="small mb-0">Ваш логин <span class="fw-bold text-primary"> <i class="fa-solid fa-copy me-1"></i>{{ self.telegram_chat_id }}</span></p>
+                        @click="copy(self.email)"
+                        class="small mb-0">Ваш логин <span class="fw-bold text-primary"> <i class="fa-solid fa-copy me-1"></i>{{ self.email }}</span></p>
                     <p
-                        @click="copy"
+                        @click="copy(self.telegram_chat_id)"
                         class="small mb-0">Ваш пароль <span class="fw-bold text-primary"> <i class="fa-solid fa-copy me-1"></i>{{ self.telegram_chat_id }}</span></p>
                 </div>
 
@@ -176,12 +176,12 @@ export default {
                 window.location.href = url
         },
 
-        async copy() {
+        async copy(item) {
 
             try {
 
                 await navigator.clipboard.writeText(
-                    this.self.telegram_chat_id
+                    item
                 );
 
                 alert("Данные скопированы");
