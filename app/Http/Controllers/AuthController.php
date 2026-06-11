@@ -33,7 +33,7 @@ class AuthController extends Controller
             Log::info("auth data".print_r([
                     'email' => $request->login,
                     'password' => $request->password
-                ], true);
+                ], true));
             if (!Auth::attempt([
                 'email' => $request->login,
                 'password' => $request->password
