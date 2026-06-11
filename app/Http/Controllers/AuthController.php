@@ -29,6 +29,9 @@ class AuthController extends Controller
                 'password' => 'required'
             ]);
 
+
+
+
             if (!Auth::attempt([
                 'email' => $request->login,
                 'password' => $request->password
@@ -38,6 +41,10 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            $user = User::query()->where("email",  $request->login)
+                ->first();
+
+            Auth::login($user);
             $request->session()->regenerate();
         }
 
