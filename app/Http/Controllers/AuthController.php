@@ -48,12 +48,13 @@ class AuthController extends Controller
             $user = User::query()->where("email",  $request->login)
                 ->first();
 
-            Log::info("user login".print_r($user->toArray(), true));
+            Log::info("user login=>".print_r($user->toArray(), true));
 
             Auth::login($user);
             $request->session()->regenerate();
 
             Log::info("auth check".print_r(Auth::check() ? 'true':'false', true));
+            Log::info("auth check user".print_r(Auth::user(), true));
         }
 
 
