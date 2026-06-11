@@ -16,7 +16,7 @@ export interface User {
     blocked_message?: string
 }
 
-const path: string = '/bot-api/admins'
+const path: string = "/admins"
 
 export const useAdminsStore = defineStore('admins', {
     state: () => ({

@@ -163,9 +163,16 @@ Route::get("/upload-suppliers", function () {
     });
 });
 
-Route::any('/register-webhook', [\App\Http\Controllers\TelegramController::class, "registerWebhooks"]);
+    Route::any('/register-webhook', [\App\Http\Controllers\TelegramController::class, "registerWebhooks"]);
 Route::post('/webhook', [\App\Http\Controllers\TelegramController::class, "handler"]);
-Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePage"]);
+Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePageBot"]);
+Route::get("/pwa", [\App\Http\Controllers\TelegramController::class, "homePagePwa"]);
+Route::get("/login", function (){
+    Inertia::setRootView("pwa");
+    return Inertia::render('AuthPage',[
+        "api_type"=>"api"
+    ]);
+});
 Route::get("/blocked", [\App\Http\Controllers\TelegramController::class, "blockedPage"])
     ->name("blocked");
 

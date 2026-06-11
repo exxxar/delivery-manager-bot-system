@@ -19,7 +19,7 @@ export interface Sale {
     product_id?: number
 }
 
-const path: string = '/bot-api/sales'
+const path: string = '/sales'
 
 
 export const useSalesStore = defineStore('sales', {

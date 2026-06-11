@@ -1,6 +1,9 @@
 <script setup>
 import Layout from "@/Layouts/Layout.vue";
 
+defineProps({
+    api_type: String,
+});
 </script>
 <template>
     <Layout v-if="!userStore.self?.blocked_at">
@@ -23,6 +26,7 @@ import Layout from "@/Layouts/Layout.vue";
 
 
 import {useUsersStore} from "@/stores/users";
+import {useConfigStore} from "@/stores/config.js";
 
 export default {
     data() {
@@ -31,7 +35,18 @@ export default {
         }
     },
     created() {
-        this.userStore.fetchSelf()
+        const configStore = useConfigStore();
+        configStore.apiPrefix = this.api_type
+
+
+        this.userStore.fetchSelf().then(() => {
+
+            if (this.userStore.self?.blocked_at != null)
+                this.$router.push({name: 'BlockedPage'})
+
+            if (!this.userStore.self?.registration_at && this.userStore.self?.role > 0)
+                new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
+        })
     },
     computed: {
         tg() {
@@ -43,6 +58,7 @@ export default {
             return JSON.parse(urlParams.get('user'));
         },
     },
+
     mounted() {
        // this.tg.requestFullscreen()
     },

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { makeAxiosFactory } from './utillites/makeAxiosFactory'
 import { useAlertStore } from './utillites/useAlertStore'
-const path: string = '/bot-api/forms'
+const path: string = '/forms'
 
 export const useJobStore = defineStore('job', {
     state: () => ({

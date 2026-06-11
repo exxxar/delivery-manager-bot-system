@@ -1,6 +1,8 @@
 import {defineStore} from 'pinia'
 import {makeAxiosFactory} from './utillites/makeAxiosFactory'
-import { useAlertStore } from './utillites/useAlertStore'
+import {useAlertStore} from './utillites/useAlertStore'
+import {useConfigStore} from "./config";
+import axios from 'axios'
 
 export interface User {
     id: number
@@ -17,7 +19,8 @@ export interface User {
     blocked_message?: string
 }
 
-const path: string = '/bot-api/users'
+
+const path: string = '/users'
 
 
 export const useUsersStore = defineStore('users', {
@@ -25,6 +28,7 @@ export const useUsersStore = defineStore('users', {
         items: [] as User[],
         self: null,
         loading: false,
+        token: null,
         error: null as string | null,
     }),
     getters: {
@@ -34,7 +38,106 @@ export const useUsersStore = defineStore('users', {
         setRole(role) {
             this.self.role = role
         },
+
+        async login(form) {
+            this.loading = true;
+
+            try {
+                const response = await axios.post(
+                    '/api/auth/login',
+                    form,
+                    {
+                        withCredentials: true
+                    }
+                );
+
+                this.user = response.data;
+
+                return true;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loginTelegram(payload) {
+            const response = await axios.post(
+                '/api/auth/telegram',
+                payload,
+                {
+                    withCredentials: true
+                }
+            );
+
+            this.user = response.data;
+        },
+
+        async me() {
+            try {
+                const response = await axios.get(
+                    '/api/auth/me',
+                    {
+                        withCredentials: true
+                    }
+                );
+
+                this.user = response.data;
+            } catch (e) {
+                this.user = null;
+            }
+        },
+
+        async logout() {
+            await axios.post(
+                '/api/auth/logout',
+                {},
+                {
+                    withCredentials: true
+                }
+            );
+
+            this.user = null;
+        },
+        async csrf() {
+            axios.defaults.withCredentials = true
+
+            await axios.get('/sanctum/csrf-cookie').then(() => {
+                axios.defaults.withXSRFToken = true
+
+                const token = decodeURIComponent(
+                    document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('XSRF-TOKEN='))
+                        ?.split('=')[1]
+                )
+
+
+                const res = makeAxiosFactory('/users/self', 'post', {}, {
+                    withCredentials: true,
+                    headers: {
+                        'X-XSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    }
+                }).then(resp => {
+                    this.self = resp.data
+                })
+
+
+                //this.token = res.data.token
+                //axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
+            })
+
+        },
         async fetchSelf() {
+
+            const configStore = useConfigStore();
+
+            if (configStore.apiPrefix === 'api') {
+
+                await this.csrf()
+                return true
+            }
+
+
             this.loading = true
             this.error = null
             try {
@@ -179,10 +282,10 @@ export const useUsersStore = defineStore('users', {
         async updateWorkStatus(id: number, is_work: boolean) {
             const alertStore = useAlertStore()
             const {data} = await makeAxiosFactory(`${path}/${id}/work-status`, 'POST', {
-                is_work:is_work
+                is_work: is_work
             })
 
-            alertStore.show( "Статус успешно обновлен")
+            alertStore.show("Статус успешно обновлен")
 
             const idx = this.items.findIndex(u => u.id === id)
             if (idx !== -1) this.items[idx] = data

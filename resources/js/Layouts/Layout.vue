@@ -64,6 +64,18 @@ import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
             <UserProfileCard
                 v-if="userStore.self"
                 :user="userStore.self"></UserProfileCard>
+
+            <template v-if="self">
+                <div class="alert alert-light border-primary border my-3">
+                    <p
+                        @click="copy"
+                        class="small mb-0">Ваш логин <span class="fw-bold text-primary"> <i class="fa-solid fa-copy me-1"></i>{{ self.telegram_chat_id }}</span></p>
+                    <p
+                        @click="copy"
+                        class="small mb-0">Ваш пароль <span class="fw-bold text-primary"> <i class="fa-solid fa-copy me-1"></i>{{ self.telegram_chat_id }}</span></p>
+                </div>
+
+            </template>
             <ul class="list-group list-group-flush my-3">
                 <li class="p-2 list-group-item"><a
                     data-bs-dismiss="offcanvas"
@@ -111,29 +123,36 @@ export default {
     },
     watch: {},
     created() {
-        this.userStore.fetchSelf().then(() => {
+        /*  this.userStore.fetchSelf().then(() => {
 
-            if (this.userStore.self.blocked_at != null)
-                this.$router.push({name: 'BlockedPage'})
+              if (this.userStore.self.blocked_at != null)
+                  this.$router.push({name: 'BlockedPage'})
 
-            if (!this.userStore.self.registration_at && this.userStore.self.role > 0)
-                new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
-        })
+              if (!this.userStore.self.registration_at && this.userStore.self.role > 0)
+                  new bootstrap.Modal(document.getElementById('primaryUserModal')).show()
+          })*/
     },
     computed: {
+        canUseTG() {
+            return window.apiPrefix === "bot-api"
+        },
         tg() {
-            return window.Telegram.WebApp;
+            return window.Telegram.WebApp || null;
         },
         self() {
-            return window.botUser || null
+            return this.userStore.self
         },
 
     },
 
     mounted() {
-        this.tg.expand()
 
-        this.tg.BackButton.hide()
+        if (this.canUseTG) {
+            this.tg.expand()
+
+            this.tg.BackButton.hide()
+        }
+
     },
     methods: {
         result() {
@@ -149,14 +168,31 @@ export default {
             window.scrollTo(0, 80);
         },
         openLink(url) {
-            this.tg.openLink(url, {
-                try_instant_view: true
-            })
-        },
-        closeShop() {
-            this.tg.close()
+            if (this.canUseTG)
+                this.tg.openLink(url, {
+                    try_instant_view: true
+                })
+            else
+                window.location.href = url
         },
 
+        async copy() {
+
+            try {
+
+                await navigator.clipboard.writeText(
+                    this.self.telegram_chat_id
+                );
+
+                alert("Данные скопированы");
+
+            } catch (e) {
+
+                console.error(e);
+
+            }
+
+        },
     },
 
 

@@ -8,7 +8,7 @@ export interface ProductCategory {
     description?: string
 }
 
-const path: string = '/bot-api/product-categories'
+const path: string = '/product-categories'
 
 export const useProductCategoriesStore = defineStore('productCategories', {
     state: () => ({

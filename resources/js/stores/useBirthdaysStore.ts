@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { makeAxiosFactory } from './utillites/makeAxiosFactory'
 
-const path: string = '/bot-api/birthdays'
+const path: string ='/birthdays'
 
 export interface BirthdayItem {
     name: string

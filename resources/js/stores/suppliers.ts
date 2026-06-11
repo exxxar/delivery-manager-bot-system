@@ -14,7 +14,7 @@ export interface Supplier {
     email?: string
 }
 
-const path: string = '/bot-api/suppliers'
+const path: string = '/suppliers'
 
 
 export const useSuppliersStore = defineStore('suppliers', {

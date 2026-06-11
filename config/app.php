@@ -192,6 +192,7 @@ return [
         'StartCodesService' => \App\Facades\StartCodesService::class,
         'Telegram' => Telegram\Bot\Laravel\Facades\Telegram::class,
         'BusinessLogic' => App\Facades\BusinessLogicFacade::class,
+
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 

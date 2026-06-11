@@ -9,7 +9,7 @@ interface ImportState {
     error: string | null
 }
 
-const path: string = '/bot-api/imports'
+const path: string = '/imports'
 
 export const useImportStore = defineStore('import', {
     state: (): ImportState => ({

@@ -23,12 +23,13 @@ createInertiaApp({
         app.use(createPinia())
         app.config.globalProperties.$notify = useAlertStore()
 
+
         return app
+            .use(router)
             .use(plugin)
             .use(ZiggyVue)
             .use(VueTheMask)
             .use(i18n)
-            .use(router)
             .mount(el);
     },
     progress: {

@@ -8,6 +8,7 @@ use App\Facades\BotMethods;
 use App\Facades\StartCodesService;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -15,12 +16,17 @@ use Telegram\Bot\FileUpload\InputFile;
 
 class TelegramController extends Controller
 {
-    public function getSelf(Request $request)
-    {
+    public function getSelf(Request $request) {
+
+
         if (env("APP_DEBUG")) {
             $user = User::query()->first();
             $user->role = RoleEnum::SUPERADMIN->value;
             $user->base_role = RoleEnum::SUPERADMIN->value;
+
+            Auth::guard('web')->login($user);
+
+            $request->session()->regenerate();
         } else {
             $user = User::query()
                 ->find($request->botUser->id);
@@ -140,8 +146,20 @@ class TelegramController extends Controller
         BotManager::bot()->reply("Как пользоваться ботом");
     }
 
+    public function homePagePwa(Request $request)
+    {
 
-    public function homePage(Request $request)
+        if (!Auth::check())
+            return redirect("/login");
+
+        Inertia::setRootView("pwa");
+        return Inertia::render('Main',[
+            "api_type"=>"api"
+        ]);
+    }
+
+
+    public function homePageBot(Request $request)
     {
 
         /* if (env("APP_DEBUG")) {
@@ -154,7 +172,9 @@ class TelegramController extends Controller
              throw new HttpException(404, "Ошибочка");*/
 
         Inertia::setRootView("bot");
-        return Inertia::render('Main');
+        return Inertia::render('Main',[
+            "api_type"=>"bot-api"
+        ]);
     }
 
     public function startCommand()

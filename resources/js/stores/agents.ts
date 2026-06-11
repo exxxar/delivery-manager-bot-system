@@ -12,8 +12,7 @@ export interface Agent {
     in_learning?: boolean
 }
 
-const path: string = "/bot-api/agents"
-
+const path: string = "/agents"
 
 export const useAgentsStore = defineStore('agents', {
     state: () => ({

@@ -1,6 +1,7 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
 
 import { defineAsyncComponent } from 'vue'
+import {useUsersStore} from "../stores/users";
 
 const MenuPage = defineAsyncComponent(() => import('../Pages/MenuPage.vue'))
 const AgentPage = defineAsyncComponent(() => import('../Pages/AgentPage.vue'))
@@ -16,9 +17,15 @@ const AdminTasksPage = defineAsyncComponent(() => import('../Pages/AdminTasksPag
 const AgentTaskPage = defineAsyncComponent(() => import('../Pages/AgentTaskPage.vue'))
 const ProductCategoryPage = defineAsyncComponent(() => import('../Pages/ProductCategoryPage.vue'))
 const BlockedPage = defineAsyncComponent(() => import('../Pages/BlockedPage.vue'))
+const AuthPage = defineAsyncComponent(() => import('../Pages/AuthPage.vue'))
 
 
 const routes = [
+    {
+        path: '/login',
+        name: 'AuthPage',
+        component: AuthPage,
+    },
     {
         path: '/blocked',
         name: 'BlockedPage',
@@ -94,9 +101,21 @@ const routes = [
 ]
 
 
-const router = createRouter({
+let router = createRouter({
     history: createWebHashHistory(),
     routes,
+
 })
 
+router.beforeEach(async (to) => {
+
+    const auth = useUsersStore();
+
+    if (!auth)
+        window.location.href = "/login"
+
+});
+
+// @ts-ignore
 export default router
+
