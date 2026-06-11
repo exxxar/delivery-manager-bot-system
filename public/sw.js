@@ -2,78 +2,59 @@
 const CACHE_NAME = 'myprocent-cache-v1'
 
 
-const ASSETS = ['/', '/css/app.css', '/js/app.js']
+const ASSETS = [
+    '/pwa/',
+    '/icons/icon-192.png',
+    '/public/icons/icon-192.png',
+    '/icons/icon-512.png',
+    '/public/icons/icon-512.png',
+    '/themes/theme8.bootstrap.min.css',
+    '/',
+    '/build/assets/*.css',
+    '/build/assets/*.js'
+]
 
-
+// Установка SW
 self.addEventListener('install', event => {
-    console.log("test")
-    self.skipWaiting()
-})
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    );
+});
 
-
+// Активация
 self.addEventListener('activate', event => {
-    event.waitUntil(self.clients.claim())
-})
+    event.waitUntil(
+        caches.keys().then(keys =>
+            Promise.all(
+                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+            )
+        )
+    );
+});
 
+// Интерсепт запросов
+self.addEventListener('fetch', event => {
+    const req = event.request;
 
-self.addEventListener('push', event => {
-    let data = {}
-
-    try {
-        data = event.data ? event.data.json() : {}
-    } catch (e) {
-        data = { title: 'Новое уведомление', body: event.data.text() }
+    // SPA fallback для маршрутов Vue Router
+    if (req.mode === 'navigate') {
+        event.respondWith(
+            fetch(req).catch(() => caches.match('/pwa/index.html'))
+        );
+        return;
     }
 
-    const title = data.title || 'Новое уведомление'
-    const options = {
-        body: data.body || '',
-        icon: data.icon || '/icons/icon-192.png',
-        badge: data.badge || '/icons/badge.png',
-        data: {
-            url: data.url || '/', // куда открыть при клике
-            ...data
-        }
-    }
-
-    event.waitUntil(
-        self.registration.showNotification(title, options)
-    )
-})
-
-
-self.addEventListener('notificationclick', event => {
-    event.notification.close()
-
-    const url = event.notification.data && event.notification.data.url
-        ? event.notification.data.url
-        : '/'
-
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true })
-            .then(windowClients => {
-                for (const client of windowClients) {
-                    if (client.url.includes(url) && 'focus' in client) {
-                        return client.focus()
-                    }
-                }
-                if (clients.openWindow) {
-                    return clients.openWindow(url)
-                }
+    // Cache-first для статики
+    event.respondWith(
+        caches.match(req).then(cached =>
+            cached ||
+            fetch(req).then(res => {
+                // Кешируем новые файлы
+                return caches.open(CACHE_NAME).then(cache => {
+                    cache.put(req, res.clone());
+                    return res;
+                });
             })
-    )
-})
-
-self.addEventListener('message', event => {
-    // if (event.data && event.data.type === 'PING') {
-    //     event.ports[0].postMessage({ ok: true })
-    // }
-})
-
-// self.addEventListener('fetch', event => {
-//     event.respondWith(
-//         caches.match(event.request).then(response => {
-//             return response || fetch(event.request)
-//         })
-//     )
-// })
+        )
+    );
+});
