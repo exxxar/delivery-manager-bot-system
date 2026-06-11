@@ -120,29 +120,27 @@ export default {
             const script = document.createElement('script');
 
             script.src =
-                'https://telegram.org/js/telegram-widget.js?22';
+                'https://telegram.org/js/telegram-widget.js?2';
+
+
 
             script.async = true;
 
             script.setAttribute(
                 'data-telegram-login',
-                'YOUR_BOT_NAME'
+                'delivery_town_bot'
             );
 
             script.setAttribute(
-                'data-size',
-                'large'
+                'data-auth-url',
+                '/callback/telegram'
             );
 
             script.setAttribute(
-                'data-userpic',
-                'false'
+                'data-request-access',
+                'write'
             );
 
-            script.setAttribute(
-                'data-onauth',
-                'onTelegramAuth(user)'
-            );
 
             document
                 .getElementById('telegram-login')

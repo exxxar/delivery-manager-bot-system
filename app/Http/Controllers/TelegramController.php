@@ -6,9 +6,12 @@ use App\Enums\RoleEnum;
 use App\Facades\BotManager;
 use App\Facades\BotMethods;
 use App\Facades\StartCodesService;
+use App\Models\Agent;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -16,6 +19,115 @@ use Telegram\Bot\FileUpload\InputFile;
 
 class TelegramController extends Controller
 {
+
+    private function checkTelegramAuthorization(array $authData): array
+    {
+        if (!isset($authData['hash'])) {
+            throw new Exception('Missing hash');
+        }
+
+        $checkHash = $authData['hash'];
+        unset($authData['hash']);
+
+        // Формируем строку для проверки
+        $dataCheckArr = [];
+        foreach ($authData as $key => $value) {
+            $dataCheckArr[] = $key . '=' . $value;
+        }
+
+        sort($dataCheckArr);
+        $dataCheckString = implode("\n", $dataCheckArr);
+
+        // Секретный ключ
+        $secretKey = hash('sha256', env("TELEGRAM_BOT_TOKEN"), true);
+
+        // Хеш Telegram
+        $hash = hash_hmac('sha256', $dataCheckString, $secretKey);
+
+        if (!hash_equals($hash, $checkHash)) {
+            throw new Exception('Data is NOT from Telegram');
+        }
+
+        // Проверка срока действия (24 часа)
+        if ((time() - $authData['auth_date']) > 86400) {
+            throw new Exception('Data is outdated');
+        }
+
+        return $authData;
+    }
+
+    /**
+     * Сохранение данных в cookie
+     */
+    private function saveTelegramUserData(array $authData)
+    {
+        $json = json_encode($authData);
+
+        Cookie::queue(
+            'tg_user',
+            $json,
+            60 * 24 * 7, // 7 дней
+            null,
+            null,
+            false,
+            true,
+            false,
+            'Lax'
+        );
+    }
+
+    /**
+     * Основной метод — обработка Telegram Login Widget
+     */
+    public function login(Request $request)
+    {
+        try {
+            $authData = $this->checkTelegramAuthorization($request->all());
+            $this->saveTelegramUserData($authData);
+
+            return response()->json([
+                'status' => 'ok',
+                'user' => $authData
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 403);
+        }
+    }
+
+    public function callbackTelegram(Request $request){
+        $telegramId = $request->id;
+
+        $user= User::query()->create([
+            'email' => "$telegramId@" . env('APP_EMAIL_DOMAIN'),
+            'name' => $request->username,
+            'password' => bcrypt($telegramId),
+            'role_id' => RoleEnum::USER->value,
+            'telegram_chat_id' => $telegramId,
+            'fio_from_telegram' => $request->first_name ?? $request->username ?? '',
+        ]);
+
+        Agent::query()
+            ->updateOrCreate([
+                'user_id' => $user->id,
+
+            ], [
+                'name' => $user->fio_from_telegram ?? $user->name,
+                'phone' => '',
+                'email' => '',
+                'region' => '',
+            ]);
+
+        Auth::login($user);
+
+        $request->session()->regenerate();
+
+        return response()->json($user);
+    }
+
     public function getSelf(Request $request)
     {
 

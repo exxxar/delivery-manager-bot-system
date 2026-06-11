@@ -167,6 +167,9 @@ Route::get("/upload-suppliers", function () {
 Route::post('/webhook', [\App\Http\Controllers\TelegramController::class, "handler"]);
 Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePageBot"]);
 Route::get("/pwa", [\App\Http\Controllers\TelegramController::class, "homePagePwa"]);
+Route::any("/callback/telegram", [\App\Http\Controllers\TelegramController::class, "login"]);
+
+
 Route::get("/login", function (){
     Inertia::setRootView("pwa");
     return Inertia::render('AuthPage',[
