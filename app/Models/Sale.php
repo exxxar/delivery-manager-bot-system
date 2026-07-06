@@ -102,21 +102,21 @@ class Sale extends Model
             'rejected' => "Отклонено"][$this->status ?? 'pending'] ?? 'Неизвестно';
 
         return
-            "<b>Сделка #{$this->id}</b>\n" .
-            "<b>Название:</b> {$this->title}\n" .
-            "<b>Описание:</b> {$this->description}\n" .
-            "<b>Статус:</b> {$status}\n" .
-            "<b>Дата встречи:</b> " . ($this->due_date ?? '-') . "\n" .
-            "<b>Дата продажи (факт. оплаты):</b> " . ($this->sale_date ?? '-') . "\n" .
-            "<b>Факт. доставка:</b> " . ($this->actual_delivery_date ?? '-') . "\n" .
-            "<b>Количество:</b> {$this->quantity}\n" .
-            "<b>Сумма заказа:</b> {$this->total_price}\n" .
-            "<b>Тип оплаты:</b> {$paymentType}\n" .
-            "<b>Отвественный:</b> " . ($this->agent?->name ?? '-') . "\n" .
-          //  "<b>Клиент:</b> " . ($this->customer?->name ?? '-') . "\n" .
-            "<b>Поставщик:</b> " . ($this->supplier?->name ?? '-') . "\n" .
-            "<b>Продукт:</b> " . ($this->product?->name ?? '-') . "\n" .
-            "<b>Создан админом:</b> " . ($this->creator?->fio_from_telegram ?? '-') . "\n";
+            "<p class='mb-2'><b>Сделка #{$this->id}</b></p>" .
+            "<p class='mb-2'><b>Название:</b> {$this->title}</p>" .
+            "<p class='mb-2'><b>Описание:</b> {$this->description}</p>" .
+            "<p class='mb-2'><b>Статус:</b> {$status}</p>" .
+            "<p class='mb-2'><b>Дата встречи:</b> " . ($this->due_date ?? '-') . "</p>" .
+            "<p class='mb-2'><b>Дата продажи (факт. оплаты):</b> " . ($this->sale_date ?? '-') . "</p>" .
+            "<p class='mb-2'><b>Факт. доставка:</b> " . ($this->actual_delivery_date ?? '-') . "</p>" .
+            "<p class='mb-2'><b>Количество:</b> {$this->quantity}</p>" .
+            "<p class='mb-2'><b>Сумма заказа:</b> {$this->total_price}</p>" .
+            "<p class='mb-2'><b>Тип оплаты:</b> {$paymentType}</p>" .
+            "<p class='mb-2'><b>Отвественный:</b> " . ($this->agent?->name ?? '-') . "</p>" .
+          //  "<p class='mb-2'><b>Клиент:</b> " . ($this->customer?->name ?? '-') . "</p>" .
+            "<p class='mb-2'><b>Поставщик:</b> " . ($this->supplier?->name ?? '-') . "</p>" .
+            "<p class='mb-2'><b>Продукт:</b> " . ($this->product?->name ?? '-') . "</p>" .
+            "<p class='mb-2'><b>Создан админом:</b> " . ($this->creator?->fio_from_telegram ?? '-') . "</p>";
     }
 
     public function scopeFilter(Builder $query, $request)

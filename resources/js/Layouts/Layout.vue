@@ -77,14 +77,30 @@ import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
 
             </template>
             <ul class="list-group list-group-flush my-3">
-                <li class="p-2 list-group-item"><a
-                    data-bs-dismiss="offcanvas"
-                    v-bind:class="{'fw-bold':$route.name==='MenuPage'}"
-                    @click="goTo('MenuPage')"
-                    href="javascript:void(0)"
-                    class="text-decoration-none fw-normal"
-                > Главное меню</a></li>
+                <li class="p-2 list-group-item">
+                    <a
+                        data-bs-dismiss="offcanvas"
+                        v-bind:class="{'fw-bold': $route.name === 'MenuPage'}"
+                        @click="goTo('MenuPage')"
+                        href="javascript:void(0)"
+                        class="text-decoration-none fw-normal"
+                    >
+                        <i class="fa-solid fa-house me-2"></i>
+                        Главное меню
+                    </a>
+                </li>
 
+                <li class="p-2 list-group-item">
+                    <a
+                        data-bs-dismiss="offcanvas"
+                        @click="confirmLogout"
+                        href="javascript:void(0)"
+                        class="text-decoration-none text-danger fw-normal"
+                    >
+                        <i class="fa-solid fa-right-from-bracket me-2"></i>
+                        Выйти из системы
+                    </a>
+                </li>
             </ul>
 
 
@@ -112,11 +128,12 @@ import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
 </template>
 <script>
 import {useUsersStore} from "@/stores/users";
-
+import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 export default {
     data() {
         return {
             userStore: useUsersStore(),
+            modalStore: useModalStore(),
             currentTheme: '',
             themes: []
         }
@@ -193,6 +210,39 @@ export default {
             }
 
         },
+
+        confirmLogout() {
+            // Используем ваш модальный стор для подтверждения
+            this.modalStore.open(
+                'Вы уверены, что хотите выйти из системы?',
+                async () => {
+                    await this.performLogout();
+                    this.modalStore.close();
+                },
+                () => this.modalStore.close()
+            );
+        },
+
+        async performLogout() {
+            try {
+                const userStore = useUsersStore();
+                await userStore.logout();
+
+                // Очищаем кеш Service Worker
+                if (navigator.serviceWorker?.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+                }
+
+                // Логируем выход
+                // (уже логируется в AuthController::logout на бэкенде)
+
+                // Редирект на страницу авторизации
+                window.location.href = '/login';
+            } catch (e) {
+                console.error('Ошибка при выходе:', e);
+                alert('Произошла ошибка при выходе');
+            }
+        }
     },
 
 

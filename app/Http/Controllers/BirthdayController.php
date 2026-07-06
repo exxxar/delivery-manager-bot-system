@@ -31,13 +31,22 @@ class BirthdayController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-birthdays-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new \App\Exports\BirthdayExport(), \Maatwebsite\Excel\Excel::XLSX);
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "Экспорт дней рождений сотрудников и поставщиков на ближайший месяц",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-        return response()->noContent();
+        $fileName = "export-birthdays-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
+
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт дней рождений сотрудников и поставщиков на ближайший месяц",
+            $fileName,
+            new \App\Exports\BirthdayExport(),
+            [],
+            'birthdays'
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 }

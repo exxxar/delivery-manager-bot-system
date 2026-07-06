@@ -77,7 +77,7 @@ class User extends Authenticatable
 
     public function getUserTelegramLink(): string
     {
-        return "\n<a href='tg://user?id=" . $this->telegram_chat_id . "'>Перейти к чату с пользователем</a>";
+        return "<br><p><a href='tg://user?id=" . $this->telegram_chat_id . "'>Перейти к чату с пользователем</a></p>";
     }
 
     public function getRoleName(): string
@@ -115,7 +115,7 @@ class User extends Authenticatable
         $text = "";
         foreach ($fields as $label => $value) {
             if (!empty($value)) {
-                $text .= "{$label}: {$value}\n";
+                $text .= "<p>{$label}: {$value}</p>";
             }
         }
 

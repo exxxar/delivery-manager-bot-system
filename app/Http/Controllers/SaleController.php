@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use App\Exports\ProductsExport;
 use App\Exports\SalesExport;
 use App\Facades\BotMethods;
+use App\Facades\UserLog;
 use App\Http\Requests\SaleStoreRequest;
 use App\Http\Requests\SaleUpdateRequest;
 use App\Models\Agent;
@@ -35,7 +36,8 @@ class SaleController extends Controller
         return response()->json($sales);
     }
 
-    public function approve(Request $request, $id){
+    public function approve(Request $request, $id)
+    {
         $sale = Sale::query()
             ->findOrFail($id);
 
@@ -47,16 +49,14 @@ class SaleController extends Controller
             ->where("id", $sale->agent_id)
             ->first();
 
-       BotMethods::bot()->sendMessage(
-            $agent->user->telegram_chat_id,
-            "✅ Старший администратор подтвердил оплату по вашей заявке №$sale->id"
-        );
+        UserLog::log("✅ Старший администратор подтвердил оплату по вашей заявке №$sale->id", $agent->user->id);
 
         return response()->noContent();
 
     }
 
-    public function decline(Request $request, $id){
+    public function decline(Request $request, $id)
+    {
         $sale = Sale::query()
             ->findOrFail($id);
 
@@ -65,10 +65,11 @@ class SaleController extends Controller
             ->where("id", $sale->agent_id)
             ->first();
 
-        BotMethods::bot()->sendMessage(
-            $agent->user->telegram_chat_id,
-            "❌ Старший администратор выявил ошибку в вашей заявке №$sale->id ($sale->total_price руб.)"
+        UserLog::log(
+            "❌ Старший администратор выявил ошибку в вашей заявке №$sale->id ($sale->total_price руб.)",
+            $agent->user->id
         );
+
 
         return response()->noContent();
     }
@@ -77,7 +78,7 @@ class SaleController extends Controller
     {
         $sales = Sale::query()
             ->without([
-                "product", "agent", "customer", "supplier","category"
+                "product", "agent", "customer", "supplier", "category"
             ])
             ->where("payment_type", 1)
             ->whereNull("verified_at");
@@ -91,11 +92,11 @@ class SaleController extends Controller
 
 
         if ($request->agent_id) {
-            $sales = $sales->where('agent_id',$request->agent_id );
+            $sales = $sales->where('agent_id', $request->agent_id);
         }
 
         $sales = $sales
-            ->orderBy("actual_delivery_date","desc")
+            ->orderBy("actual_delivery_date", "desc")
             ->paginate($request->get('per_page',
                 $request->size ?? 50));
 
@@ -264,40 +265,26 @@ class SaleController extends Controller
                 $sale->mentor_award = ($sale->total_price ?? 0) * ($mentorPercent / 100);
                 $sale->save();
 
-                \App\Facades\BotMethods::bot()->sendMessage(
-                    $agent->mentor->telegram_chat_id,
-                    "Вам начислен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+                UserLog::log(
+                    "Вам начислен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
+                    $agent->mentor->id
                 );
-                sleep(1);
+
+
             }
 
             if (!is_null($agent->user->telegram_chat_id ?? null)) {
-                \App\Facades\BotMethods::bot()->sendMessage(
-                    $agent->user->telegram_chat_id,
-                    "Вам назначена сделка:\n$saleInfo"
+                UserLog::log(
+                    "Вам назначена сделка:\n$saleInfo",
+                    $agent->user->id
                 );
-                sleep(1);
             }
 
         }
 
-
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
+        UserLog::logSuper(
             "#создание_сделки\n$saleInfo" . $userLink . (!is_null($sale->payment_document_name ?? null) ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
         );
-
-        /*  if (!is_null($sale->payment_document_name ?? null)) {
-
-              $slash = env("APP_DEBUG") ? "\\" : "/";
-              \App\Facades\BotMethods::bot()->sendDocument(
-                  env("TELEGRAM_ADMIN_CHANNEL"),
-                  "Чек к сделке №" . ($sale->id ?? '-'),
-                  InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
-                      $sale->payment_document_name
-                  )
-              );
-          }*/
 
 
         return response()->json($sale, 201);
@@ -347,15 +334,18 @@ class SaleController extends Controller
                 $index++;
             }
 
-            \App\Facades\BotMethods::bot()->sendMessage(
-                $user->telegram_chat_id,
-                "Чек к сделке №" . ($sale->id ?? '-') . ($total > 0 ? $fileLinks : "")
+
+            UserLog::log(
+                "Чек к сделке №" . ($sale->id ?? '-') . ($total > 0 ? $fileLinks : ""),
+                $user->id
             );
 
+
         } else {
-            \App\Facades\BotMethods::bot()->sendMessage(
-                $user->telegram_chat_id,
-                "Чек к сделке №" . ($sale->id ?? '-') . " — не найден!"
+
+            UserLog::log(
+                "Чек к сделке №" . ($sale->id ?? '-') . " — не найден!",
+                $user->id
             );
         }
 
@@ -416,20 +406,19 @@ class SaleController extends Controller
                 $sale->save();
 
                 if ($priceIsChange) {
-                    \App\Facades\BotMethods::bot()->sendMessage(
-                        $agent->mentor->telegram_chat_id,
-                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+
+                    UserLog::log(
+                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
+                        $agent->mentor->id
                     );
-                    sleep(1);
+
                 }
             }
         }
 
         $saleInfo = $sale->toTelegramText();
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
-        );
+
+        UserLog::logSuper("#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink());
 
         return response()->json($sale);
     }
@@ -530,11 +519,10 @@ class SaleController extends Controller
                 $sale->save();
 
                 if ($priceIsChange) {
-                    \App\Facades\BotMethods::bot()->sendMessage(
-                        $agent->mentor->telegram_chat_id,
-                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+                    UserLog::log(
+                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
+                        $agent->mentor->id
                     );
-                    sleep(1);
                 }
             }
         }
@@ -574,8 +562,8 @@ class SaleController extends Controller
         }
 
         $saleInfo = $sale->toTelegramText($receiptIsLost);
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
+
+        UserLog::logSuper(
             "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile && !empty($sale->payment_document_name) ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLinks" : "")
         );
 
@@ -627,19 +615,20 @@ class SaleController extends Controller
                 $sale->save();
 
                 if ($priceIsChange) {
-                    \App\Facades\BotMethods::bot()->sendMessage(
-                        $agent->mentor->telegram_chat_id,
-                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+
+                    UserLog::log(
+                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
+                        $agent->mentor->id
                     );
-                    sleep(1);
                 }
             }
         }
 
         $saleInfo = $sale->toTelegramText($receiptIsLost);
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
+
+        UserLog::logSuper(
             "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
+
         );
 
         /* if ($hasFile) {
@@ -732,19 +721,19 @@ class SaleController extends Controller
                 $sale->save();
 
                 if ($priceIsChange) {
-                    \App\Facades\BotMethods::bot()->sendMessage(
-                        $agent->mentor->telegram_chat_id,
-                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name"
+                    UserLog::log(
+                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
+                        $agent->mentor->id
                     );
-                    sleep(1);
                 }
             }
         }
 
         $saleInfo = $sale->toTelegramText();
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
+
+        UserLog::logSuper(
             "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
+
         );
 
         /* if ($hasFile) {
@@ -775,8 +764,7 @@ class SaleController extends Controller
 
         $sale->delete();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
+        UserLog::logSuper(
             "#удаление_сделки\n$saleInfo" . $botUser->getUserTelegramLink()
         );
 
@@ -792,13 +780,22 @@ class SaleController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new \App\Exports\SalesExport(), \Maatwebsite\Excel\Excel::XLSX);
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "Экспорт истории продаж",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-        return response()->noContent();
+        $fileName = "export-sales-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
+
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт истории продаж",
+            $fileName,
+            new \App\Exports\SalesExport(),
+            [],
+            'sales_history'
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 }

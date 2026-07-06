@@ -163,6 +163,8 @@ export const useSalesStore = defineStore('sales', {
 
             params.delete("page")
 
+            console.log("Test 2", url)
+
             const {data} = await makeAxiosFactory(`${url}&${params.toString()}`, 'GET')
 
             this.items = data.data

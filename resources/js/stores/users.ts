@@ -39,6 +39,26 @@ export const useUsersStore = defineStore('users', {
             this.self.role = role
         },
 
+        // ===== РЕГИСТРАЦИЯ =====
+        async register(data: {
+            name: string
+            email: string
+            phone: string
+            password: string
+            password_confirmation: string
+        }) {
+            this.loading = true
+            this.error = null
+            try {
+                const response = await makeAxiosFactory('/api/auth/register', 'POST', data)
+                return response.data
+            } catch (e: any) {
+                this.error = e?.message || 'Ошибка регистрации'
+                throw e
+            } finally {
+                this.loading = false
+            }
+        },
         async login(form) {
             this.loading = true;
 
@@ -51,7 +71,7 @@ export const useUsersStore = defineStore('users', {
                     }
                 );
 
-                this.user = response.data;
+                this.self = response.data;
 
                 return true;
             } finally {
@@ -80,7 +100,7 @@ export const useUsersStore = defineStore('users', {
                     }
                 );
 
-                this.user = response.data;
+                this.self = response.data;
             } catch (e) {
                 this.user = null;
             }
@@ -95,7 +115,7 @@ export const useUsersStore = defineStore('users', {
                 }
             );
 
-            this.user = null;
+            this.self = null;
         },
         async csrf() {
             axios.defaults.withCredentials = true

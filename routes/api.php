@@ -37,6 +37,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
+Route::post('/auth/register', [\App\Http\Controllers\AuthController::class, 'register']);
+Route::post('/telegram', [\App\Http\Controllers\AuthController::class, 'loginTelegram']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout']);
+});
 
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
@@ -86,6 +92,17 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::post('/', [BirthdayController::class, 'birthdaysNextWeek'])->name('birthdays.list');
         });
 
+    Route::prefix('reports')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\ReportController::class, 'index'])->name('reports.index');
+            Route::get('/{report}/download', [\App\Http\Controllers\Api\ReportController::class, 'download'])->name('reports.download');
+            Route::delete('/{report}', [\App\Http\Controllers\Api\ReportController::class, 'destroy'])->name('reports.destroy');
+        });
+
+    Route::prefix('logs')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\UserLogController::class, 'index'])->name('logs.index');
+        });
 
     // 🔹 Экспорты
     Route::prefix('exports')

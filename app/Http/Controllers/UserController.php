@@ -7,6 +7,7 @@ use App\Enums\RoleEnum;
 use App\Exports\UsersExport;
 use App\Facades\BotManager;
 use App\Facades\BotMethods;
+use App\Facades\UserLog;
 use App\Models\Agent;
 use App\Models\Supplier;
 use App\Models\User;
@@ -135,8 +136,8 @@ class UserController extends Controller
             unset($data["email"]);
 
         $user->update([
-            "name"=>$name,
-            "role"=>$role,
+            "name" => $name,
+            "role" => $role,
         ]);
 
         $agent = $user->agent;
@@ -152,10 +153,7 @@ class UserController extends Controller
 
         $userInfo = $user->toTelegramText();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#обновление_данных_пользователя\n<b>Пользователю изменены его персональные данные</b>\n$userInfo\n$tmpUserLink"
-        );
+        UserLog::logSuper("#обновление_данных_пользователя\n<b>Пользователю изменены его персональные данные</b>\n$userInfo\n$tmpUserLink");
 
         return response()->json($user);
     }
@@ -168,10 +166,7 @@ class UserController extends Controller
 
         $userInfo = $user->toTelegramText();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#удаление_пользователя\n<b>Пользователь был удален</b>\n$userInfo\n$tmpUserLink"
-        );
+        UserLog::logSuper("#удаление_пользователя\n<b>Пользователь был удален</b>\n$userInfo\n$tmpUserLink");
 
         $user->delete();
 
@@ -205,17 +200,11 @@ class UserController extends Controller
 
         $userInfo = $user->toTelegramText();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#смена_роли_пользователя\n<b>Пользователю изменена роль с $oldRoleName на $newRoleName</b>\n$userInfo\n$tmpUserLink"
-        );
+        UserLog::logSuper("#смена_роли_пользователя\n<b>Пользователю изменена роль с $oldRoleName на $newRoleName</b>\n$userInfo\n$tmpUserLink");
 
-        sleep(1);
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            $user->telegram_chat_id,
-            "Вам была изменена роль в системе с $oldRoleName на $newRoleName"
-        );
+        UserLog::log("Вам была изменена роль в системе с $oldRoleName на $newRoleName", $user->id);
+
 
         return response()->json($user);
     }
@@ -285,16 +274,9 @@ class UserController extends Controller
 
         $userInfo = $user->toTelegramText();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#блокировка_пользователя\n<b>Пользователь заблокирован</b>\n$userInfo\n$tmpUserLink"
-        );
-
-        sleep(1);
-
-        \App\Facades\BotMethods::bot()->sendMessage(
-            $user->telegram_chat_id,
-            "Вам ограничили доступ к системе"
+        UserLog::logSuper("#блокировка_пользователя\n<b>Пользователь заблокирован</b>\n$userInfo\n$tmpUserLink");
+        UserLog::log(
+            "Вам ограничили доступ к системе", $user->id
         );
 
         return response()->json($user);
@@ -311,17 +293,8 @@ class UserController extends Controller
 
         $userInfo = $user->toTelegramText();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "#блокировка_пользователя\n<b>Пользователь разблокирован</b>\n$userInfo\n$tmpUserLink"
-        );
-
-        sleep(1);
-
-        \App\Facades\BotMethods::bot()->sendMessage(
-            $user->telegram_chat_id,
-            "Вам убрали ограничения доступа к системе"
-        );
+        UserLog::logSuper("#блокировка_пользователя\n<b>Пользователь разблокирован</b>\n$userInfo\n$tmpUserLink");
+        UserLog::log("Вам убрали ограничения доступа к системе", $user->id);
 
         return response()->json($user);
     }
@@ -334,14 +307,23 @@ class UserController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-admins-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new \App\Exports\AdminsExport(), \Maatwebsite\Excel\Excel::XLSX);
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "Экспорт списка администраторов",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-        return response()->noContent();
+        $fileName = "export-admins-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
+
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт списка администраторов",
+            $fileName,
+            new \App\Exports\AdminsExport(),
+            [],
+            'admins_list'
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 
     public function getTelegramLink(Request $request, $id)
@@ -355,10 +337,7 @@ class UserController extends Controller
 
         $userInfo = $findUser->toTelegramText();
 
-        \App\Facades\BotMethods::bot()->sendMessage(
-            $user->telegram_chat_id,
-            "#ссылка_на_пользователя\n<b>Ссылка на пользователя</b>\n$userInfo\n$tmpUserLink"
-        );
+        UserLog::log("#ссылка_на_пользователя\n<b>Ссылка на пользователя</b>\n$userInfo\n$tmpUserLink", $user->id);
 
         return response()->json($user);
     }
@@ -371,13 +350,22 @@ class UserController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-users-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new \App\Exports\UsersExport(), \Maatwebsite\Excel\Excel::XLSX);
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "Экспорт списка пользователей",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-        return response()->noContent();
+        $fileName = "export-users-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
+
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт списка пользователей",
+            $fileName,
+            new \App\Exports\UsersExport(),
+            [],
+            'users_list'
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 }

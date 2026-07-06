@@ -49,37 +49,45 @@ class AdminController extends Controller
         $fromDate = Carbon::parse($request->startDate)->startOfDay();
         $toDate = Carbon::parse($request->endDate)->endOfDay();
 
+        $exportService = app(\App\Services\ExportService::class);
 
-        $content =  Excel::raw(new SummaryAgentReport(
-            resultType: 0,
-            fromDate: $fromDate,
-            toDate: $toDate,
+        // Отчет по зарплатам
+        $fileName1 = "Отчет по зарплатам $fromDate - $toDate.xlsx";
+        $report1 = $exportService->saveReport(
+            $botUser,
+            "Отчет по зарплатам за период $fromDate - $toDate",
+            $fileName1,
+            new SummaryAgentReport(
+                resultType: 0,
+                fromDate: $fromDate,
+                toDate: $toDate,
+            ),
+            [],
+            'salary_report',
+            $fromDate,
+            $toDate
+        );
 
-        ), \Maatwebsite\Excel\Excel::XLSX);
+        // Отчет по поставщикам
+        $fileName2 = "report-" . Carbon::now()->format('Y-m-d-H-i-s') . ".xlsx";
+        $report2 = $exportService->saveReport(
+            $botUser,
+            "Отчет по поставщикам за период $fromDate - $toDate",
+            $fileName2,
+            new \App\Exports\ExportType1\SummarySuppliersReport(
+                fromDate: $fromDate,
+                toDate: $toDate,
+            ),
+            [],
+            'suppliers_report',
+            $fromDate,
+            $toDate
+        );
 
-          $fileName = "Отчет по зарплатам $fromDate - $toDate.xlsx";
-          BotMethods::bot()
-              ->sendDocument($botUser->telegram_chat_id ?? env("TELEGRAM_ADMIN_CHANNEL"),
-                  "#отчет\nОтчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
-                  InputFile::createFromContents($content, $fileName));
-
-
-        \App\Facades\BotMethods::bot()
-            ->sendMessage($botUser->telegram_chat_id,
-                "Внимание! Готовим отчет по поставщикам, это займет какое-то время (минут 5)!"
-            );
-        $content =
-            Excel::raw(new \App\Exports\ExportType1\SummarySuppliersReport(
-                fromDate: $fromDate ?? Carbon::now()->startOfMonth(),
-                toDate: $toDate ?? Carbon::now()->endOfMonth(),
-            ), \Maatwebsite\Excel\Excel::XLSX);
-
-        $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($botUser->telegram_chat_id,
-                "Отчет по поставщикам <b>$fromDate</b> - <b>$toDate</b>",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
-
+        return response()->json([
+            'message' => 'Отчеты успешно сформированы',
+            'reports' => [$report1, $report2]
+        ]);
     }
 
 
@@ -126,7 +134,8 @@ class AdminController extends Controller
 
     }
 
-    public function exportIndividual(Request $request, $agentId) {
+    public function exportIndividual(Request $request, $agentId)
+    {
         $validate = $request->validate([
             "startDate" => "required",
             "endDate" => "required",
@@ -137,30 +146,25 @@ class AdminController extends Controller
         $fromDate = Carbon::parse($validate["startDate"])->startOfDay();
         $toDate = Carbon::parse($validate["endDate"])->endOfDay();
 
-        $agent = Agent::query()->where("id", $agentId )->first();
+        $agent = Agent::query()->where("id", $agentId)->first();
 
         $fileName = "export-self-sales-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
 
-        $data = Excel::raw(
-            new AgentSalesExport(
-                $agent->id ?? null,
-                $fromDate,
-                $toDate
-            ),
-            \Maatwebsite\Excel\Excel::XLSX
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $admin,
+            "Отчет по работе Администратора " . ($agent->name ?? 'не указано') . " за период $fromDate - $toDate",
+            $fileName,
+            new \App\Exports\AgentSalesExport($agent->id ?? null, $fromDate, $toDate),
+            [],
+            'individual_sales',
+            $fromDate,
+            $toDate
         );
 
-        $path = "exports/" . $fileName;
-// Сохранение файла
-        Storage::put($path, $data);
-
-        $fileLink = url("/storage/app/" . $path);
-
-        \App\Facades\BotMethods::bot()
-            ->sendMessage($admin->telegram_chat_id, "Отчет по работе Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>: $fileLink");
-
-
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 
     public function exportFull(Request $request, $agentId = null)
@@ -170,64 +174,68 @@ class AdminController extends Controller
             "endDate" => "required",
         ]);
 
-
         $supplierIds = $request->selected_suppliers ?? [];
         $agentIds = $request->selected_agents ?? [];
-
         $resultType = $request->result_type ?? 0;
 
         $admin = $request->botUser;
 
         $agent = is_null($agentId) ?
-            Agent::query()->where("user_id", $admin->id)->first():
-            Agent::query()->where("id",$agentId)->first();
+            Agent::query()->where("user_id", $admin->id)->first() :
+            Agent::query()->where("id", $agentId)->first();
 
         $fromDate = Carbon::parse($validate["startDate"])->startOfDay();
         $toDate = Carbon::parse($validate["endDate"])->endOfDay();
 
-        \App\Facades\BotMethods::bot()
-            ->sendMessage($admin->telegram_chat_id,
-                is_null($agentId) ?
-                    "Внимание! Готовим отчет по зарплатам за период <b>$fromDate</b> - <b>$toDate</b> " :
-                    "Внимание! Готовим отчет по зарплате Администратора <b>" . ($agent->name ?? 'не указано') . "</b> за период <b>$fromDate</b> - <b>$toDate</b>"
-            );
+        $exportService = app(\App\Services\ExportService::class);
+        $reports = [];
 
-        $content = Excel::raw(new \App\Exports\ExportType4\SummaryAgentReport(
-            resultType: $resultType,
-            fromDate: $fromDate ?? Carbon::now()->startOfMonth(),
-            toDate: $toDate ?? Carbon::now()->endOfMonth(),
-            agentsIds:$agentIds,
-            suppliersIds: $supplierIds,
-        ), \Maatwebsite\Excel\Excel::XLSX);
+        // Отчет по зарплатам
+        $title = is_null($agentId) ?
+            "Отчет по зарплатам за период $fromDate - $toDate" :
+            "Отчет по зарплате Администратора " . ($agent->name ?? 'не указано') . " за период $fromDate - $toDate";
 
-        $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($admin->telegram_chat_id,
-                "Отчет по зарплатам <b>$fromDate</b> - <b>$toDate</b>",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
-
-
-        if ($admin->role < 3)
-            return response()->noContent();
-
-        \App\Facades\BotMethods::bot()
-            ->sendMessage($admin->telegram_chat_id,
-                "Внимание! Готовим отчет по поставщикам, это займет какое-то время (минут 10-15)!"
-            );
-        $content =
-            Excel::raw(new \App\Exports\ExportType1\SummarySuppliersReport(
-                fromDate: $fromDate ?? Carbon::now()->startOfMonth(),
-                toDate: $toDate ?? Carbon::now()->endOfMonth(),
+        $fileName1 = "report-" . Carbon::now()->format('Y-m-d-H-i-s') . ".xlsx";
+        $reports[] = $exportService->saveReport(
+            $admin,
+            $title,
+            $fileName1,
+            new \App\Exports\ExportType4\SummaryAgentReport(
+                resultType: $resultType,
+                fromDate: $fromDate,
+                toDate: $toDate,
                 agentsIds: $agentIds,
-                suppliersIds: $supplierIds
-            ), \Maatwebsite\Excel\Excel::XLSX);
+                suppliersIds: $supplierIds,
+            ),
+            [],
+            'full_salary_report',
+            $fromDate,
+            $toDate
+        );
 
-        $fileName = "report-" . Carbon::now()->format('Y-m-d H-i-s') . ".xlsx";
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($admin->telegram_chat_id,
-                "Отчет по поставщикам <b>$fromDate</b> - <b>$toDate</b>",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($content, $fileName));
+        // Отчет по поставщикам (только для ролей >= 3)
+        if ($admin->role >= 3) {
+            $fileName2 = "report-" . Carbon::now()->format('Y-m-d-H-i-s') . "-suppliers.xlsx";
+            $reports[] = $exportService->saveReport(
+                $admin,
+                "Отчет по поставщикам за период $fromDate - $toDate",
+                $fileName2,
+                new \App\Exports\ExportType1\SummarySuppliersReport(
+                    fromDate: $fromDate,
+                    toDate: $toDate,
+                    agentsIds: $agentIds,
+                    suppliersIds: $supplierIds
+                ),
+                [],
+                'full_suppliers_report',
+                $fromDate,
+                $toDate
+            );
+        }
 
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Отчеты успешно сформированы',
+            'reports' => $reports
+        ]);
     }
 }

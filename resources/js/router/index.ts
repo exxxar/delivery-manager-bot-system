@@ -27,6 +27,18 @@ const routes = [
         component: AuthPage,
     },
     {
+        path: '/reports',
+        name: 'ReportsPage',
+        component: () => import('../Pages/ReportsPage.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/user-logs',
+        name: 'UserLogsPage',
+        component: () => import('@/Pages/UserLogsPage.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/blocked',
         name: 'BlockedPage',
         component: BlockedPage,

@@ -2,12 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\RoleEnum;
 use App\Exports\ExportType1\SummarySuppliersReport;
 use App\Exports\ExportType4\SummaryAgentReport;
 
 
 use App\Exports\SalesByAgentReport;
 use App\Facades\BotMethods;
+use App\Models\User;
+use App\Services\ExportService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Maatwebsite\Excel\Facades\Excel;
@@ -15,91 +18,121 @@ use Telegram\Bot\FileUpload\InputFile;
 
 class GenerateReport extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:generate-report';
+    protected $description = 'Генерация отчетов для всех администраторов и суперадминов';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
-
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         ini_set('memory_limit', '3000M');
-        ini_set('max_execution_time', 3000); //300 seconds = 5 minutes
+        ini_set('max_execution_time', 3000);
+
         $startDate = Carbon::now("+3")->startOfMonth();
         $endDate = Carbon::now("+3")->endOfMonth();
+        $yearStart = Carbon::now("+3")->startOfYear();
+        $yearEnd = Carbon::now("+3")->endOfYear();
 
-        $channel = env("TELEGRAM_ADMIN_CHANNEL");
+        $this->info('Получение списка администраторов и суперадминов...');
 
+        $admins = User::whereIn('role', [
+            RoleEnum::ADMIN->value,
+            RoleEnum::SUPERADMIN->value
+        ])->get();
 
-        $fileName = "продажи за период $startDate - $endDate.xlsx";
-        $data = Excel::raw(new SalesByAgentReport($startDate, $endDate),
-            \Maatwebsite\Excel\Excel::XLSX);
+        $this->info("Найдено администраторов: " . $admins->count());
 
-        BotMethods::bot()
-            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за период<b>$startDate</b> - <b>$endDate</b>",
-                InputFile::createFromContents($data, $fileName));
+        $exportService = app(ExportService::class);
 
-        $fileName = "продажи за год.xlsx";
-        $data = Excel::raw(new SalesByAgentReport(
-            Carbon::now("+3")->startOfYear(),
-            Carbon::now("+3")->endOfYear()
-        ), \Maatwebsite\Excel\Excel::XLSX);
+        foreach ($admins as $admin) {
+            $this->info("Обработка администратора: {$admin->name} (ID: {$admin->id})");
 
-        BotMethods::bot()
-            ->sendDocument($channel, "#отчет\nЭкспорт истории продаж за год",
-                InputFile::createFromContents($data, $fileName));
-        //-----------------------------------------------------------
+            try {
+                // 1. Продажи за период
+                $fileName = "продажи-за-период-{$startDate->format('Y-m-d')}-{$endDate->format('Y-m-d')}-{$admin->id}.xlsx";
+                $exportService->saveReport(
+                    $admin,
+                    "Экспорт истории продаж за период {$startDate->format('d.m.Y')} - {$endDate->format('d.m.Y')}",
+                    $fileName,
+                    new SalesByAgentReport($startDate, $endDate),
+                    [],
+                    'sales_period',
+                    $startDate,
+                    $endDate
+                );
+                $this->info("  ✓ Создан отчет: Продажи за период");
 
-        $content = Excel::raw(new SummaryAgentReport(
-            resultType: 0,
-            fromDate: $startDate,
-            toDate: $endDate,
-        ), \Maatwebsite\Excel\Excel::XLSX);
+                // 2. Продажи за год
+                $fileName = "продажи-за-год-{$yearStart->format('Y')}-{$admin->id}.xlsx";
+                $exportService->saveReport(
+                    $admin,
+                    "Экспорт истории продаж за год {$yearStart->format('Y')}",
+                    $fileName,
+                    new SalesByAgentReport($yearStart, $yearEnd),
+                    [],
+                    'sales_year',
+                    $yearStart,
+                    $yearEnd
+                );
+                $this->info("  ✓ Создан отчет: Продажи за год");
 
-        $fileName = "Отчет по зарплатам $startDate - $endDate.xlsx";
-        BotMethods::bot()
-            ->sendDocument($channel,
-                "#отчет\nОтчет по зарплатам <b>$startDate</b> - <b>$endDate</b>",
-                InputFile::createFromContents($content, $fileName));
+                // 3. Отчет по зарплатам за период
+                $fileName = "отчет-по-зарплатам-{$startDate->format('Y-m-d')}-{$endDate->format('Y-m-d')}-{$admin->id}.xlsx";
+                $exportService->saveReport(
+                    $admin,
+                    "Отчет по зарплатам за период {$startDate->format('d.m.Y')} - {$endDate->format('d.m.Y')}",
+                    $fileName,
+                    new SummaryAgentReport(
+                        resultType: 0,
+                        fromDate: $startDate,
+                        toDate: $endDate,
+                    ),
+                    [],
+                    'salary_period',
+                    $startDate,
+                    $endDate
+                );
+                $this->info("  ✓ Создан отчет: Зарплаты за период");
 
+                // 4. Отчет по поставщикам за период
+                $fileName = "отчет-по-поставщикам-{$startDate->format('Y-m-d')}-{$endDate->format('Y-m-d')}-{$admin->id}.xlsx";
+                $exportService->saveReport(
+                    $admin,
+                    "Отчет по поставщикам за период {$startDate->format('d.m.Y')} - {$endDate->format('d.m.Y')}",
+                    $fileName,
+                    new SummarySuppliersReport(
+                        fromDate: $startDate,
+                        toDate: $endDate
+                    ),
+                    [],
+                    'suppliers_period',
+                    $startDate,
+                    $endDate
+                );
+                $this->info("  ✓ Создан отчет: Поставщики за период");
 
-        //-----------------------------------------------------
+                // 5. Отчет по поставщикам за год
+                $fileName = "отчет-по-поставщикам-за-год-{$yearStart->format('Y')}-{$admin->id}.xlsx";
+                $exportService->saveReport(
+                    $admin,
+                    "Отчет по поставщикам за год {$yearStart->format('Y')}",
+                    $fileName,
+                    new SummarySuppliersReport(
+                        fromDate: $yearStart,
+                        toDate: $yearEnd
+                    ),
+                    [],
+                    'suppliers_year',
+                    $yearStart,
+                    $yearEnd
+                );
+                $this->info("  ✓ Создан отчет: Поставщики за год");
 
-        $content =
-            Excel::raw(new SummarySuppliersReport(
-                fromDate: $startDate,
-                toDate: $endDate
-            ), \Maatwebsite\Excel\Excel::XLSX);
+                $this->info("  ✅ Завершено для администратора: {$admin->name}");
 
-        $fileName = "Отчет по поставщикам  $startDate - $endDate.xlsx";
-        BotMethods::bot()
-            ->sendDocument($channel,
-                "#отчет\nОтчет по поставщикам <b>$startDate</b> - <b>$endDate</b>",
-                InputFile::createFromContents($content, $fileName));
-        //-----------------------------------------------------------
+            } catch (\Exception $e) {
+                $this->error("  ❌ Ошибка для администратора {$admin->name}: " . $e->getMessage());
+            }
+        }
 
-        $content =
-            Excel::raw(new SummarySuppliersReport(
-                fromDate: Carbon::now("+3")->startOfYear(),
-                toDate: Carbon::now("+3")->endOfYear()
-            ), \Maatwebsite\Excel\Excel::XLSX);
-
-        $fileName = "Отчет по поставщикам за год.xlsx";
-        BotMethods::bot()
-            ->sendDocument($channel,
-                "#отчет\nОтчет по поставщикам за год",
-                InputFile::createFromContents($content, $fileName));
-
+        $this->info('✅ Генерация отчетов завершена!');
     }
 }

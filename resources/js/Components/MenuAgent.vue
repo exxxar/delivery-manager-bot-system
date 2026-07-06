@@ -72,6 +72,20 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                 </div>
             </div>
 
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card h-100 border-primary shadow-sm menu-card"
+                     @click="goTo('ReportsPage')"
+                     style="cursor:pointer;">
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-file-lines fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Мои отчеты</h5>
+                        <p class="text-muted small mb-0">
+                            Список всех сгенерированных отчетов
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Товары -->
             <div class="col-12 col-md-6 col-xl-3">
 
@@ -88,6 +102,20 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
 
                         <p class="text-muted small mb-0">
                             Управление товарами
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card h-100 border-info shadow-sm menu-card"
+                     @click="goTo('UserLogsPage')"
+                     style="cursor:pointer;">
+                    <div class="card-body text-center p-4">
+                        <i class="fa-solid fa-clock-rotate-left fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">История действий</h5>
+                        <p class="text-muted small mb-0">
+                            Журнал ваших действий в системе
                         </p>
                     </div>
                 </div>

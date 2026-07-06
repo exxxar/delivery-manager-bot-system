@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\AgentSalesExport;
 use App\Exports\AgentsExport;
+use App\Facades\UserLog;
 use App\Http\Requests\AgentStoreRequest;
 use App\Http\Requests\AgentUpdateRequest;
 use App\Models\Agent;
@@ -140,11 +141,8 @@ class AgentController extends Controller
         }
 
         if ($isTest) {
-            $user = $request->botUser ?? null;
+            UserLog::log("Вас отметили как <b>Администратор-Тестировщик</b>, ваши заявки не пойдут в учет.");
 
-            \App\Facades\BotMethods::bot()
-                ->sendMessage($user->telegram_chat_id,
-                    "Вас отметили как <b>Администратор-Тестировщик</b>, ваши заявки не пойдут в учет.");
         }
 
         return response()->json($agent);
@@ -185,25 +183,22 @@ class AgentController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-agent-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        // $data = Excel::raw(new \App\Exports\AgentsExport(), \Maatwebsite\Excel\Excel::XLSX);
+        $fileName = "export-agents-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
 
-        $data = Excel::raw(
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт списка торговых представителей",
+            $fileName,
             new \App\Exports\AgentsExport(),
-            \Maatwebsite\Excel\Excel::XLSX
+            [],
+            'agents_list'
         );
 
-        $path = "exports/" . $fileName;
-// Сохранение файла
-        Storage::put($path, $data);
-
-        $fileLink = url("/storage/app/" . $path);
-
-        //
-        \App\Facades\BotMethods::bot()
-            ->sendMessage($user->telegram_chat_id, "Экспорт списка торговых представителей: $fileLink");
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 }

@@ -315,6 +315,17 @@ Route::prefix("bot-api")
                 Route::post('/', [BirthdayController::class, 'birthdaysNextWeek'])->name('birthdays.list');
             });
 
+        Route::prefix('reports')
+            ->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\ReportController::class, 'index'])->name('reports.index');
+                Route::get('/{report}/download', [\App\Http\Controllers\Api\ReportController::class, 'download'])->name('reports.download');
+                Route::delete('/{report}', [\App\Http\Controllers\Api\ReportController::class, 'destroy'])->name('reports.destroy');
+            });
+
+        Route::prefix('logs')
+            ->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\UserLogController::class, 'index'])->name('logs.index');
+            });
 
         // 🔹 Экспорты
         Route::prefix('exports')

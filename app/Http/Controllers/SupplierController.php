@@ -136,13 +136,38 @@ class SupplierController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->all();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|unique:suppliers,phone',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string|max:500',
+            'description' => 'nullable|string',
+            'percent' => 'nullable|numeric|min:0|max:100',
+            'birthday' => 'nullable|date',
+        ]);
 
+        $data = $request->all();
         $data["percent"] = $data["percent"] ?? 8;
+
+        // 🔹 Проверка на дубликат по phone
+        if (!empty($data['phone'])) {
+            $existing = Supplier::where('phone', $data['phone'])->first();
+
+            if ($existing) {
+                // Если поставщик с таким телефоном уже есть — обновляем его
+                $existing->update($data);
+                return response()->json([
+                    'message' => 'Поставщик с таким телефоном уже существует, данные обновлены',
+                    'supplier' => $existing,
+                    'is_updated' => true
+                ], 200);
+            }
+        }
 
         $supplier = Supplier::create($data);
         return response()->json($supplier, 201);
     }
+
 
     public function show($id)
     {
@@ -152,11 +177,27 @@ class SupplierController extends Controller
 
     public function update(Request $request, $id)
     {
-        $data = $request->all();
 
+
+        $data = $request->all();
         $data["percent"] = $data["percent"] ?? 8;
 
         $supplier = Supplier::findOrFail($id);
+
+        // 🔹 Проверка на дубликат по phone (исключая текущего поставщика)
+        if (!empty($data['phone'])) {
+            $existing = Supplier::where('phone', $data['phone'])
+                ->where('id', '!=', $id)
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'message' => 'Поставщик с таким телефоном уже существует',
+                    'existing_supplier' => $existing
+                ], 422);
+            }
+        }
+
         $supplier->update($data);
         return response()->json($supplier);
     }
@@ -176,14 +217,23 @@ class SupplierController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-sales-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
-        $data = Excel::raw(new \App\Exports\SuppliersExport(), \Maatwebsite\Excel\Excel::XLSX);
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "Экспорт списка поставщиков",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-        return response()->noContent();
+        $fileName = "export-suppliers-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
+
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт списка поставщиков",
+            $fileName,
+            new \App\Exports\SuppliersExport(),
+            [],
+            'suppliers_list'
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 
     public function removeAll(Request $request)

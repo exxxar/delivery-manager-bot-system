@@ -132,13 +132,22 @@ class CustomerController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
 
-        $fileName = "export-customer-".Carbon::now()->format("Y-m-d H-i-s").".xlsx";
-        $data = Excel::raw(new \App\Exports\CustomersExport(), \Maatwebsite\Excel\Excel::XLSX);
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id,"Экспорт списка клиентов",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data,$fileName));
-        return response()->noContent();
+        $fileName = "export-customers-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
+
+        $report = app(\App\Services\ExportService::class)->saveReport(
+            $user,
+            "Экспорт списка клиентов",
+            $fileName,
+            new \App\Exports\CustomersExport(),
+            [],
+            'customers_list'
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 }

@@ -26,7 +26,8 @@ export async function makeAxiosFactory(
 
     const configStore = useConfigStore();
 
-    link =  "/" + configStore.apiPrefix + link
+    if (!link.includes(configStore.apiPrefix))
+        link = "/" + configStore.apiPrefix + link
 
     if (configStore.apiPrefix === "api") {
         axios.defaults.withXSRFToken = true;
@@ -38,7 +39,7 @@ export async function makeAxiosFactory(
                 ?.split('=')[1]
         )
 
-       // axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+        // axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
         axios.defaults.headers.common['X-XSRF-TOKEN'] = token
 
         config = {
@@ -53,7 +54,6 @@ export async function makeAxiosFactory(
 
     //console.log("check token", token)
     const alertStore = useAlertStore();
-
 
 
     try {

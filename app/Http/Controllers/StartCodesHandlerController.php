@@ -7,6 +7,7 @@ use App\Enums\RoleEnum;
 use App\Facades\BotManager;
 use App\Facades\BotMethods;
 use App\Facades\BusinessLogic;
+use App\Facades\UserLog;
 use App\Models\Bot;
 use App\Models\BotPage;
 use App\Models\BotUser;
@@ -53,9 +54,16 @@ class StartCodesHandlerController extends Controller
         $user->role = RoleEnum::AGENT->value;
         $user->save();
 
-        BotManager::bot()->reply("Вы успешно изменили роль пользователю:\n".$user->toTelegramText());
-        sleep(1);
-        BotManager::bot()->sendMessage($telegramChatId, "Вам выдали роль <b>Администратор</b>");
+        UserLog::log(
+            "Вы успешно изменили роль пользователю:\n".$user->toTelegramText()
+        );
+
+
+        UserLog::log(
+            "Вам выдали роль <b>Администратор</b>",
+            $user->id
+        );
+
 
     }
     public function roleInviteAction(...$data){
@@ -79,18 +87,17 @@ class StartCodesHandlerController extends Controller
 
         if ($botUser->role != RoleEnum::USER->value)
         {
-            BotManager::bot()
-                ->reply("У вас уже установлена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>. Ваша роль изменена не будет!");
+
+            UserLog::log("У вас уже установлена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>. Ваша роль изменена не будет!");
+
             return;
         }
         $botUser->role = $selectedRole ?? 0;
         $botUser->save();
 
-        BotManager::bot()->reply("Вам назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>");
-        sleep(1);
-        BotManager::bot()->sendMessage(
-            env("TELEGRAM_ADMIN_CHANNEL"),
-            "Пользователю назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>\n".$botUser->toTelegramText());
+        UserLog::log("Вам назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>");
+        UserLog::logSuper("Пользователю назначена роль <b>".$rolesTitles[$botUser->role ?? 0]."</b>\n".$botUser->toTelegramText());
+
     }
 
 

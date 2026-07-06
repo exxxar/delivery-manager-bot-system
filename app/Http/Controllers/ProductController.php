@@ -152,34 +152,47 @@ class ProductController extends Controller
      */
     public function export(Request $request)
     {
-
         $type = $request->get("type") ?? 0;
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new HttpException("Пользователь не авторизован", 403);
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
+
+        $exportService = app(\App\Services\ExportService::class);
 
         switch ($type) {
             default:
             case 0:
                 $title = "Сводная таблица продуктов";
-                $data = Excel::raw(new \App\Exports\ProductsExport(), \Maatwebsite\Excel\Excel::XLSX);
+                $exportClass = new \App\Exports\ProductsExport();
+                $reportType = 'products_summary';
                 break;
             case 1:
                 $title = "Таблица продуктов, разделенных по категориям";
-                $data = Excel::raw(new \App\Exports\ExportType5\ProductsByCategoryReport(), \Maatwebsite\Excel\Excel::XLSX);
+                $exportClass = new \App\Exports\ExportType5\ProductsByCategoryReport();
+                $reportType = 'products_by_category';
                 break;
             case 2:
                 $title = "Таблица продуктов, разделенных по поставщикам";
-                $data = Excel::raw(new \App\Exports\ExportType5\ProductsBySupplierReport(), \Maatwebsite\Excel\Excel::XLSX);
+                $exportClass = new \App\Exports\ExportType5\ProductsBySupplierReport();
+                $reportType = 'products_by_supplier';
                 break;
         }
 
-        $fileName = "export-products-" . Carbon::now()->format("Y-m-d H-i-s") . ".xlsx";
+        $fileName = "export-products-" . Carbon::now()->format("Y-m-d-H-i-s") . ".xlsx";
 
-        \App\Facades\BotMethods::bot()
-            ->sendDocument($user->telegram_chat_id, "$title",
-                \Telegram\Bot\FileUpload\InputFile::createFromContents($data, $fileName));
-        return response()->noContent();
+        $report = $exportService->saveReport(
+            $user,
+            $title,
+            $fileName,
+            $exportClass,
+            [],
+            $reportType
+        );
+
+        return response()->json([
+            'message' => 'Отчет успешно сформирован',
+            'report' => $report
+        ]);
     }
 }
