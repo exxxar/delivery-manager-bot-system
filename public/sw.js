@@ -1,6 +1,6 @@
 // sw.js
 
-const CACHE_NAME = 'myprocent-cache-v2';
+const CACHE_NAME = 'myprocent-cache-v3.1.1';
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE = `${CACHE_NAME}-dynamic`;
 const IMAGES_CACHE = `${CACHE_NAME}-images`;
