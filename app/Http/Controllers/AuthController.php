@@ -51,6 +51,7 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'fio_from_telegram' => $request->phone,
             'password' => Hash::make($request->password),
             'role' => 0, // USER по умолчанию
         ]);
