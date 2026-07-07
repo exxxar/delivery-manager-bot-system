@@ -310,7 +310,7 @@ class SaleController extends Controller
 
         UserLog::logSuper(
             "#создание_сделки\n{$saleInfo}{$userLink}" .
-            (!empty($sale->payment_document_name) ? "\nЧек к сделке №{$sale->id}\n{$fileLink}" : "")
+            (!empty($sale->payment_document_name) ? "<p>Чек к сделке №{$sale->id} <a href='{$fileLink}' target='_blank'>Ссылка на чек</a></p>" : "")
         );
 
         return response()->json($sale, 201);
@@ -342,7 +342,7 @@ class SaleController extends Controller
             $index = 1;
 
             foreach ($files as $filename) {
-                $fileLinks .= "<p class='mb-2'>" . env("APP_URL") . "/storage/app/uploads/$filename</p>";
+                $fileLinks .= "<p class='mb-2'><a href='" . env("APP_URL") . "/storage/app/uploads/$filename' target='_blank'>Ссылка на чек</a> </p>";
                 $index++;
             }
 
@@ -561,7 +561,7 @@ class SaleController extends Controller
                        continue; // если файл вдруг не найден — просто пропускаем
                    }*/
 
-                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
+                $fileLinks .= "<p><a href='" . env("APP_URL") . "/storage/app/uploads/$filename' target='_blank'>Ссылка на чек</a> </p>";
                 /*\App\Facades\BotMethods::bot()->sendDocument(
                     env("TELEGRAM_ADMIN_CHANNEL"),
                     "Чек $index/$total к сделке №" . ($sale->id ?? '-'),
@@ -638,7 +638,7 @@ class SaleController extends Controller
         $saleInfo = $sale->toTelegramText($receiptIsLost);
 
         UserLog::logSuper(
-            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
+            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') .  "<p>Чек к сделке №{$sale->id}<a href='{$fileLink}' target='_blank'>Ссылка на чек</a></p>" : "")
 
         );
 
@@ -757,7 +757,7 @@ class SaleController extends Controller
 
         UserLog::logSuper(
             "#обновление_данных_сделки\n{$saleInfo}{$telegramLink}" .
-            ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n{$fileLink}" : "")
+            ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') .  "<p>Чек к сделке №{$sale->id}<a href='{$fileLink}' target='_blank'>Ссылка на чек</a></p>" : "")
         );
 
         $sale->load(["product", "agent", "customer", "supplier", "creator", "category"]);
