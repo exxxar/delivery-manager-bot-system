@@ -257,7 +257,7 @@ return [
         |
         */
         'batch'       => [
-            'memory_limit' => '2048M', // было 1024M или меньше
+            'memory_limit' => 2000000000, // было 1024M или меньше
             'driver' => 'illuminate',
             'cache' => 'file', // кешировать на диск
         ],
