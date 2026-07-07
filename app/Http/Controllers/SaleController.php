@@ -184,10 +184,28 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
-
         $botUser = $request->botUser;
 
+        if (!$botUser) {
+            return response()->json(['message' => 'Пользователь не авторизован'], 401);
+        }
+
         $data = $request->all();
+
+        // 🔹 Валидация обязательных полей
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'total_price' => 'nullable|numeric|min:0',
+            'quantity' => 'nullable|numeric|min:0',
+            'payment_type' => 'nullable|in:0,1',
+            'sale_date' => 'nullable|date',
+            'actual_delivery_date' => 'nullable|date',
+            'agent_id' => 'nullable|exists:agents,id',
+            'customer_id' => 'nullable|exists:customers,id',
+        ]);
+
+        // 🔹 Обработка файла
         $fileLink = "";
         if ($request->hasFile('file')) {
             $file = $request->file('file');
@@ -195,97 +213,105 @@ class SaleController extends Controller
             $path = $file->storeAs('uploads', $filename);
 
             $fileLink = env("APP_URL") . "/storage/app/$path";
-
             $data["payment_document_name"] = $filename;
-            // $data["sale_date"] = is_null($date["sale_date"] ?? null) ? null : Carbon::parse($data["sale_date"]);
         }
 
-        $needAutomaticNaming = $data["need_automatic_naming"] == "true";
-        $isAlreadyDelivered = $data["is_already_delivered"] == "true";
-        $receiptIsLost = $data["receipt_is_lost"] == "true";
-        unset($data["need_automatic_naming"]);
-        unset($data["receipt_is_lost"]);
-        unset($data["is_already_delivered"]);
-        unset($data["file"]);
+        // 🔹 Надёжное преобразование булевых значений
+        $needAutomaticNaming = filter_var($data["need_automatic_naming"] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $isAlreadyDelivered = filter_var($data["is_already_delivered"] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $receiptIsLost = filter_var($data["receipt_is_lost"] ?? false, FILTER_VALIDATE_BOOLEAN);
 
+        unset($data["need_automatic_naming"], $data["receipt_is_lost"], $data["is_already_delivered"], $data["file"]);
+
+        // 🔹 Даты
         $data["due_date"] = Carbon::now("+3")->format('Y-m-d H:i:s');
-        if (!is_null($data["sale_date"] ?? null))
+        if (!empty($data["sale_date"])) {
             $data["sale_date"] = Carbon::parse($data["sale_date"])->format('Y-m-d H:i:s');
-        if (!is_null($data["actual_delivery_date"] ?? null))
+        }
+        if (!empty($data["actual_delivery_date"])) {
             $data["actual_delivery_date"] = Carbon::parse($data["actual_delivery_date"])->format('Y-m-d H:i:s');
+        }
 
         if ($isAlreadyDelivered) {
             $data["status"] = "completed";
         }
 
-        $product = Product::query()->where("id", $data["product_id"])->first();
+        // 🔹 🔥 ГЛАВНЫЙ ФИКС: безопасная загрузка продукта
+        $product = Product::find($data["product_id"]);
 
-        if ($data["quantity"] == 0)
-            $data["quantity"] = 1;
-
-        $data["product_category_id"] = $product->product_category_id ?? null;
-        $data["created_by_id"] = $botUser->id ?? null;
-
-        if ($botUser->role == RoleEnum::AGENT->value)
-            $data["agent_id"] = $botUser->agent->id ?? null;
-
-        if ($needAutomaticNaming) {
-            $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
-
-            $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
-            $data["description"] = "Товар " . ($product->name ?? 'товара')
-                . ", поставщик " . ($supplier->name ?? 'поставщика')
-                . ", тип оплаты " . ($data["payment_type"] == 0 ? "наличными" : "безналичный расчет")
-                . ", кол-во " . ($data["quantity"] ?? 0) . "ед."
-                . ", цена " . ($data["total_price"] ?? 0) . "руб. ";
+        if (!$product) {
+            return response()->json(['message' => 'Продукт не найден'], 422);
         }
 
-        if (is_null($data["total_price"] ?? null))
-            $data["total_price"] = 0;
+        $data["quantity"] = ($data["quantity"] ?? 0) == 0 ? 1 : $data["quantity"];
+        $data["product_category_id"] = $product->product_category_id;
+        $data["created_by_id"] = $botUser->id;
+        $data["total_price"] = $data["total_price"] ?? 0;
 
-        $sale = Sale::query()->create($data);
+        // 🔹 Назначение агента
+        if ($botUser->role == RoleEnum::AGENT->value) {
+            $data["agent_id"] = $data["agent_id"] ?? $botUser->agent?->id ?? null;
+        }
 
+        // 🔹 🔥 Автоматическое именование — с защитой от null
+        if ($needAutomaticNaming) {
+            $supplier = Supplier::find($data["supplier_id"]);
+
+            $productName = $product->name ?? 'товара';
+            $supplierName = $supplier?->name ?? 'поставщика';
+
+            $data["title"] = "Доставка {$productName} от {$supplierName}";
+            $data["description"] = "Товар {$productName}"
+                . ", поставщик {$supplierName}"
+                . ", тип оплаты " . (($data["payment_type"] ?? 0) == 0 ? "наличными" : "безналичный расчет")
+                . ", кол-во {$data["quantity"]}ед."
+                . ", цена {$data["total_price"]}руб. ";
+        }
+
+        $sale = Sale::create($data);
+
+        // 🔹 Если агент не назначен — пробуем назначить от ботюзера
         if (is_null($sale->agent_id)) {
-            $sale->agent_id = $botUser->agent->id ?? null;
+            $sale->agent_id = $botUser->agent?->id ?? null;
             $sale->save();
         }
 
         $saleInfo = $sale->toTelegramText($receiptIsLost);
-
         $userLink = $botUser->getUserTelegramLink();
 
-        if (!is_null($sale->agent_id ?? null)) {
+        // 🔹 🔥 Обработка агента и ментора — с защитой от null
+        if (!is_null($sale->agent_id)) {
             $agent = Agent::query()
                 ->with(["user", "mentor"])
-                ->where("id", $sale->agent_id)
-                ->first();
+                ->find($sale->agent_id);
 
-            if ($agent->in_learning) {
-                $mentorPercent = $agent->mentor->mentor_percent ?? 0;
-                $sale->mentor_award = ($sale->total_price ?? 0) * ($mentorPercent / 100);
-                $sale->save();
+            if ($agent) {
+                // 🔹 Начисление бонуса наставника
+                if ($agent->in_learning && $agent->mentor) {
+                    $mentorPercent = $agent->mentor->mentor_percent ?? 0;
+                    $sale->mentor_award = ($sale->total_price ?? 0) * ($mentorPercent / 100);
+                    $sale->save();
 
-                UserLog::log(
-                    "Вам начислен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
-                    $agent->mentor->id
-                );
+                    UserLog::log(
+                        "Вам начислен бонус наставника <b>{$sale->mentor_award}</b> руб. ({$mentorPercent}%) по сделке #{$sale->id} (на сумму <b>{$sale->total_price}</b> руб.) за {$agent->name}",
+                        $agent->mentor->id
+                    );
+                }
 
-
+                // 🔹 Уведомление агенту
+                if ($agent->user?->telegram_chat_id) {
+                    UserLog::log(
+                        "Вам назначена сделка:\n{$saleInfo}",
+                        $agent->user->id
+                    );
+                }
             }
-
-            if (!is_null($agent->user->telegram_chat_id ?? null)) {
-                UserLog::log(
-                    "Вам назначена сделка:\n$saleInfo",
-                    $agent->user->id
-                );
-            }
-
         }
 
         UserLog::logSuper(
-            "#создание_сделки\n$saleInfo" . $userLink . (!is_null($sale->payment_document_name ?? null) ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
+            "#создание_сделки\n{$saleInfo}{$userLink}" .
+            (!empty($sale->payment_document_name) ? "\nЧек к сделке №{$sale->id}\n{$fileLink}" : "")
         );
-
 
         return response()->json($sale, 201);
     }
@@ -316,24 +342,9 @@ class SaleController extends Controller
             $index = 1;
 
             foreach ($files as $filename) {
-
-                // $filePath = $basePath . $filename;
-
-                /*   if (!file_exists($filePath)) {
-                       continue;
-                   }*/
-
-                $fileLinks .= "\n" . env("APP_URL") . "/storage/app/uploads/$filename";
-
-                /*    \App\Facades\BotMethods::bot()->sendDocument(
-                        $user->telegram_chat_id,
-                        "Чек $index/$total к сделке №" . ($sale->id ?? '-'),
-                        InputFile::create($filePath, $filename)
-                    );*/
-
+                $fileLinks .= "<p class='mb-2'>" . env("APP_URL") . "/storage/app/uploads/$filename</p>";
                 $index++;
             }
-
 
             UserLog::log(
                 "Чек к сделке №" . ($sale->id ?? '-') . ($total > 0 ? $fileLinks : ""),
@@ -650,15 +661,17 @@ class SaleController extends Controller
     {
         $data = $request->all();
 
-        $needAutomaticNaming = $data["need_automatic_naming"] == "true";
+        $needAutomaticNaming = ($data["need_automatic_naming"] ?? false) == "true"
+            || ($data["need_automatic_naming"] ?? false) === true;
         unset($data["need_automatic_naming"]);
 
         $botUser = $request->botUser ?? null;
 
         $data["total_price"] = $data["total_price"] ?? 0;
 
-        if (($data["quantity"] ?? 0) == 0)
+        if (($data["quantity"] ?? 0) == 0) {
             $data["quantity"] = 1;
+        }
 
         $hasFile = false;
         $fileLink = "";
@@ -673,79 +686,79 @@ class SaleController extends Controller
             $fileLink = env("APP_URL") . "/storage/app/$path";
         }
 
-
         $sale = Sale::findOrFail($id);
 
+        // 🔹 Автоматическое именование — с защитой от null
         if ($needAutomaticNaming) {
-            $supplier = Supplier::query()->where("id", $data["supplier_id"])->first();
-            $product = Product::query()->where("id", $sale->product_id)->first();
+            $supplier = !empty($data["supplier_id"])
+                ? Supplier::find($data["supplier_id"])
+                : null;
+            $product = !empty($sale->product_id)
+                ? Product::find($sale->product_id)
+                : null;
 
-            $data["title"] = "Доставка " . ($product->name ?? 'товара') . " от " . ($supplier->name ?? 'поставщика');
-            $data["description"] = "Товар " . ($product->name ?? 'товара')
-                . ", поставщик " . ($supplier->name ?? 'поставщика')
-                . ", тип оплаты " . ($data["payment_type"] == 0 ? "наличными" : "безналичный расчет")
+            $productName = $product?->name ?? 'товара';
+            $supplierName = $supplier?->name ?? 'поставщика';
+
+            $data["title"] = "Доставка {$productName} от {$supplierName}";
+            $data["description"] = "Товар {$productName}"
+                . ", поставщик {$supplierName}"
+                . ", тип оплаты " . (($data["payment_type"] ?? 0) == 0 ? "наличными" : "безналичный расчет")
                 . ", кол-во " . $data["quantity"] . "ед."
                 . ", цена " . $data["total_price"] . "руб. ";
         }
 
-
         $data["due_date"] = Carbon::parse($data["due_date"] ?? $sale->due_date ?? Carbon::now());
         $data["mentor_award"] = 0;
-        $data["payment_type"] = isset($data["payment_type"]) ? ($data["payment_type"] ?? 0) : $sale->payment_type;
-
+        $data["payment_type"] = $data["payment_type"] ?? $sale->payment_type ?? 0;
 
         $priceIsChange = $sale->total_price != $data["total_price"];
 
+        // 🔹 🔥 ГЛАВНЫЙ ФИКС: защита от null при поиске продукта
+        $productId = $data["product_id"] ?? $sale->product_id ?? null;
+        $product = $productId ? Product::find($productId) : null;
 
-        $product = Product::query()->where("id", $data["product_id"] ?? $sale->product_id ?? null)->first();
-
-        if ($product->id != $sale->product_id) {
+        // 🔹 Используем null-safe оператор
+        if ($product && $product->id != $sale->product_id) {
             $data["product_category_id"] = $product->product_category_id ?? null;
         }
 
-        if (is_null($sale->agent_id)) {
-            $sale->agent_id = $botUser->agent->id ?? null;
+        // 🔹 Защита: если у ботюзера нет агента
+        if (is_null($sale->agent_id) && $botUser) {
+            $sale->agent_id = $botUser->agent?->id ?? null;
         }
 
         $sale->update($data);
 
-        if (!is_null($sale->agent_id ?? null)) {
+        // 🔹 Защита: проверка всех связей перед использованием
+        if (!is_null($sale->agent_id)) {
             $agent = Agent::query()
                 ->with(["user", "mentor"])
                 ->where("id", $sale->agent_id)
                 ->first();
 
-            if ($agent->in_learning) {
+            if ($agent && $agent->in_learning && $agent->mentor) {
                 $mentorPercent = $agent->mentor->mentor_percent ?? 0;
                 $sale->mentor_award = ($sale->total_price ?? 0) * ($mentorPercent / 100);
                 $sale->save();
 
                 if ($priceIsChange) {
                     UserLog::log(
-                        "Вам изменен бонус наставника <b> $sale->mentor_award </b> руб. ($mentorPercent %) по сделке #$sale->id (на сумму <b>$sale->total_price </b> руб.) за $agent->name",
+                        "Вам изменен бонус наставника <b>{$sale->mentor_award}</b> руб. ({$mentorPercent}%) по сделке #{$sale->id} (на сумму <b>{$sale->total_price}</b> руб.) за {$agent->name}",
                         $agent->mentor->id
                     );
                 }
             }
         }
 
+        // 🔹 Защита: botUser может быть null
+        $telegramLink = $botUser ? $botUser->getUserTelegramLink() : '';
         $saleInfo = $sale->toTelegramText();
 
         UserLog::logSuper(
-            "#обновление_данных_сделки\n$saleInfo" . $botUser->getUserTelegramLink() . ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n$fileLink" : "")
-
+            "#обновление_данных_сделки\n{$saleInfo}{$telegramLink}" .
+            ($hasFile ? "\nЧек к сделке №" . ($sale->id ?? '-') . "\n{$fileLink}" : "")
         );
-
-        /* if ($hasFile) {
-             $slash = env("APP_DEBUG") ? "\\" : "/";
-             \App\Facades\BotMethods::bot()->sendDocument(
-                 env("TELEGRAM_ADMIN_CHANNEL"),
-                 "Чек к сделке №" . ($sale->id ?? '-'),
-                 InputFile::create(storage_path("app" . $slash . "uploads" . $slash) . $sale->payment_document_name,
-                     $sale->payment_document_name
-                 )
-             );
-         }*/
 
         $sale->load(["product", "agent", "customer", "supplier", "creator", "category"]);
         return response()->json($sale);

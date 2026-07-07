@@ -26,6 +26,7 @@ class GenerateReport extends Command
         ini_set('memory_limit', '3000M');
         ini_set('max_execution_time', 3000);
 
+
         $startDate = Carbon::now("+3")->startOfMonth();
         $endDate = Carbon::now("+3")->endOfMonth();
         $yearStart = Carbon::now("+3")->startOfYear();

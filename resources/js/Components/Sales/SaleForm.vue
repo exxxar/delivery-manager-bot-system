@@ -188,13 +188,14 @@ const today = new Date().toISOString().split('T')[0]
 -->
 
 
-            <div class="form-floating mb-2">
-                <input
-                    required
-                    v-model="form.actual_delivery_date" type="date"
-                    class="form-control" id="actual_delivery_date">
-                <label for="actual_delivery_date">Фактическая дата доставки</label>
-            </div>
+            <CustomDatePicker
+                v-model="form.actual_delivery_date"
+                input-id="actual_delivery_date"
+                label="Фактическая дата доставки"
+                placeholder="Выберите дату"
+                :required="true"
+                class="mb-2"
+            />
 <!--
             <div
                 class="form-check form-switch mb-2">
@@ -318,10 +319,11 @@ import {useUsersStore} from "@/stores/users";
 import {useSalesStore} from "@/stores/sales";
 import {startTimer, checkTimer, getSpentTimeCounter} from "@/utilites/commonMethods.js";
 import {useAlertStore} from "@/stores/utillites/useAlertStore";
+import CustomDatePicker from '@/Components/UI/CustomDatePicker.vue'
 
 export default {
     name: 'SaleForm',
-    components: {AgentList, CustomerList, SupplierListGroup, ProductList},
+    components: {AgentList, CustomerList, SupplierListGroup, ProductList, CustomDatePicker},
     props: {
         initialData: {
             type: Object,
