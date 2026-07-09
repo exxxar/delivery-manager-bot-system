@@ -37,7 +37,41 @@ export const useSalesStore = defineStore('sales', {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+        // 🔹 НОВЫЙ: загрузка данных за месяц с группировкой
+        async fetchMonthData(month: string, page = 1, daysPerPage = 7) {
+            this.loading = true
+            this.error = null
+            try {
+                const params = new URLSearchParams()
+                params.append('month', month)
+                params.append('page', String(page))
+                params.append('days_per_page', String(daysPerPage))
 
+                // Применяем фильтры
+                if (this.filters) {
+                    Object.entries(this.filters).forEach(([key, value]) => {
+                        if (value !== null && value !== undefined && value !== '') {
+                            params.append(key, String(value))
+                        }
+                    })
+                }
+
+                const { data } = await makeAxiosFactory(`/sales?${params.toString()}`, 'GET')
+
+                this.groupedMonth = data
+                this.pagination = data.pagination
+
+                // Для обратной совместимости - заполняем items всеми сделками из дней
+                this.items = data.days.flatMap((day: DayGroup) => day.items)
+
+                return data
+            } catch (e: any) {
+                this.error = e?.message || 'Не удалось загрузить данные'
+                throw e
+            } finally {
+                this.loading = false
+            }
+        },
         async fetchNotVerified(payload = {size:50, page: 1, date_from: null, date_to: null, agent_id:null}) {
             this.loading = true
             this.error = null

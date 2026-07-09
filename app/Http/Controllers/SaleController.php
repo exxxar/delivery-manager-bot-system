@@ -26,12 +26,85 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-
-
-        $sales = Sale::query()
+        $query = Sale::query()
             ->filter($request)
-            ->sort($request)
-            ->paginate($request->get('per_page', $request->size ?? 10));
+            ->sort($request);
+
+        // 🔹 Если запрошена группировка по месяцу
+        if ($request->filled('month')) {
+            $month = $request->month; // формат: "2026-07"
+
+            // Парсим месяц
+            try {
+                $monthDate = \Carbon\Carbon::parse($month . '-01');
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Неверный формат месяца'], 422);
+            }
+
+            // Фильтруем по месяцу (фактическая дата доставки или дата встречи)
+            $query->where(function($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ])->orWhere(function($q2) use ($monthDate) {
+                    $q2->whereNull('actual_delivery_date')
+                        ->whereBetween('due_date', [
+                            $monthDate->startOfMonth()->toDateString(),
+                            $monthDate->endOfMonth()->toDateString()
+                        ]);
+                });
+            });
+
+            $sales = $query->get();
+
+            // Группируем по дням
+            $byDays = $sales->groupBy(function ($sale) {
+                $date = $sale->actual_delivery_date
+                    ?? $sale->due_date
+                    ?? $sale->created_at;
+                return \Carbon\Carbon::parse($date)->format('Y-m-d');
+            })->map(function ($dayItems, $dayKey) {
+                return [
+                    'date' => $dayKey,
+                    'label' => \Carbon\Carbon::parse($dayKey)->translatedFormat('D, d M'),
+                    'weekday' => \Carbon\Carbon::parse($dayKey)->dayName,
+                    'count' => $dayItems->count(),
+                    'total' => round($dayItems->sum('total_price'), 2),
+                    'items' => $dayItems->values(),
+                ];
+            })->sortByDesc('date')->values();
+
+            // Пагинация по дням
+            $daysPerPage = $request->get('days_per_page', 7); // по умолчанию 7 дней на страницу
+            $currentPage = $request->get('page', 1);
+            $totalDays = $byDays->count();
+            $totalPages = ceil($totalDays / $daysPerPage);
+
+            $paginatedDays = $byDays->forPage($currentPage, $daysPerPage)->values();
+
+            return response()->json([
+                'grouped' => true,
+                'month' => $month,
+                'month_label' => $monthDate->translatedFormat('F Y'),
+                'days' => $paginatedDays,
+                'pagination' => [
+                    'current_page' => $currentPage,
+                    'per_page' => $daysPerPage,
+                    'total' => $totalDays,
+                    'last_page' => $totalPages,
+                    'from' => ($currentPage - 1) * $daysPerPage + 1,
+                    'to' => min($currentPage * $daysPerPage, $totalDays),
+                ],
+                'month_stats' => [
+                    'total_sales' => $sales->count(),
+                    'total_sum' => round($sales->sum('total_price'), 2),
+                    'avg_sum' => $sales->count() > 0 ? round($sales->avg('total_price'), 2) : 0,
+                ],
+            ]);
+        }
+
+        // 🔹 Обычная пагинация (если месяц не указан)
+        $sales = $query->paginate($request->get('per_page', $request->size ?? 10));
 
         return response()->json($sales);
     }

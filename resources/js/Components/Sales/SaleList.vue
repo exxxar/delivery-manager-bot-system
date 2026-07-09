@@ -13,9 +13,31 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
     <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
 
 
-
     <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
-    <div class="d-flex justify-content-between my-2" >
+
+
+    <!-- 🔹 Переключатель вида -->
+    <div class="btn-group btn-group-sm mb-3" role="group">
+        <button
+            type="button"
+            class="btn btn-outline-primary"
+            :class="{ active: viewMode === 'list' }"
+            @click="viewMode = 'list'"
+        >
+            <i class="fa-solid fa-list me-1"></i> Список
+        </button>
+        <button
+            type="button"
+            class="btn btn-outline-primary"
+            :class="{ active: viewMode === 'timeline' }"
+            @click="viewMode = 'timeline'"
+        >
+            <i class="fa-solid fa-timeline me-1"></i> По месяцам
+        </button>
+    </div>
+
+
+    <div class="d-flex justify-content-between my-2">
         <div>
             <a href="javascript:void(0)"
                @click="selectAll"
@@ -31,8 +53,9 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 
         <span
             class="fw-bold small "
-            v-if="salesStore.pagination">Всего {{salesStore.pagination.total}} ед.</span>
+            v-if="salesStore.pagination">Всего {{ salesStore.pagination.total }} ед.</span>
     </div>
+
 
     <template v-if="filteredBadSales.length>0">
         <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i>
@@ -83,7 +106,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                 </li>
                                 <li><a class="dropdown-item text-success"
                                        href="javascript:void(0)"
-                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a></li>
+                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a>
+                                </li>
                             </template>
 
                             <li>
@@ -102,86 +126,105 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
         <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Все заявки</h6>
     </template>
 
-    <div class="container-fluid px-0">
-        <div class="row g-2">
 
-            <div
-                v-for="sale in filteredSales"
-                :key="sale.id"
-                class="col-12 col-md-6 col-xxl-4"
-            >
+    <!-- 🔹 РЕЖИМ: СПИСОК (старый) -->
+    <template v-if="viewMode === 'list'">
+        <div class="container-fluid px-0">
+            <div class="row g-2">
 
                 <div
-                    class="card shadow-sm h-100 sale-card position-relative"
+                    v-for="sale in filteredSales"
+                    :key="sale.id"
+                    class="col-12 col-md-6 col-xxl-4"
+                >
 
-                    :class="{
+                    <div
+                        class="card shadow-sm h-100 sale-card position-relative"
+
+                        :class="{
                     'border-primary border-3': selection.indexOf(sale.id)!==-1,
                     'bg-danger-subtle':
                         sale.status === 'completed' &&
                         (!sale.actual_delivery_date)
                 }"
-                >
+                    >
 
-                    <!-- Dropdown -->
-                    <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
+                        <!-- Dropdown -->
+                        <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
 
-                        <button
-                            class="btn btn-sm btn-light border"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                        >
-                            <i class="fas fa-bars text-primary"></i>
-                        </button>
+                            <button
+                                class="btn btn-sm btn-light border"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                            >
+                                <i class="fas fa-bars text-primary"></i>
+                            </button>
 
-                        <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end">
 
-                            <template v-if="forSelect">
+                                <template v-if="forSelect">
 
-                                <li>
-                                    <a
-                                        class="dropdown-item"
-                                        href="#"
-                                        @click.prevent="$emit('select', sale)"
-                                    >
-                                        Выбрать
-                                    </a>
-                                </li>
+                                    <li>
+                                        <a
+                                            class="dropdown-item"
+                                            href="#"
+                                            @click.prevent="$emit('select', sale)"
+                                        >
+                                            Выбрать
+                                        </a>
+                                    </li>
 
-                            </template>
+                                </template>
 
-                            <template v-if="!forSelect">
+                                <template v-if="!forSelect">
 
-                                <li>
-                                    <a
-                                        class="dropdown-item"
-                                        href="javascript:void(0)"
-                                        @click.prevent="openView(sale)"
-                                    >
-                                        Просмотреть
-                                    </a>
-                                </li>
+                                    <li>
+                                        <a
+                                            class="dropdown-item"
+                                            href="javascript:void(0)"
+                                            @click.prevent="openView(sale)"
+                                        >
+                                            Просмотреть
+                                        </a>
+                                    </li>
 
-                                <li>
-                                    <a
-                                        class="dropdown-item"
-                                        href="javascript:void(0)"
-                                        @click.prevent="openEdit(sale)"
-                                    >
-                                        Редактировать
-                                    </a>
-                                </li>
+                                    <li>
+                                        <a
+                                            class="dropdown-item"
+                                            href="javascript:void(0)"
+                                            @click.prevent="openEdit(sale)"
+                                        >
+                                            Редактировать
+                                        </a>
+                                    </li>
 
-                                <li v-if="sale.status !== 'completed'">
-                                    <a
-                                        class="dropdown-item text-success"
-                                        href="javascript:void(0)"
-                                        @click.prevent="openConfirmDeal(sale)"
-                                    >
-                                        Подтвердить оплату и доставку
-                                    </a>
-                                </li>
+                                    <li v-if="sale.status !== 'completed'">
+                                        <a
+                                            class="dropdown-item text-success"
+                                            href="javascript:void(0)"
+                                            @click.prevent="openConfirmDeal(sale)"
+                                        >
+                                            Подтвердить оплату и доставку
+                                        </a>
+                                    </li>
 
-                                <template v-if="sale.payment_document_name">
+                                    <template v-if="sale.payment_document_name">
+
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+
+                                        <li>
+                                            <a
+                                                class="dropdown-item text-success"
+                                                href="javascript:void(0)"
+                                                @click.prevent="sendPaymentDocumentToTg(sale.id)"
+                                            >
+                                                Отправить документ в чат
+                                            </a>
+                                        </li>
+
+                                    </template>
 
                                     <li>
                                         <hr class="dropdown-divider">
@@ -189,75 +232,266 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 
                                     <li>
                                         <a
-                                            class="dropdown-item text-success"
+                                            class="dropdown-item text-danger"
                                             href="javascript:void(0)"
-                                            @click.prevent="sendPaymentDocumentToTg(sale.id)"
+                                            @click.prevent="confirmDelete(sale)"
                                         >
-                                            Отправить документ в чат
+                                            Удалить
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a
+                                            class="dropdown-item text-danger"
+                                            href="javascript:void(0)"
+                                            @click.prevent="confirmCancelDeal(sale)"
+                                        >
+                                            Отменить сделку
                                         </a>
                                     </li>
 
                                 </template>
 
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
+                            </ul>
+                        </div>
 
-                                <li>
-                                    <a
-                                        class="dropdown-item text-danger"
-                                        href="javascript:void(0)"
-                                        @click.prevent="confirmDelete(sale)"
-                                    >
-                                        Удалить
-                                    </a>
-                                </li>
+                        <!-- Контент карточки -->
+                        <div class="card-body">
 
-                                <li>
-                                    <a
-                                        class="dropdown-item text-danger"
-                                        href="javascript:void(0)"
-                                        @click.prevent="confirmCancelDeal(sale)"
-                                    >
-                                        Отменить сделку
-                                    </a>
-                                </li>
+                            <SaleCard
+                                :sale="sale"
+                                :field_visible="field_visible"
+                                :saleStatuses="saleStatuses"
+                                @toggle-selection="toggleSelection"
+                            />
 
-                            </template>
-
-                        </ul>
-                    </div>
-
-                    <!-- Контент карточки -->
-                    <div class="card-body">
-
-                        <SaleCard
-                            :sale="sale"
-                            :field_visible="field_visible"
-                            :saleStatuses="saleStatuses"
-                            @toggle-selection="toggleSelection"
-                        />
+                        </div>
 
                     </div>
+                </div>
 
+            </div>
+        </div>
+
+        <Pagination
+            v-if="salesStore.items.length > 0"
+            :pagination="salesStore.pagination"
+            @page-changed="fetchDataByUrl"
+        />
+
+
+        <!-- Сообщение если список пуст -->
+        <div v-if="salesStore.items.length === 0" class="alert alert-info mt-3">
+            На текущий момент у вас нет продаж.
+        </div>
+
+    </template>
+
+    <!-- 🔹 РЕЖИМ: ТАЙМЛАЙН (новый) -->
+    <template v-else>
+        <!-- Селектор месяца -->
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+                <div class="form-floating">
+                    <select
+                        class="form-select"
+                        v-model="selectedMonth"
+                        @change="changeMonth"
+                        id="monthSelect"
+                    >
+                        <option v-for="m in getMonthList()" :key="m.key" :value="m.key">
+                            {{ m.label }}
+                        </option>
+                    </select>
+                    <label for="monthSelect">
+                        <i class="fa-solid fa-calendar-days me-1"></i>
+                        Месяц
+                    </label>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-floating">
+                    <select
+                        class="form-select"
+                        v-model="daysPerPage"
+                        @change="loadMonthData(1)"
+                        id="daysPerPageSelect"
+                    >
+                        <option :value="5">5 дней</option>
+                        <option :value="7">7 дней</option>
+                        <option :value="10">10 дней</option>
+                        <option :value="15">15 дней</option>
+                        <option :value="30">Весь месяц</option>
+                    </select>
+                    <label for="daysPerPageSelect">
+                        <i class="fa-solid fa-calendar-week me-1"></i>
+                        Дней на странице
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика месяца -->
+        <div v-if="salesStore.groupedMonth" class="alert alert-info mb-3">
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="small text-muted">Всего сделок</div>
+                    <div class="fw-bold fs-5">{{ salesStore.groupedMonth.month_stats.total_sales }}</div>
+                </div>
+                <div class="col-4">
+                    <div class="small text-muted">Общая сумма</div>
+                    <div class="fw-bold fs-5 text-success">{{ formatMoney(salesStore.groupedMonth.month_stats.total_sum) }}</div>
+                </div>
+                <div class="col-4">
+                    <div class="small text-muted">Средний чек</div>
+                    <div class="fw-bold fs-5">{{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Загрузка -->
+        <div v-if="salesStore.loading" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+
+        <!-- Дни -->
+        <div v-else-if="salesStore.groupedMonth && salesStore.groupedMonth.days.length > 0">
+            <div v-for="day in salesStore.groupedMonth.days" :key="day.date" class="day-group mb-4">
+
+                <!-- Заголовок дня -->
+                <div class="day-header d-flex justify-content-between align-items-center mb-2 px-3 py-2 bg-light rounded border-start border-primary border-3">
+                    <div>
+                        <i class="fa-regular fa-calendar me-2 text-primary"></i>
+                        <strong>{{ day.date }}</strong>
+                        <span class="text-muted small ms-2">
+            {{ day.count }} сделок
+        </span>
+                    </div>
+                    <div class="fw-bold text-success">
+                        {{ formatMoney(day.total) }}
+                    </div>
+                </div>
+
+                <!-- Карточки сделок -->
+                <div class="container-fluid px-0">
+                    <div class="row g-2">
+                        <div
+                            v-for="sale in day.items"
+                            :key="sale.id"
+                            class="col-12 col-md-6 col-xxl-4"
+                        >
+                            <div
+                                class="card shadow-sm h-100 sale-card position-relative"
+                                :class="{
+                                'border-primary border-3': selection.indexOf(sale.id) !== -1,
+                                'bg-danger-subtle': sale.status === 'completed' && !sale.actual_delivery_date
+                            }"
+                            >
+                                <!-- Dropdown -->
+                                <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
+                                    <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-bars text-primary"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <template v-if="forSelect">
+                                            <li>
+                                                <a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">
+                                                    Выбрать
+                                                </a>
+                                            </li>
+                                        </template>
+                                        <template v-else>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">
+                                                    Просмотреть
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">
+                                                    Редактировать
+                                                </a>
+                                            </li>
+                                            <li v-if="sale.status !== 'completed'">
+                                                <a class="dropdown-item text-success" href="javascript:void(0)" @click.prevent="openConfirmDeal(sale)">
+                                                    Подтвердить оплату и доставку
+                                                </a>
+                                            </li>
+                                            <template v-if="sale.payment_document_name">
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-success" href="javascript:void(0)" @click.prevent="sendPaymentDocumentToTg(sale.id)">
+                                                        Отправить документ в чат
+                                                    </a>
+                                                </li>
+                                            </template>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmDelete(sale)">
+                                                    Удалить
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmCancelDeal(sale)">
+                                                    Отменить сделку
+                                                </a>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+
+                                <div class="card-body">
+                                    <SaleCard
+                                        :sale="sale"
+                                        :field_visible="field_visible"
+                                        :saleStatuses="saleStatuses"
+                                        @toggle-selection="toggleSelection"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Пагинация по дням -->
+            <div v-if="salesStore.pagination.last_page > 1" class="mt-4">
+                <nav aria-label="Пагинация по дням">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" :class="{ disabled: salesStore.pagination.current_page === 1 }">
+                            <a class="page-link" href="javascript:void(0)" @click="changePage(salesStore.pagination.current_page - 1)">
+                                &laquo;
+                            </a>
+                        </li>
+                        <li
+                            v-for="page in salesStore.pagination.last_page"
+                            :key="page"
+                            class="page-item"
+                            :class="{ active: page === salesStore.pagination.current_page }"
+                        >
+                            <a class="page-link" href="javascript:void(0)" @click="changePage(page)">
+                                {{ page }}
+                            </a>
+                        </li>
+                        <li class="page-item" :class="{ disabled: salesStore.pagination.current_page === salesStore.pagination.last_page }">
+                            <a class="page-link" href="javascript:void(0)" @click="changePage(salesStore.pagination.current_page + 1)">
+                                &raquo;
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="text-center text-muted small">
+                    Показаны дни {{ salesStore.pagination.from }}-{{ salesStore.pagination.to }} из {{ salesStore.pagination.total }}
+                </div>
+            </div>
         </div>
-    </div>
 
-    <Pagination
-        v-if="salesStore.items.length > 0"
-        :pagination="salesStore.pagination"
-        @page-changed="fetchDataByUrl"
-    />
-
-
-    <!-- Сообщение если список пуст -->
-    <div v-if="salesStore.items.length === 0" class="alert alert-info mt-3">
-        На текущий момент у вас нет продаж.
-    </div>
-
+        <!-- Пусто -->
+        <div v-else class="alert alert-info mt-3">
+            За выбранный месяц сделок не найдено.
+        </div>
+    </template>
 
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSaleModal" tabindex="-1">
@@ -300,7 +534,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 <div class="modal-body">
                     <DealForm
                         v-if="selectedSale"
-                        v-model="dealForm" @callback="confirmDeal" />
+                        v-model="dealForm" @callback="confirmDeal"/>
                 </div>
             </div>
         </div>
@@ -323,6 +557,10 @@ export default {
     props: ["forSelect", "adminId", "agentId", "productId", "customerId", "supplierId"],
     data() {
         return {
+            viewMode: 'timeline', // 'list' или 'timeline'
+            selectedMonth: this.getCurrentMonth(), // текущий месяц
+            daysPerPage: 7,
+
             selection: [],
             field_visible: null,
             sales: [],
@@ -345,7 +583,7 @@ export default {
                 actual_delivery_date: null,
                 quantity: 0,
                 total_price: 0,
-                files: [] ,
+                files: [],
                 additional_comment: null,
                 payment_document_name: null,
                 payment_type: '0',
@@ -362,7 +600,7 @@ export default {
         filteredSales() {
             return this.salesStore.items.filter(s => s.title.toLowerCase().includes(this.search.toLowerCase()))
         },
-        filteredBadSales(){
+        filteredBadSales() {
             return this.salesStore.bad_items ?? []
         }
     },
@@ -374,10 +612,62 @@ export default {
             supplier_id: this.supplierId || null,
         })
 
-        this.salesStore.fetchFiltered()
-        this.salesStore.fetchBadData()
+        // Загружаем данные в зависимости от режима
+        if (this.viewMode === 'timeline') {
+            this.loadMonthData()
+        } else {
+            this.salesStore.fetchFiltered()
+            this.salesStore.fetchBadData()
+        }
     },
     methods: {
+
+        getCurrentMonth() {
+            const now = new Date()
+            const year = now.getFullYear()
+            const month = String(now.getMonth() + 1).padStart(2, '0')
+            return `${year}-${month}`
+        },
+
+        getMonthList() {
+            const months = []
+            const now = new Date()
+
+            // Генерируем список месяцев за последний год
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                const year = date.getFullYear()
+                const month = String(date.getMonth() + 1).padStart(2, '0')
+                const key = `${year}-${month}`
+                const label = date.toLocaleDateString('ru-RU', {month: 'long', year: 'numeric'})
+
+                months.push({key, label})
+            }
+
+            return months
+        },
+
+        async loadMonthData(page = 1) {
+            await this.salesStore.fetchMonthData(
+                this.selectedMonth,
+                page,
+                this.daysPerPage
+            )
+        },
+
+        async changeMonth() {
+            await this.loadMonthData(1)
+        },
+
+        async changePage(page) {
+            await this.loadMonthData(page)
+        },
+
+        formatMoney(value) {
+            return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
+        },
+
+
         async sendPaymentDocumentToTg(id) {
             await this.salesStore.sendPaymentDocumentToTg(id).then(() => {
                 this.alertStore.show("Чек отправлен вам в телеграм бот!");
@@ -490,7 +780,7 @@ export default {
                 this.selectedSale = sale
                 this.dealForm.quantity = sale.quantity
                 this.dealForm.id = sale.id
-                this.dealForm.payment_type = ''+sale.payment_type
+                this.dealForm.payment_type = '' + sale.payment_type
                 this.dealForm.total_price = sale.total_price
                 this.dealForm.payment_document_name = sale.payment_document_name
                 new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
@@ -498,15 +788,15 @@ export default {
 
 
         },
-       /* async confirmPayment() {
-            this.paymentConfirmForm.id = this.selectedSale.id
-            await this.salesStore.confirmPayment(this.paymentConfirmForm)
-            bootstrap.Modal.getInstance(document.getElementById('paymentConfirmForm')).hide()
+        /* async confirmPayment() {
+             this.paymentConfirmForm.id = this.selectedSale.id
+             await this.salesStore.confirmPayment(this.paymentConfirmForm)
+             bootstrap.Modal.getInstance(document.getElementById('paymentConfirmForm')).hide()
 
-        },*/
+         },*/
         async confirmDeal() {
             this.dealForm.id = this.selectedSale.id
-            await this.salesStore.confirmDealAndPayment(this.dealForm).then(()=>{
+            await this.salesStore.confirmDealAndPayment(this.dealForm).then(() => {
                 this.dealForm.files = []
                 this.dealForm.actual_delivery_date = ''
                 this.dealForm.quantity = 1
@@ -548,5 +838,21 @@ p {
     overflow-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
+}
+
+.day-header {
+    transition: all 0.2s ease;
+}
+
+.day-header:hover {
+    background-color: #e9ecef;
+}
+
+.sale-card {
+    transition: transform 0.2s ease;
+}
+
+.sale-card:hover {
+    transform: translateY(-2px);
 }
 </style>
