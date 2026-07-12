@@ -23,6 +23,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
     <ul class="nav nav-pills nav-fill mb-3">
         <li class="nav-item">
             <button
+                type="button"
                 class="nav-link"
                 :class="{ active: viewMode === 'all' }"
                 @click="switchMode('all')"
@@ -33,6 +34,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         </li>
         <li class="nav-item">
             <button
+                type="button"
                 class="nav-link"
                 :class="{ active: viewMode === 'active' }"
                 @click="switchMode('active')"
@@ -43,6 +45,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         </li>
         <li class="nav-item">
             <button
+                type="button"
                 class="nav-link"
                 :class="{ active: viewMode === 'inactive' }"
                 @click="switchMode('inactive')"
