@@ -362,6 +362,7 @@ export default {
                 this.userStore.fetchSelf()
             })
         },
+
         removeAll() {
             this.modalStore.open(
                 `Вы уверены, что хотите удалить все выбранные элементы?`,

@@ -34,6 +34,9 @@ export const useSuppliersStore = defineStore('suppliers', {
         async fetchActive(month: string, page = 1, size = 30) {
             this.loading = true
             this.error = null
+            this.currentMode = 'active'
+            this.currentMonth = month
+
             try {
                 const params = new URLSearchParams()
                 params.append('month', month)
@@ -42,7 +45,18 @@ export const useSuppliersStore = defineStore('suppliers', {
 
                 const { data } = await makeAxiosFactory(`${path}/active?${params.toString()}`, 'GET')
                 this.items = data.data
-                this.pagination = data.pagination
+                this.pagination = {
+                    current_page: data.current_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    last_page: data.last_page,
+                    from: data.from,
+                    to: data.to,
+                    prev_page_url: data.prev_page_url,
+                    next_page_url: data.next_page_url,
+                    first_page_url: data.first_page_url,
+                    last_page_url: data.last_page_url,
+                }
                 this.stats = data.stats
             } catch (e: any) {
                 this.error = e?.message || 'Не удалось загрузить активных поставщиков'
@@ -55,6 +69,9 @@ export const useSuppliersStore = defineStore('suppliers', {
         async fetchInactive(month: string, page = 1, size = 30) {
             this.loading = true
             this.error = null
+            this.currentMode = 'inactive'
+            this.currentMonth = month
+
             try {
                 const params = new URLSearchParams()
                 params.append('month', month)
@@ -63,10 +80,53 @@ export const useSuppliersStore = defineStore('suppliers', {
 
                 const { data } = await makeAxiosFactory(`${path}/inactive?${params.toString()}`, 'GET')
                 this.items = data.data
-                this.pagination = data.pagination
+                this.pagination = {
+                    current_page: data.current_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    last_page: data.last_page,
+                    from: data.from,
+                    to: data.to,
+                    prev_page_url: data.prev_page_url,
+                    next_page_url: data.next_page_url,
+                    first_page_url: data.first_page_url,
+                    last_page_url: data.last_page_url,
+                }
                 this.stats = data.stats
             } catch (e: any) {
                 this.error = e?.message || 'Не удалось загрузить неактивных поставщиков'
+            } finally {
+                this.loading = false
+            }
+        },
+
+        // 🔹 НОВЫЙ: пагинация по URL для активных/неактивных
+        async fetchByUrl(url: string) {
+            this.loading = true
+            this.error = null
+
+            try {
+                const { data } = await makeAxiosFactory(url, 'GET')
+                this.items = data.data
+                this.pagination = {
+                    current_page: data.current_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    last_page: data.last_page,
+                    from: data.from,
+                    to: data.to,
+                    prev_page_url: data.prev_page_url,
+                    next_page_url: data.next_page_url,
+                    first_page_url: data.first_page_url,
+                    last_page_url: data.last_page_url,
+                }
+
+                // Если есть статистика (для активных/неактивных)
+                if (data.stats) {
+                    this.stats = data.stats
+                }
+            } catch (e: any) {
+                this.error = e?.message || 'Не удалось загрузить данные'
             } finally {
                 this.loading = false
             }
@@ -123,11 +183,7 @@ export const useSuppliersStore = defineStore('suppliers', {
             this.pagination = data
         },
         // @ts-ignore
-        async fetchByUrl(url: string) {
-            const { data } = await makeAxiosFactory(url, 'GET')
-            this.items = data.data
-            this.pagination = data
-        },
+
         async fetchOne(id: number) {
             try {
                 const { data } = await makeAxiosFactory(`${path}/${id}`, 'GET')

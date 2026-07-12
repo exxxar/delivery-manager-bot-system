@@ -243,22 +243,14 @@ class SupplierController extends Controller
         $perPage = $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
-        return response()->json([
-            'data' => $suppliers->items(),
-            'pagination' => [
-                'current_page' => $suppliers->currentPage(),
-                'per_page' => $suppliers->perPage(),
-                'total' => $suppliers->total(),
-                'last_page' => $suppliers->lastPage(),
-                'from' => $suppliers->firstItem(),
-                'to' => $suppliers->lastItem(),
-            ],
-            'month' => $month,
-            'stats' => [
-                'total_suppliers' => $suppliers->total(),
-                'total_turnover' => round(collect($suppliers->items())->sum('month_turnover'), 2),
-            ]
-        ]);
+        // 🔹 Добавляем статистику в ответ
+        $response = $suppliers->toArray();
+        $response['stats'] = [
+            'total_suppliers' => $suppliers->total(),
+            'total_turnover' => round(collect($suppliers->items())->sum('month_turnover'), 2),
+        ];
+
+        return response()->json($response);
     }
 
     public function inactive(Request $request)
@@ -288,21 +280,13 @@ class SupplierController extends Controller
         $perPage = $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
-        return response()->json([
-            'data' => $suppliers->items(),
-            'pagination' => [
-                'current_page' => $suppliers->currentPage(),
-                'per_page' => $suppliers->perPage(),
-                'total' => $suppliers->total(),
-                'last_page' => $suppliers->lastPage(),
-                'from' => $suppliers->firstItem(),
-                'to' => $suppliers->lastItem(),
-            ],
-            'month' => $month,
-            'stats' => [
-                'total_suppliers' => $suppliers->total(),
-            ]
-        ]);
+        // 🔹 Добавляем статистику в ответ
+        $response = $suppliers->toArray();
+        $response['stats'] = [
+            'total_suppliers' => $suppliers->total(),
+        ];
+
+        return response()->json($response);
     }
 
     /**
