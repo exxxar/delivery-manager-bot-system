@@ -29,6 +29,48 @@ export const useSuppliersStore = defineStore('suppliers', {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+
+        // 🔹 НОВЫЙ: активные поставщики
+        async fetchActive(month: string, page = 1, size = 30) {
+            this.loading = true
+            this.error = null
+            try {
+                const params = new URLSearchParams()
+                params.append('month', month)
+                params.append('page', String(page))
+                params.append('per_page', String(size))
+
+                const { data } = await makeAxiosFactory(`${path}/active?${params.toString()}`, 'GET')
+                this.items = data.data
+                this.pagination = data.pagination
+                this.stats = data.stats
+            } catch (e: any) {
+                this.error = e?.message || 'Не удалось загрузить активных поставщиков'
+            } finally {
+                this.loading = false
+            }
+        },
+
+        // 🔹 НОВЫЙ: неактивные поставщики
+        async fetchInactive(month: string, page = 1, size = 30) {
+            this.loading = true
+            this.error = null
+            try {
+                const params = new URLSearchParams()
+                params.append('month', month)
+                params.append('page', String(page))
+                params.append('per_page', String(size))
+
+                const { data } = await makeAxiosFactory(`${path}/inactive?${params.toString()}`, 'GET')
+                this.items = data.data
+                this.pagination = data.pagination
+                this.stats = data.stats
+            } catch (e: any) {
+                this.error = e?.message || 'Не удалось загрузить неактивных поставщиков'
+            } finally {
+                this.loading = false
+            }
+        },
         setFilters(filters: Record<string, any>) {
             // @ts-ignore
             this.filters = filters

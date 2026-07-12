@@ -37,4 +37,9 @@ class Supplier extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    public function sales(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
 }

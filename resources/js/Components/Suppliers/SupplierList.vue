@@ -19,6 +19,72 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         </label>
     </div>
 
+    <!-- 🔹 Табы режимов -->
+    <ul class="nav nav-pills nav-fill mb-3">
+        <li class="nav-item">
+            <button
+                class="nav-link"
+                :class="{ active: viewMode === 'all' }"
+                @click="switchMode('all')"
+            >
+                <i class="fa-solid fa-list me-1"></i>
+                Все
+            </button>
+        </li>
+        <li class="nav-item">
+            <button
+                class="nav-link"
+                :class="{ active: viewMode === 'active' }"
+                @click="switchMode('active')"
+            >
+                <i class="fa-solid fa-bolt text-success me-1"></i>
+                Активные
+            </button>
+        </li>
+        <li class="nav-item">
+            <button
+                class="nav-link"
+                :class="{ active: viewMode === 'inactive' }"
+                @click="switchMode('inactive')"
+            >
+                <i class="fa-solid fa-moon text-secondary me-1"></i>
+                Неактивные
+            </button>
+        </li>
+    </ul>
+
+    <!-- 🔹 Селектор месяца (только для активных/неактивных) -->
+    <div v-if="viewMode !== 'all'" class="form-floating mb-3">
+        <select
+            class="form-select"
+            v-model="selectedMonth"
+            @change="loadByMode"
+            id="monthSelect"
+        >
+            <option v-for="m in getMonthList()" :key="m.key" :value="m.key">
+                {{ m.label }}
+            </option>
+        </select>
+        <label for="monthSelect">
+            <i class="fa-solid fa-calendar-days me-1"></i>
+            Месяц
+        </label>
+    </div>
+
+    <!-- 🔹 Статистика (для активных/неактивных) -->
+    <div v-if="viewMode !== 'all' && suppliersStore.stats" class="alert alert-info mb-3 py-2">
+        <div class="row text-center small">
+            <div class="col-6">
+                <div class="text-muted">Поставщиков</div>
+                <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers }}</div>
+            </div>
+            <div class="col-6" v-if="suppliersStore.stats.total_turnover !== undefined">
+                <div class="text-muted">Товарооборот</div>
+                <div class="fw-bold fs-5 text-success">{{ formatMoney(suppliersStore.stats.total_turnover) }}</div>
+            </div>
+        </div>
+    </div>
+
     <template v-if="showSimpleSupplierForm">
         <SupplierForm
             v-on:saved="addNewSupplier"
@@ -72,9 +138,8 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                 <!-- Левая часть -->
                 <div class="flex-grow-1 me-3 text-break" @click="selectSupplier(supplier)">
                     <div class="fw-bold" @click="toggleSelection(supplier)">
-                    <span class="badge bg-primary" v-if="field_visible?.id||false">#{{
-                            supplier.id
-                        }}</span>{{ supplier.name }}
+                        <span class="badge bg-primary" v-if="field_visible?.id||false">#{{ supplier.id }}</span>
+                        {{ supplier.name }}
                         <span
                             v-if="field_visible?.percent||false"
                             class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
@@ -86,16 +151,40 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                     <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
                     <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
 
+                    <!-- 🔹 НОВАЯ: статистика для активных/неактивных -->
+                    <template v-if="viewMode === 'active' && supplier.month_sales_count">
+                        <div class="d-flex gap-2 mt-1">
+                    <span class="badge bg-success">
+                        <i class="fa-solid fa-receipt me-1"></i>
+                        {{ supplier.month_sales_count }} сделок
+                    </span>
+                            <span class="badge bg-info text-dark">
+                        <i class="fa-solid fa-money-bill-trend-up me-1"></i>
+                        {{ formatMoney(supplier.month_turnover) }}
+                    </span>
+                        </div>
+                    </template>
+
+                    <template v-if="viewMode === 'inactive'">
+                        <div class="mt-1">
+                    <span class="badge bg-secondary">
+                        <i class="fa-solid fa-pause me-1"></i>
+                        Нет сделок за выбранный месяц
+                    </span>
+                        </div>
+                    </template>
                 </div>
 
+                <!-- Правая часть (меню) — без изменений -->
                 <div class="d-flex justify-content-between">
-                    <button type="button"
-                            class="btn btn-sm"
-                            @click="toggleFavorites(supplier.id)">
-                        <span v-if="favorites.indexOf(supplier.id)===-1"><i class="fa-regular fa-star text-danger"></i></span>
-                        <span v-else><i class="fa-solid fa-star text-danger"></i></span>
+                    <button type="button" class="btn btn-sm" @click="toggleFavorites(supplier.id)">
+                <span v-if="favorites.indexOf(supplier.id)===-1">
+                    <i class="fa-regular fa-star text-danger"></i>
+                </span>
+                        <span v-else>
+                    <i class="fa-solid fa-star text-danger"></i>
+                </span>
                     </button>
-                    <!-- Правая часть (меню) -->
                     <div class="dropdown flex-shrink-0">
                         <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-bars"></i>
@@ -108,18 +197,15 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                             </template>
                             <template v-else>
                                 <li>
-                                    <a class="dropdown-item" href="#"
-                                       @click.prevent="openEditModal(supplier)">Редактировать</a>
+                                    <a class="dropdown-item" href="#" @click.prevent="openEditModal(supplier)">Редактировать</a>
                                 </li>
                                 <li v-if="(user?.role || 0) >= 3">
-                                    <a class="dropdown-item text-danger" href="#"
-                                       @click.prevent="openDeleteModal(supplier)">Удалить</a>
+                                    <a class="dropdown-item text-danger" href="#" @click.prevent="openDeleteModal(supplier)">Удалить</a>
                                 </li>
                             </template>
                         </ul>
                     </div>
                 </div>
-
             </li>
         </ul>
 
@@ -202,14 +288,17 @@ export default {
             showSimpleSupplierForm: false,
             selectedSupplier: null,
             suppliersStore: useSuppliersStore(),
+
+            viewMode: 'all', // 'all' | 'active' | 'inactive'
+            selectedMonth: this.getCurrentMonth(),
         }
     },
     watch: {
-        search: function (newVal, oldVal) {
+        search: function () {
             this.findSupplier()
         },
-        size:function (){
-            this.fetchData()
+        size: function () {
+            this.loadByMode()
         }
     },
     computed: {
@@ -230,8 +319,10 @@ export default {
          }*/
     },
     created() {
-        this.fetchData()
+        this.loadByMode()
     },
+
+
     methods: {
         searchDebounced() {
             debounce(() => {
@@ -343,6 +434,48 @@ export default {
                     this.modalStore.close()
                     this.selection = []
                 })
+        },
+
+        getCurrentMonth() {
+            const now = new Date()
+            const year = now.getFullYear()
+            const month = String(now.getMonth() + 1).padStart(2, '0')
+            return `${year}-${month}`
+        },
+
+        getMonthList() {
+            const months = []
+            const now = new Date()
+
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                const year = date.getFullYear()
+                const month = String(date.getMonth() + 1).padStart(2, '0')
+                const key = `${year}-${month}`
+
+                months.push({ key, label: key })
+            }
+
+            return months
+        },
+
+        switchMode(mode) {
+            this.viewMode = mode
+            this.loadByMode()
+        },
+
+        async loadByMode(page = 1) {
+            if (this.viewMode === 'active') {
+                await this.suppliersStore.fetchActive(this.selectedMonth, page, this.size)
+            } else if (this.viewMode === 'inactive') {
+                await this.suppliersStore.fetchInactive(this.selectedMonth, page, this.size)
+            } else {
+                await this.fetchData(page)
+            }
+        },
+
+        formatMoney(value) {
+            return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
 
     }

@@ -132,8 +132,11 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
                 ->middleware(["tg.role:admin"]);
             Route::post("/toggle-favorite", [SupplierController::class, "toggleSupplierInFavorites"]);
 
-            // Список всех поставщиков
             Route::get('/', [SupplierController::class, 'index']);
+            Route::get('/active', [SupplierController::class, 'active'])->name('suppliers.active');
+            Route::get('/inactive', [SupplierController::class, 'inactive'])->name('suppliers.inactive');
+
+
             // Создать нового поставщика
             Route::post('/', [SupplierController::class, 'store']);
             // Получить конкретного поставщика по ID

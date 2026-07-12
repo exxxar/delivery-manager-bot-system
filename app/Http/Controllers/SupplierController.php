@@ -209,6 +209,102 @@ class SupplierController extends Controller
     }
 
 
+    public function active(Request $request)
+    {
+        $month = $request->get('month', now()->format('Y-m'));
+
+        try {
+            $monthDate = \Carbon\Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный формат месяца'], 422);
+        }
+
+        $query = Supplier::query()
+            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+            }])
+            ->withSum(['sales as month_turnover' => function ($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+            }], 'total_price')
+            ->having('month_sales_count', '>', 0)
+            ->orderByDesc('month_turnover');
+
+        // 🔹 Поиск по имени
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        $perPage = $request->get('per_page', $request->size ?? 30);
+        $suppliers = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $suppliers->items(),
+            'pagination' => [
+                'current_page' => $suppliers->currentPage(),
+                'per_page' => $suppliers->perPage(),
+                'total' => $suppliers->total(),
+                'last_page' => $suppliers->lastPage(),
+                'from' => $suppliers->firstItem(),
+                'to' => $suppliers->lastItem(),
+            ],
+            'month' => $month,
+            'stats' => [
+                'total_suppliers' => $suppliers->total(),
+                'total_turnover' => round(collect($suppliers->items())->sum('month_turnover'), 2),
+            ]
+        ]);
+    }
+
+    public function inactive(Request $request)
+    {
+        $month = $request->get('month', now()->format('Y-m'));
+
+        try {
+            $monthDate = \Carbon\Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный формат месяца'], 422);
+        }
+
+        $query = Supplier::query()
+            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+            }])
+            ->having('month_sales_count', '=', 0);
+
+        // 🔹 Поиск по имени
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        $perPage = $request->get('per_page', $request->size ?? 30);
+        $suppliers = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $suppliers->items(),
+            'pagination' => [
+                'current_page' => $suppliers->currentPage(),
+                'per_page' => $suppliers->perPage(),
+                'total' => $suppliers->total(),
+                'last_page' => $suppliers->lastPage(),
+                'from' => $suppliers->firstItem(),
+                'to' => $suppliers->lastItem(),
+            ],
+            'month' => $month,
+            'stats' => [
+                'total_suppliers' => $suppliers->total(),
+            ]
+        ]);
+    }
+
     /**
      * @throws HttpException
      */
