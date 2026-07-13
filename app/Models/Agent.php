@@ -52,6 +52,11 @@ class Agent extends Model
 
     protected $with = ["percentages"];
 
+    public function sales(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
     public function getUserInfoAttribute(){
         $user = $this->user()->first();
 

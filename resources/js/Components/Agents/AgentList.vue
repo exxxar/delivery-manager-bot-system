@@ -7,13 +7,54 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
 
 <template>
 
+        <!-- 🔹 Табы режимов -->
+        <ul class="nav nav-pills nav-fill mb-3">
+            <li class="nav-item">
+                <button class="nav-link" :class="{ active: viewMode === 'all' }" @click="switchMode('all')">
+                    <i class="fa-solid fa-list me-1"></i> Все
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" :class="{ active: viewMode === 'active' }" @click="switchMode('active')">
+                    <i class="fa-solid fa-bolt text-success me-1"></i> Активные
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" :class="{ active: viewMode === 'inactive' }" @click="switchMode('inactive')">
+                    <i class="fa-solid fa-moon text-secondary me-1"></i> Неактивные
+                </button>
+            </li>
+        </ul>
 
-    <div class="form-floating mb-3">
-        <input type="search"
-               v-model="search"
-               class="form-control" id="searchInput" placeholder="Поиск..."/>
-        <label for="searchInput">Поиск</label>
-    </div>
+        <!-- 🔹 Селектор месяца и статистика (только для активных/неактивных) -->
+        <template v-if="viewMode !== 'all'">
+            <div class="form-floating mb-3">
+                <select class="form-select" v-model="selectedMonth" @change="loadByMode" id="monthSelect">
+                    <option v-for="m in getMonthList()" :key="m.key" :value="m.key">{{ m.label }}</option>
+                </select>
+                <label for="monthSelect"><i class="fa-solid fa-calendar-days me-1"></i> Месяц</label>
+            </div>
+
+            <div v-if="agentStore.stats" class="alert alert-info mb-3 py-2">
+                <div class="row text-center small">
+                    <div class="col-6">
+                        <div class="text-muted">Администраторов</div>
+                        <div class="fw-bold fs-5">{{ agentStore.stats.total_agents }}</div>
+                    </div>
+                    <div class="col-6" v-if="agentStore.stats.total_turnover !== undefined">
+                        <div class="text-muted">Общий товарооборот</div>
+                        <div class="fw-bold fs-5 text-success">{{ formatMoney(agentStore.stats.total_turnover) }}</div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- 🔹 Поиск (теперь работает и с API для активных/неактивных) -->
+        <div class="form-floating mb-3">
+            <input type="search" v-model="search" class="form-control" id="searchInput" placeholder="Поиск по имени или телефону..."/>
+            <label for="searchInput">Поиск</label>
+        </div>
+
 
     <template v-if="!forSelect">
         <div class="d-flex justify-content-between" v-if="(user?.role || 0) >= 3">
@@ -39,22 +80,29 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                         <span class="badge bg-primary">Общ. {{agent.total_percent || 0}}%</span>
                         <span class="badge bg-primary-subtle mx-1">Перс. {{agent.percent}}%</span>
                     </p>
-<!--                    <span v-if="agent.in_learning" class="badge bg-success">
-                        <i class="fa-solid fa-user-graduate"></i>
-                    </span>-->
                     <span @click="toggleSelection(agent.id)">{{ agent.name }}</span>
-<!--                    <span v-if="agent.in_learning&&!forSelect" class="small text-success">
-                        <template v-if="agent.mentor">
-                           <a
-                               @click="openEdit(agent.mentor)"
-                               href="javascript:void(0)">({{ agent.mentor?.name || '-' }})</a>
-                        </template>
-                        <template v-else>
-                            Наставник не указан
-                        </template>
-                    </span>-->
                 </div>
                 <small class="text-muted">{{ agent.phone || 'телефон не указан'}}</small>
+
+                <!-- 🔹 НОВАЯ: статистика для активных/неактивных -->
+                <template v-if="viewMode === 'active' && agent.month_sales_count">
+                    <div class="d-flex gap-2 mt-2">
+                        <span class="badge bg-success">
+                            <i class="fa-solid fa-receipt me-1"></i> {{ agent.month_sales_count }} сделок
+                        </span>
+                        <span class="badge bg-info text-dark">
+                            <i class="fa-solid fa-money-bill-trend-up me-1"></i> {{ formatMoney(agent.month_turnover) }}
+                        </span>
+                    </div>
+                </template>
+
+                <template v-if="viewMode === 'inactive'">
+                    <div class="mt-2">
+                        <span class="badge bg-secondary">
+                            <i class="fa-solid fa-pause me-1"></i> Нет сделок за выбранный месяц
+                        </span>
+                    </div>
+                </template>
             </div>
 
             <!-- Dropdown кнопка -->
@@ -226,13 +274,22 @@ export default {
             report: {
                 startDate: '',
                 endDate: '',
-            }
+            },
+
+            viewMode: 'all',
+            selectedMonth: this.getCurrentMonth(),
         }
     },
     watch:{
       'size':function (){
           this.fetchAgents()
-      }
+      },
+        // 🔹 Обновляем watcher поиска, чтобы он вызывал loadByMode для API-запросов
+        search: function (newVal) {
+            if (this.viewMode !== 'all') {
+                this.loadByMode(1) // Сбрасываем на 1 страницу при новом поиске
+            }
+        }
     },
     computed: {
         user() {
@@ -253,6 +310,38 @@ export default {
 
     },
     methods: {
+        // 🔹 НОВЫЕ методы
+        getCurrentMonth() {
+            const now = new Date()
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+        },
+        getMonthList() {
+            const months = []
+            const now = new Date()
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+                const year = date.getFullYear()
+                const month = String(date.getMonth() + 1).padStart(2, '0')
+                months.push({ key: `${year}-${month}`, label: `${year}-${month}` })
+            }
+            return months
+        },
+        switchMode(mode) {
+            this.viewMode = mode
+            this.loadByMode(1)
+        },
+        async loadByMode(page = 1) {
+            if (this.viewMode === 'active') {
+                await this.agentStore.fetchActive(this.selectedMonth, page, this.size, this.search)
+            } else if (this.viewMode === 'inactive') {
+                await this.agentStore.fetchInactive(this.selectedMonth, page, this.size, this.search)
+            } else {
+                await this.fetchAgents(page)
+            }
+        },
+        formatMoney(value) {
+            return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
+        },
         toggleSelection(id) {
             let index = this.selection.findIndex(i => i === id)
             if (index === -1)

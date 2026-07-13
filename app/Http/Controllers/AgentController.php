@@ -21,6 +21,91 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AgentController extends Controller
 {
+
+    public function active(Request $request)
+    {
+        $month = $request->get('month', now()->format('Y-m'));
+
+        try {
+            $monthDate = \Carbon\Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный формат месяца'], 422);
+        }
+
+        $query = Agent::query()
+            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+            }])
+            ->withSum(['sales as month_turnover' => function ($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+            }], 'total_price')
+            ->having('month_sales_count', '>', 0)
+            ->orderByDesc('month_turnover');
+
+        // 🔹 Поиск по имени или телефону
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('phone', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $perPage = $request->get('per_page', $request->size ?? 20);
+        $agents = $query->paginate($perPage);
+
+        $response = $agents->toArray();
+        $response['stats'] = [
+            'total_agents' => $agents->total(),
+            'total_turnover' => round(collect($agents->items())->sum('month_turnover'), 2),
+        ];
+
+        return response()->json($response);
+    }
+
+    public function inactive(Request $request)
+    {
+        $month = $request->get('month', now()->format('Y-m'));
+
+        try {
+            $monthDate = \Carbon\Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный_format месяца'], 422);
+        }
+
+        $query = Agent::query()
+            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
+                $q->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+            }])
+            ->having('month_sales_count', '=', 0);
+
+        // 🔹 Поиск по имени или телефону
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('phone', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $perPage = $request->get('per_page', $request->size ?? 20);
+        $agents = $query->paginate($perPage);
+
+        $response = $agents->toArray();
+        $response['stats'] = [
+            'total_agents' => $agents->total(),
+        ];
+
+        return response()->json($response);
+    }
+
     public function index(Request $request)
     {
         $query = Agent::query()

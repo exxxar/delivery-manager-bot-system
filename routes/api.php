@@ -68,6 +68,10 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/', [AgentController::class, 'index']);
             // Создать нового агента
             Route::post('/', [AgentController::class, 'store']);
+
+            Route::get('/active', [AgentController::class, 'active'])->name('agents.active');
+            Route::get('/inactive', [AgentController::class, 'inactive'])->name('agents.inactive');
+
             Route::post('/percentage', [PercentageController::class, 'list']);
             Route::post('/remove-percentage', [PercentageController::class, 'remove']);
             Route::post('/store-percentage', [PercentageController::class, 'store']);
