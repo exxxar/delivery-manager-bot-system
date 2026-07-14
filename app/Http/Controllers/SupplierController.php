@@ -7,6 +7,7 @@ use App\Exports\SalesExport;
 use App\Exports\SuppliersExport;
 use App\Http\Requests\SupplierStoreRequest;
 use App\Http\Requests\SupplierUpdateRequest;
+use App\Models\Agent;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Supplier;
@@ -209,12 +210,6 @@ class SupplierController extends Controller
         return response()->json(null, 204);
     }
 
-
-    use App\Enums\RoleEnum;
-    use App\Models\Agent;
-    use App\Models\Supplier;
-
-// ... внутри SupplierController
 
     public function active(Request $request)
     {
