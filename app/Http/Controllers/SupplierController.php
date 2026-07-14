@@ -209,8 +209,16 @@ class SupplierController extends Controller
     }
 
 
+    use App\Enums\RoleEnum;
+    use App\Models\Agent;
+    use App\Models\Supplier;
+
+// ... внутри SupplierController
+
     public function active(Request $request)
     {
+        $botUser = $request->botUser;
+        $agent = Agent::where('user_id', $botUser->id)->first();
         $month = $request->get('month', now()->format('Y-m'));
 
         try {
@@ -219,19 +227,29 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
+        // 🔹 Единое замыкание для фильтрации продаж
+        $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
+            // 1. Только завершенные сделки
+            $q->where('status', 'completed')
+                ->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+
+            // 2. Ограничение по ролям (ниже суперадмина видят только свои)
+            if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+                $q->where(function ($subQ) use ($botUser, $agent) {
+                    if ($agent) {
+                        $subQ->where('agent_id', $agent->id);
+                    }
+                    $subQ->orWhere('created_by_id', $botUser->id);
+                });
+            }
+        };
+
         $query = Supplier::query()
-            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
-                $q->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ]);
-            }])
-            ->withSum(['sales as month_turnover' => function ($q) use ($monthDate) {
-                $q->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ]);
-            }], 'total_price')
+            ->withCount(['sales as month_sales_count' => $salesQuery])
+            ->withSum(['sales as month_turnover' => $salesQuery], 'total_price')
             ->having('month_sales_count', '>', 0)
             ->orderByDesc('month_turnover');
 
@@ -255,6 +273,8 @@ class SupplierController extends Controller
 
     public function inactive(Request $request)
     {
+        $botUser = $request->botUser;
+        $agent = Agent::where('user_id', $botUser->id)->first();
         $month = $request->get('month', now()->format('Y-m'));
 
         try {
@@ -263,13 +283,26 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        $query = Supplier::query()
-            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
-                $q->whereBetween('actual_delivery_date', [
+        // 🔹 Единое замыкание для фильтрации продаж (такое же, как в active)
+        $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
+            $q->where('status', 'completed')
+                ->whereBetween('actual_delivery_date', [
                     $monthDate->startOfMonth()->toDateString(),
                     $monthDate->endOfMonth()->toDateString()
                 ]);
-            }])
+
+            if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+                $q->where(function ($subQ) use ($botUser, $agent) {
+                    if ($agent) {
+                        $subQ->where('agent_id', $agent->id);
+                    }
+                    $subQ->orWhere('created_by_id', $botUser->id);
+                });
+            }
+        };
+
+        $query = Supplier::query()
+            ->withCount(['sales as month_sales_count' => $salesQuery])
             ->having('month_sales_count', '=', 0);
 
         // 🔹 Поиск по имени
