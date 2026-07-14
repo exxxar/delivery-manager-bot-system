@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Exports\SalesExport;
 use App\Exports\SuppliersExport;
 use App\Http\Requests\SupplierStoreRequest;
