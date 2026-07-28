@@ -112,7 +112,14 @@ class ProductController extends Controller
         if (is_null($data["supplier_id"]))
             throw new HttpException("Не выбран поставщик!",403);
 
-        $product = Product::query()->firstOrCreate($data);
+        $product = Product::query()->firstOrCreate([
+            'name'=>$data["name"],
+            'description'=>$data["description"],
+            'price'=>0,
+            'count'=>1,
+            'supplier_id'=>$data["supplier_id"],
+            'product_category_id'=>$data["product_category_id"],
+        ]);
         $product->load(['supplier', 'category']);
         return response()->json($product, 201);
     }

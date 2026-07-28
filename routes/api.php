@@ -100,6 +100,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
         ->group(function () {
             Route::get('/', [\App\Http\Controllers\Api\ReportController::class, 'index'])->name('reports.index');
             Route::get('/{report}/download', [\App\Http\Controllers\Api\ReportController::class, 'download'])->name('reports.download');
+            Route::get('/{report}/send-to-telegram', [\App\Http\Controllers\Api\ReportController::class, 'sendToTelegram'])->name('reports.send-to-telegram');
             Route::delete('/{report}', [\App\Http\Controllers\Api\ReportController::class, 'destroy'])->name('reports.destroy');
         });
 

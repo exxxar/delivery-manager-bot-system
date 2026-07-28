@@ -42,6 +42,12 @@
                             </a>
                         </li>
                         <li>
+                            <a class="dropdown-item" href="#" @click.prevent="sendToTelegram(report)">
+                                <i class="fa-solid fa-download text-success me-2"></i>
+                                Отправить в телеграм
+                            </a>
+                        </li>
+                        <li>
                             <a class="dropdown-item text-danger" href="#"
                                @click.prevent="confirmDelete(report)">
                                 <i class="fa-solid fa-trash me-2"></i>
@@ -100,6 +106,14 @@ export default {
         },
         async fetchDataByUrl(url) {
             await this.reportsStore.fetchByUrl(url)
+        },
+
+        async sendToTelegram(report) {
+            try {
+                await this.reportsStore.sendToTelegram(report.id)
+            } catch (e) {
+                console.error('Ошибка при скачивании:', e)
+            }
         },
         async downloadReport(report) {
             try {

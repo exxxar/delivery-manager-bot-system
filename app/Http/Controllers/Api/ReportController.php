@@ -20,6 +20,28 @@ class ReportController extends Controller
         return response()->json($reports);
     }
 
+
+
+    public function sendToTelegram(Request $request, Report $report)
+    {
+        $user = $request->botUser;
+
+        if ($report->user_id !== $user->id) {
+            abort(403, 'Доступ запрещен');
+        }
+
+        if (is_null($user->telegram_chat_id) ) {
+            abort(403, 'Ваш аккаунт не связан с телеграм');
+        }
+
+        $url = env("APP_URL")."/storage/app/".$report->file_path;
+
+        \App\Facades\BotMethods::bot()
+            ->sendMessage($user->telegram_chat_id,
+                "Документ $url");
+
+        return response()->noContent();
+    }
     public function download(Request $request, Report $report)
     {
         $user = $request->botUser;

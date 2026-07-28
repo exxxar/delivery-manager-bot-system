@@ -51,6 +51,17 @@ export const useReportsStore = defineStore('reports', {
                 this.loading = false
             }
         },
+
+        async sendToTelegram(reportId: number) {
+            try {
+                const response = await makeAxiosFactory(`${path}/${reportId}/send-to-telegram`, 'GET', null)
+
+                return true
+            } catch (e: any) {
+                this.error = e?.message || 'Не удалось скачать отчет'
+                throw e
+            }
+        },
         async download(reportId: number) {
             try {
                 const response = await makeAxiosFactory(`${path}/${reportId}/download`, 'GET', null, {
