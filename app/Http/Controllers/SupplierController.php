@@ -223,8 +223,8 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        $salesQuery = function ($q) use ($monthDate, $botUser, $agent, $request) {
-            // 1. Только завершенные сделки с указанным поставщиком
+        // 🔹 1. Единое замыкание фильтров (идентично Sale::scopeFilter + completed)
+        $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request) {
             $q->where('status', 'completed')
                 ->whereNotNull('supplier_id')
                 ->whereBetween('actual_delivery_date', [
@@ -232,7 +232,6 @@ class SupplierController extends Controller
                     $monthDate->endOfMonth()->toDateString()
                 ]);
 
-            // 2. Ограничение по ролям (ТОЧНО как в Sale::scopeFilter)
             $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
 
             if ($onlySelfSales) {
@@ -247,9 +246,10 @@ class SupplierController extends Controller
             }
         };
 
+        // 🔹 2. Получаем пагинированный список поставщиков с их личной статистикой
         $query = Supplier::query()
-            ->withCount(['sales as month_sales_count' => $salesQuery])
-            ->withSum(['sales as month_turnover' => $salesQuery], 'total_price')
+            ->withCount(['sales as month_sales_count' => $salesFilter])
+            ->withSum(['sales as month_turnover' => $salesFilter], 'total_price')
             ->having('month_sales_count', '>', 0)
             ->orderByDesc('month_turnover');
 
@@ -260,10 +260,18 @@ class SupplierController extends Controller
         $perPage = (int) $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
+        // 🔹 3. СЧИТАЕМ ИСТИННЫЙ ОБЩИЙ ТОВАРООБОРОТ (без учета пагинации и поиска по имени)
+        // Мы применяем те же самые фильтры к модели Sale и делаем SUM по всей таблице
+        $grandTotalQuery = \App\Models\Sale::query();
+        $salesFilter($grandTotalQuery); // Применяем то же самое замыкание!
+
+        $totalTurnover = $grandTotalQuery->sum('total_price');
+
+        // 🔹 4. Формируем ответ
         $response = $suppliers->toArray();
         $response['stats'] = [
             'total_suppliers' => $suppliers->total(),
-            'total_turnover' => round(collect($suppliers->items())->sum('month_turnover'), 2),
+            'total_turnover' => round($totalTurnover, 2), // <-- ТЕПЕРЬ ЭТО ТОЧНАЯ СУММА ЗА МЕСЯЦ
         ];
 
         return response()->json($response);
