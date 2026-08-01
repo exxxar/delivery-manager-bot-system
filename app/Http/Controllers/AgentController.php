@@ -32,19 +32,30 @@ class AgentController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
+        // 🔹 Создаем единое замыкание для фильтрации продаж, идентичное логике index
+        $salesQuery = function ($q) use ($monthDate) {
+            $q->where(function ($subQ) use ($monthDate) {
+                // 1. Фактическая доставка в этом месяце
+                $subQ->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ])->orWhere(function ($deepQ) use ($monthDate) {
+                    // 2. ИЛИ фактической нет, но плановая доставка в этом месяце
+                    $deepQ->whereNull('actual_delivery_date')
+                        ->whereBetween('due_date', [
+                            $monthDate->startOfMonth()->toDateString(),
+                            $monthDate->endOfMonth()->toDateString()
+                        ]);
+                });
+            });
+
+            // 🔹 ВАЖНО: Если вы хотите считать только завершенные, раскомментируйте строку ниже:
+            // $q->where('status', 'completed');
+        };
+
         $query = Agent::query()
-            ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
-                $q->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ]);
-            }])
-            ->withSum(['sales as month_turnover' => function ($q) use ($monthDate) {
-                $q->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ]);
-            }], 'total_price')
+            ->withCount(['sales as month_sales_count' => $salesQuery])
+            ->withSum(['sales as month_turnover' => $salesQuery], 'total_price')
             ->having('month_sales_count', '>', 0)
             ->orderByDesc('month_turnover');
 
@@ -56,7 +67,7 @@ class AgentController extends Controller
             });
         }
 
-        $perPage = $request->get('per_page', $request->size ?? 20);
+        $perPage = (int) $request->get('per_page', $request->size ?? 20);
         $agents = $query->paginate($perPage);
 
         $response = $agents->toArray();

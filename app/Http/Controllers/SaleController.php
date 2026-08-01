@@ -30,53 +30,40 @@ class SaleController extends Controller
             ->filter($request)
             ->sort($request);
 
-        // 🔹 Если запрошена группировка по месяцу
         if ($request->filled('month')) {
-            $month = $request->month; // формат: "2026-07"
+            $month = $request->month;
 
-            // Парсим месяц
             try {
                 $monthDate = \Carbon\Carbon::parse($month . '-01');
             } catch (\Exception $e) {
                 return response()->json(['message' => 'Неверный формат месяца'], 422);
             }
 
-            // Фильтруем по месяцу (фактическая дата доставки или дата встречи)
-            $query->where(function($q) use ($monthDate) {
-                $q->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ])->orWhere(function($q2) use ($monthDate) {
-                    $q2->whereNull('actual_delivery_date')
-                        ->whereBetween('due_date', [
-                            $monthDate->startOfMonth()->toDateString(),
-                            $monthDate->endOfMonth()->toDateString()
-                        ]);
-                });
-            });
+            // 🔹 1. ЖЕСТКО ограничиваем статусом "completed", чтобы цифры совпадали с активной статистикой
+            $query->where('status', 'completed');
+
+            // 🔹 2. Фильтруем СТРОГО по actual_delivery_date (без fallback на due_date)
+            $query->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateString(),
+                $monthDate->endOfMonth()->toDateString()
+            ]);
 
             $sales = $query->get();
 
             // Группируем по дням
             $byDays = $sales->groupBy(function ($sale) {
-                $date = $sale->actual_delivery_date
-                    ?? $sale->due_date
-                    ?? $sale->created_at;
-                return \Carbon\Carbon::parse($date)->format('Y-m-d');
+                return \Carbon\Carbon::parse($sale->actual_delivery_date)->format('Y-m-d');
             })->map(function ($dayItems, $dayKey) {
                 return [
                     'date' => $dayKey,
-                    'label' => \Carbon\Carbon::parse($dayKey)->translatedFormat('D, d M'),
-                    'weekday' => \Carbon\Carbon::parse($dayKey)->dayName,
                     'count' => $dayItems->count(),
                     'total' => round($dayItems->sum('total_price'), 2),
                     'items' => $dayItems->values(),
                 ];
             })->sortByDesc('date')->values();
 
-            // Пагинация по дням
-            $daysPerPage = $request->get('days_per_page', 7); // по умолчанию 7 дней на страницу
-            $currentPage = $request->get('page', 1);
+            $daysPerPage = (int) $request->get('days_per_page', 7);
+            $currentPage = (int) $request->get('page', 1);
             $totalDays = $byDays->count();
             $totalPages = ceil($totalDays / $daysPerPage);
 
@@ -85,7 +72,7 @@ class SaleController extends Controller
             return response()->json([
                 'grouped' => true,
                 'month' => $month,
-                'month_label' => $monthDate->translatedFormat('F Y'),
+                'month_label' => $month,
                 'days' => $paginatedDays,
                 'pagination' => [
                     'current_page' => $currentPage,
@@ -103,12 +90,10 @@ class SaleController extends Controller
             ]);
         }
 
-        // 🔹 Обычная пагинация (если месяц не указан)
+        // Обычная пагинация
         $sales = $query->paginate($request->get('per_page', $request->size ?? 10));
-
         return response()->json($sales);
     }
-
     public function approve(Request $request, $id)
     {
         $sale = Sale::query()

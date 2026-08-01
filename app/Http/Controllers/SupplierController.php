@@ -223,22 +223,33 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 Единое замыкание для фильтрации продаж
+        // 🔹 Единое замыкание, полностью идентичное логике Sale::index + статус completed
         $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
             // 1. Только завершенные сделки
-            $q->where('status', 'completed')
-                ->whereBetween('actual_delivery_date', [
+            $q->where('status', 'completed');
+
+            // 2. Логика дат (точно как в Sale::index)
+            $q->where(function ($dateQuery) use ($monthDate) {
+                $dateQuery->whereBetween('actual_delivery_date', [
                     $monthDate->startOfMonth()->toDateString(),
                     $monthDate->endOfMonth()->toDateString()
-                ]);
+                ])
+                    ->orWhere(function ($nullDateQuery) use ($monthDate) {
+                        $nullDateQuery->whereNull('actual_delivery_date')
+                            ->whereBetween('due_date', [
+                                $monthDate->startOfMonth()->toDateString(),
+                                $monthDate->endOfMonth()->toDateString()
+                            ]);
+                    });
+            });
 
-            // 2. Ограничение по ролям (ниже суперадмина видят только свои)
+            // 3. Ограничение по ролям (ниже суперадмина видят только свои)
             if ($botUser->role < RoleEnum::SUPERADMIN->value) {
-                $q->where(function ($subQ) use ($botUser, $agent) {
+                $q->where(function ($roleQuery) use ($botUser, $agent) {
                     if ($agent) {
-                        $subQ->where('agent_id', $agent->id);
+                        $roleQuery->where('agent_id', $agent->id);
                     }
-                    $subQ->orWhere('created_by_id', $botUser->id);
+                    $roleQuery->orWhere('created_by_id', $botUser->id);
                 });
             }
         };
@@ -254,7 +265,7 @@ class SupplierController extends Controller
             $query->where('name', 'like', '%' . $request->name . '%');
         }
 
-        $perPage = $request->get('per_page', $request->size ?? 30);
+        $perPage = (int) $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
         // 🔹 Добавляем статистику в ответ

@@ -179,8 +179,8 @@ class Sale extends Model
         $query->when($request->customer_id, fn($q) => $q->where('customer_id', $request->customer_id)
         );
 
-        // 🔹 Даты
-        if ($request->date_from || $request->date_to) {
+        // 🔹 Даты (игнорируем, если используется группировка по month)
+        if (($request->date_from || $request->date_to) && !$request->filled('month')) {
             $query->whereBetween('actual_delivery_date', [
                     $request->date_from ?? '1900-01-01',
                     $request->date_to ?? now()->toDateString()
