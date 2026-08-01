@@ -32,24 +32,16 @@ class AgentController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 Создаем единое замыкание для фильтрации продаж, идентичное логике index
+        // 🔹 Создаем единое замыкание для фильтрации продаж
         $salesQuery = function ($q) use ($monthDate) {
-            $q->where(function ($subQ) use ($monthDate) {
-                // 1. Фактическая доставка в этом месяце
-                $subQ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ])->orWhere(function ($deepQ) use ($monthDate) {
-                    // 2. ИЛИ фактической нет, но плановая доставка в этом месяце
-                    $deepQ->whereNull('actual_delivery_date')
-                        ->whereBetween('due_date', [
-                            $monthDate->startOfMonth()->toDateString(),
-                            $monthDate->endOfMonth()->toDateString()
-                        ]);
-                });
-            });
+            // 1. СТРОГО по фактической дате доставки
+            $q->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateString(),
+                $monthDate->endOfMonth()->toDateString()
+            ]);
 
-            // 🔹 ВАЖНО: Если вы хотите считать только завершенные, раскомментируйте строку ниже:
+            // 🔹 ВАЖНО: Если нужно считать в оборот только завершенные сделки,
+            // раскомментируйте строку ниже (рекомендуется):
             // $q->where('status', 'completed');
         };
 

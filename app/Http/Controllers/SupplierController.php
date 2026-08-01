@@ -223,25 +223,16 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 Единое замыкание, полностью идентичное логике Sale::index + статус completed
+        // 🔹 Единое замыкание для фильтрации продаж (строго по actual_delivery_date)
         $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
             // 1. Только завершенные сделки
             $q->where('status', 'completed');
 
-            // 2. Логика дат (точно как в Sale::index)
-            $q->where(function ($dateQuery) use ($monthDate) {
-                $dateQuery->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
-                ])
-                    ->orWhere(function ($nullDateQuery) use ($monthDate) {
-                        $nullDateQuery->whereNull('actual_delivery_date')
-                            ->whereBetween('due_date', [
-                                $monthDate->startOfMonth()->toDateString(),
-                                $monthDate->endOfMonth()->toDateString()
-                            ]);
-                    });
-            });
+            // 2. СТРОГО по фактической дате доставки
+            $q->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateString(),
+                $monthDate->endOfMonth()->toDateString()
+            ]);
 
             // 3. Ограничение по ролям (ниже суперадмина видят только свои)
             if ($botUser->role < RoleEnum::SUPERADMIN->value) {
