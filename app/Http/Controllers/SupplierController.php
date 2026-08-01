@@ -223,24 +223,26 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 Единое замыкание для фильтрации продаж (строго по actual_delivery_date)
-        $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
-            // 1. Только завершенные сделки
-            $q->where('status', 'completed');
+        $salesQuery = function ($q) use ($monthDate, $botUser, $agent, $request) {
+            // 1. Только завершенные сделки с указанным поставщиком
+            $q->where('status', 'completed')
+                ->whereNotNull('supplier_id')
+                ->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
 
-            // 2. СТРОГО по фактической дате доставки
-            $q->whereBetween('actual_delivery_date', [
-                $monthDate->startOfMonth()->toDateString(),
-                $monthDate->endOfMonth()->toDateString()
-            ]);
+            // 2. Ограничение по ролям (ТОЧНО как в Sale::scopeFilter)
+            $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
 
-            // 3. Ограничение по ролям (ниже суперадмина видят только свои)
-            if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+            if ($onlySelfSales) {
                 $q->where(function ($roleQuery) use ($botUser, $agent) {
-                    if ($agent) {
-                        $roleQuery->where('agent_id', $agent->id);
+                    if (is_null($agent)) {
+                        $roleQuery->where('created_by_id', $botUser->id);
+                    } else {
+                        $roleQuery->where('agent_id', $agent->id)
+                            ->orWhere('created_by_id', $botUser->id);
                     }
-                    $roleQuery->orWhere('created_by_id', $botUser->id);
                 });
             }
         };
@@ -251,7 +253,6 @@ class SupplierController extends Controller
             ->having('month_sales_count', '>', 0)
             ->orderByDesc('month_turnover');
 
-        // 🔹 Поиск по имени
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
@@ -259,7 +260,6 @@ class SupplierController extends Controller
         $perPage = (int) $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
-        // 🔹 Добавляем статистику в ответ
         $response = $suppliers->toArray();
         $response['stats'] = [
             'total_suppliers' => $suppliers->total(),
