@@ -98,10 +98,11 @@ class TelegramController extends Controller
         }
     }
 
-    public function callbackTelegram(Request $request){
+    public function callbackTelegram(Request $request)
+    {
         $telegramId = $request->id;
 
-        $user= User::query()->create([
+        $user = User::query()->create([
             'email' => "$telegramId@" . env('APP_EMAIL_DOMAIN'),
             'name' => $request->username,
             'password' => bcrypt($telegramId),
@@ -318,12 +319,17 @@ class TelegramController extends Controller
 
         \App\Facades\BotManager::bot()
             ->reply("<b>Ваш логин и пароль для входа в мобверсию:</b>\n"
-                . "Логин <code>". ($botUser->email ?? '-') . "</code>\n"
-                . "Пароль <code>". ($botUser->telegram_chat_id ?? '-') . "</code>\n"
+                . "Логин <code>" . ($botUser->email ?? '-') . "</code>\n"
+                . "Пароль <code>" . ($botUser->telegram_chat_id ?? '-') . "</code>\n"
                 . "Ссылка для входа <code>" . env("APP_URL") . "/pwa</code>"
-                );
+            );
 
 
+    }
+
+    public function blockedPage()
+    {
+        return view('telegram.blocked'); // или Inertia::render(...)
     }
 
     public function startWithParam(...$data)
