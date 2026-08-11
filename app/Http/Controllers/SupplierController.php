@@ -10,6 +10,7 @@ use App\Http\Requests\SupplierUpdateRequest;
 use App\Models\Agent;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Sale;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use HttpException;
@@ -20,6 +21,48 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SupplierController extends Controller
 {
+
+    public function supplierSales(Request $request, $id)
+    {
+        $botUser = $request->botUser;
+        $agent = Agent::where('user_id', $botUser->id)->first();
+
+        $supplier = Supplier::findOrFail($id);
+        $month = $request->get('month', now()->format('Y-m'));
+
+        try {
+            $monthDate = Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный формат месяца'], 422);
+        }
+
+        $sales = Sale::query()
+            ->with(['product', 'supplier', 'customer', 'creator', 'agent'])
+            ->where('supplier_id', $id)
+            ->where('status', 'completed')
+            ->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateString(),
+                $monthDate->endOfMonth()->toDateString()
+            ])
+            ->where(function ($q) use ($botUser, $agent) {
+                // Супер-админы видят все сделки поставщика
+                if ($botUser->role >= RoleEnum::SUPERADMIN->value) {
+                    return;
+                }
+                // Обычные агенты — только свои сделки
+                if (is_null($agent)) {
+                    $q->where('created_by_id', $botUser->id);
+                } else {
+                    $q->where('agent_id', $agent->id)
+                        ->orWhere('created_by_id', $botUser->id);
+                }
+            })
+            ->orderByDesc('actual_delivery_date')
+            ->paginate($request->get('per_page', 20));
+
+        return response()->json($sales);
+    }
+
     public function index(Request $request)
     {
 

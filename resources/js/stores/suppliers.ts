@@ -24,12 +24,48 @@ export const useSuppliersStore = defineStore('suppliers', {
         error: null as string | null,
         sort: { field: 'id', direction: 'desc' } as { field: string; direction: 'asc' | 'desc' },
         pagination:null,
+
+        supplierSales: [] as any[],
+        supplierSalesPagination: null as any,
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+        async fetchSupplierSales(supplierId: number, month: string, page = 1, size = 20) {
+            this.loading = true
+            this.error = null
+            this.supplierSales = []
 
+            try {
+                const params = new URLSearchParams()
+                params.append('month', month)
+                params.append('page', String(page))
+                params.append('per_page', String(size))
+
+                const { data } = await makeAxiosFactory(
+                    `${path}/${supplierId}/sales?${params.toString()}`,
+                    'GET'
+                )
+
+                this.supplierSales = data.data
+                this.supplierSalesPagination = {
+                    current_page: data.current_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    last_page: data.last_page,
+                    from: data.from,
+                    to: data.to,
+                }
+
+                return data
+            } catch (e: any) {
+                this.error = e?.message || 'Ошибка загрузки сделок поставщика'
+                throw e
+            } finally {
+                this.loading = false
+            }
+        },
         // 🔹 НОВЫЙ: активные поставщики
         async fetchActive(month: string, page = 1, size = 30) {
             this.loading = true

@@ -24,6 +24,57 @@ use Telegram\Bot\FileUpload\InputFile;
 
 class SaleController extends Controller
 {
+
+    public function incomplete(Request $request)
+    {
+        $botUser = $request->botUser;
+
+        if (!$botUser) {
+            return response()->json(['message' => 'Пользователь не авторизован'], 401);
+        }
+
+        $agent = Agent::where('user_id', $botUser->id)->first();
+
+        $query = Sale::query()
+            ->with(['product', 'agent', 'customer', 'supplier', 'creator'])
+            // 🔹 Критерий "незакрытой сделки":
+            // хотя бы одно из условий истинно
+            ->where(function ($q) {
+                $q->whereNull('actual_delivery_date')
+                    ->orWhere(function ($sub) {
+                        $sub->whereNull('total_price')
+                            ->orWhere('total_price', 0);
+                    })
+                    ->orWhere('status', '!=', 'delivered');
+            })
+            // 🔹 Исключаем отклонённые — они не подлежат закрытию
+            ->where('status', '!=', 'rejected')
+            // 🔹 Права доступа (как было)
+            ->where(function ($q) use ($botUser, $agent) {
+                if ($botUser->role >= RoleEnum::SUPERADMIN->value) {
+                    return;
+                }
+                if (is_null($agent)) {
+                    $q->where('created_by_id', $botUser->id);
+                } else {
+                    $q->where('agent_id', $agent->id)
+                        ->orWhere('created_by_id', $botUser->id);
+                }
+            })
+            // 🔹 Сортировка: сначала почти готовые (delivered), потом pending
+            ->orderByRaw("CASE
+            WHEN status = 'delivered' THEN 1
+            WHEN status = 'assigned' THEN 2
+            WHEN status = 'pending' THEN 3
+            ELSE 4
+        END")
+            ->orderBy('created_at', 'desc');
+
+        $sales = $query->paginate($request->get('per_page', 20));
+
+        return response()->json($sales);
+    }
+
     public function index(Request $request)
     {
         $query = Sale::query()

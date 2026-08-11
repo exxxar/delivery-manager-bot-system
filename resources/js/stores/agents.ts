@@ -11,6 +11,7 @@ export interface Agent {
     region?: string
     in_learning?: boolean
     registration_at?: string | null
+
     month_sales_count?: number
     month_turnover?: number
 }
@@ -22,11 +23,48 @@ export const useAgentsStore = defineStore('agents', {
         items: [] as Agent[],
         loading: false,
         error: null as string | null,
+        agentSales: [] as any[],
+        agentSalesPagination: null as any,
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(a => a.id === id),
     },
     actions: {
+
+        async fetchAgentSales(agentId: number, month: string, page = 1, size = 20) {
+            this.loading = true
+            this.error = null
+            this.agentSales = []
+
+            try {
+                const params = new URLSearchParams()
+                params.append('month', month)
+                params.append('page', String(page))
+                params.append('per_page', String(size))
+
+                const { data } = await makeAxiosFactory(
+                    `${path}/${agentId}/sales?${params.toString()}`,
+                    'GET'
+                )
+
+                this.agentSales = data.data
+                this.agentSalesPagination = {
+                    current_page: data.current_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    last_page: data.last_page,
+                    from: data.from,
+                    to: data.to,
+                }
+
+                return data
+            } catch (e: any) {
+                this.error = e?.message || 'Ошибка загрузки сделок'
+                throw e
+            } finally {
+                this.loading = false
+            }
+        },
         // @ts-ignore
         async fetchAll() {
             this.loading = true

@@ -2,6 +2,7 @@
 import Pagination from "@/Components/Pagination.vue";
 import SupplierFilter from "@/Components/Suppliers/SupplierFilter.vue";
 import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
+import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 </script>
 
 <template>
@@ -117,7 +118,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         <template v-if="!forSelect">
             <SupplierFilter v-on:apply-filters="applyFilters"></SupplierFilter>
 
-            <div class="d-flex" v-if="(user?.role || 0) >= 3">
+            <div class="d-flex" v-if="user && (user.role || 0) >= 3">
                 <a href="javascript:void(0)"
                    @click="selectAll"
                    class="small">Выделить все</a>
@@ -157,10 +158,15 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                     <!-- 🔹 НОВАЯ: статистика для активных/неактивных -->
                     <template v-if="viewMode === 'active' && supplier.month_sales_count">
                         <div class="d-flex gap-2 mt-1">
-                    <span class="badge bg-success">
-                        <i class="fa-solid fa-receipt me-1"></i>
-                        {{ supplier.month_sales_count }} сделок
-                    </span>
+                           <span
+                               class="badge bg-success clickable-badge"
+                               @click.stop="openSupplierSales(supplier)"
+                               :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
+                           >
+                                <i class="fa-solid fa-receipt me-1"></i>
+                                {{ supplier.month_sales_count }} сделок
+                                <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
+                            </span>
                             <span class="badge bg-info text-dark">
                         <i class="fa-solid fa-money-bill-trend-up me-1"></i>
                         {{ formatMoney(supplier.month_turnover) }}
@@ -180,13 +186,18 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 
                 <!-- Правая часть (меню) — без изменений -->
                 <div class="d-flex justify-content-between">
-                    <button type="button" class="btn btn-sm" @click="toggleFavorites(supplier.id)">
-                <span v-if="favorites.indexOf(supplier.id)===-1">
-                    <i class="fa-regular fa-star text-danger"></i>
-                </span>
-                        <span v-else>
-                    <i class="fa-solid fa-star text-danger"></i>
-                </span>
+                    <button
+                        type="button"
+                        class="btn btn-sm"
+                        @click="toggleFavorites(supplier.id)"
+                        :disabled="!user"
+                    >
+                        <span v-if="!favorites.includes(supplier.id)">
+                            <i class="fa-regular fa-star text-danger"></i>
+                        </span>
+                                            <span v-else>
+                            <i class="fa-solid fa-star text-danger"></i>
+                        </span>
                     </button>
                     <div class="dropdown flex-shrink-0">
                         <button class="btn btn-sm" type="button" data-bs-toggle="dropdown">
@@ -266,6 +277,55 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
         </div>
     </div>
 
+    <!-- Модалка со сделками поставщика -->
+    <div class="modal fade" id="supplierSalesModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-truck text-primary me-2"></i>
+                        Сделки: <span class="text-primary">{{ selectedSupplier?.name }}</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Загрузка -->
+                    <div v-if="suppliersStore.loading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+
+                    <template v-else>
+                        <!-- Список сделок -->
+                        <div v-if="suppliersStore.supplierSales.length > 0">
+                            <SaleCard
+                                v-for="sale in suppliersStore.supplierSales"
+                                :key="sale.id"
+                                :sale="sale"
+                                :field_visible="field_visible"
+                                :saleStatuses="saleStatuses"
+                                class="shadow-sm mb-2 rounded-2 p-2"
+                            />
+
+                            <!-- Пагинация -->
+                            <Pagination
+                                v-if="suppliersStore.supplierSalesPagination?.total > 0"
+                                :pagination="suppliersStore.supplierSalesPagination"
+                                @page-changed="fetchSupplierSalesPage"
+                            />
+                        </div>
+
+                        <!-- Пусто -->
+                        <div v-else class="text-center text-muted py-5">
+                            <i class="fa-solid fa-inbox fs-1 mb-3 d-block"></i>
+                            <p class="mb-0">За выбранный период сделок не найдено</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -286,6 +346,13 @@ export default {
             userStore: useUsersStore(),
             alertStore: useAlertStore(),
             selection: [],
+            saleStatuses: {
+                pending: "В ожидании",
+                assigned: "Назначено",
+                completed: "Завершено",
+                rejected: "Отклонено",
+                delivered: "Доставляется"
+            },
             search: null,
             size:30,
             showSimpleSupplierForm: false,
@@ -305,12 +372,12 @@ export default {
         }
     },
     computed: {
-        favorites(){
-          return this.user.agent?.favorite_suppliers || []
+        favorites() {
+            return this.user?.agent?.favorite_suppliers || []
         },
         user() {
-            return this.userStore.self || null
-        },
+            return this.userStore?.self || null
+        }
         /* filteredSuppliers() {
              if (!this.search) return this.suppliersStore.items || []
              const q = this.search.toLowerCase()
@@ -322,11 +389,37 @@ export default {
          }*/
     },
     created() {
+        if (!this.userStore.self) {
+            this.userStore.fetchSelf()
+        }
+
         this.loadByMode()
     },
 
 
     methods: {
+        async openSupplierSales(supplier) {
+            this.selectedSupplier = supplier
+            try {
+                await this.suppliersStore.fetchSupplierSales(supplier.id, this.selectedMonth)
+                new bootstrap.Modal(document.getElementById('supplierSalesModal')).show()
+            } catch (e) {
+                console.error('Ошибка загрузки сделок поставщика:', e)
+                this.alertStore.show('Не удалось загрузить сделки поставщика', 'error')
+            }
+        },
+
+        async fetchSupplierSalesPage(url) {
+            const match = url.match(/page=(\d+)/)
+            const page = match ? parseInt(match[1]) : 1
+            if (this.selectedSupplier) {
+                await this.suppliersStore.fetchSupplierSales(
+                    this.selectedSupplier.id,
+                    this.selectedMonth,
+                    page
+                )
+            }
+        },
         searchDebounced() {
             debounce(() => {
                 this.findSupplier()
@@ -352,13 +445,19 @@ export default {
             this.suppliersStore.setSort(filters.sort.field, filters.sort.direction)
             this.suppliersStore.fetchFiltered(page, size)
         },
-        toggleFavorites(id){
-            this.suppliersStore.toggleFavorites(id).then(()=>{
-                this.alertStore.show(this.favorites.indexOf(id)!==-1?
-                    "Убираем из избранного":
-                    "Добавляем в избранное",
-                    "success")
+        toggleFavorites(id) {
+            if (!this.user) {
+                this.alertStore.show('Необходимо авторизоваться', 'warning')
+                return
+            }
 
+            this.suppliersStore.toggleFavorites(id).then(() => {
+                this.alertStore.show(
+                    this.favorites.includes(id)
+                        ? "Убираем из избранного"
+                        : "Добавляем в избранное",
+                    "success"
+                )
                 this.userStore.fetchSelf()
             })
         },
@@ -485,3 +584,25 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.clickable-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.clickable-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3);
+    filter: brightness(1.1);
+}
+
+.clickable-badge:active {
+    transform: translateY(0);
+}
+</style>
+

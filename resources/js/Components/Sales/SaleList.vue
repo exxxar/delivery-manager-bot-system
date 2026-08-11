@@ -9,30 +9,44 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 <template>
 
 
-    <!-- Быстрый поиск -->
-    <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
 
 
-    <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
 
-
-    <!-- 🔹 Переключатель вида -->
-    <div class="btn-group btn-group-sm mb-3" role="group">
+    <!-- 🔹 Красивые табы -->
+    <div class="custom-tabs mb-3">
         <button
             type="button"
-            class="btn btn-outline-primary"
-            :class="{ active: viewMode === 'list' }"
-            @click="viewMode = 'list'"
+            class="custom-tab"
+            :class="{ active: currentTab === 'list' }"
+            @click="switchTab('list')"
         >
-            <i class="fa-solid fa-list me-1"></i> Список
+            <i class="fa-solid fa-list"></i>
+            <span>Все сделки</span>
         </button>
+
+
+
         <button
             type="button"
-            class="btn btn-outline-primary"
-            :class="{ active: viewMode === 'timeline' }"
-            @click="viewMode = 'timeline'"
+            class="custom-tab"
+            :class="{ active: currentTab === 'timeline' }"
+            @click="switchTab('timeline')"
         >
-            <i class="fa-solid fa-timeline me-1"></i> По месяцам
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>По месяцам</span>
+        </button>
+
+        <button
+            type="button"
+            class="custom-tab"
+            :class="{ active: currentTab === 'incomplete' }"
+            @click="switchTab('incomplete')"
+        >
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Незавершённые</span>
+            <span v-if="salesStore.incompletePagination?.total > 0" class="tab-badge">
+            {{ salesStore.incompletePagination.total }}
+        </span>
         </button>
     </div>
 
@@ -128,7 +142,12 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 
 
     <!-- 🔹 РЕЖИМ: СПИСОК (старый) -->
-    <template v-if="viewMode === 'list'">
+    <template v-if="currentTab === 'list'">
+        <!-- Быстрый поиск -->
+        <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
+
+        <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
+
         <div class="container-fluid px-0">
             <div class="row g-2">
 
@@ -288,7 +307,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
     </template>
 
     <!-- 🔹 РЕЖИМ: ТАЙМЛАЙН (новый) -->
-    <template v-else>
+    <template v-if="currentTab === 'timeline'">
         <!-- Селектор месяца -->
         <div class="row g-2 mb-3">
             <div class="col-12 col-md-6">
@@ -493,6 +512,101 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
         </div>
     </template>
 
+    <!-- 🔹 РЕЖИМ: НЕЗАВЕРШЁННЫЕ СДЕЛКИ -->
+    <template v-if="currentTab === 'incomplete'">
+
+        <!-- Загрузка -->
+        <div v-if="salesStore.incompleteLoading" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+
+        <template v-else>
+            <!-- Статистика -->
+            <div v-if="salesStore.incompleteItems.length > 0" class="alert alert-warning mb-3">
+                <div class="d-flex align-items-center">
+                    <i class="fa-solid fa-hourglass-half fs-4 me-3"></i>
+                    <div>
+                        <strong>{{ salesStore.incompletePagination?.total || 0 }}</strong>
+                        сделок ожидают завершения
+                    </div>
+                </div>
+            </div>
+
+            <!-- Список -->
+            <div class="container-fluid px-0">
+                <div class="row g-2">
+                    <div
+                        v-for="sale in salesStore.incompleteItems"
+                        :key="sale.id"
+                        class="col-12 col-md-6 col-xxl-4"
+                    >
+                        <div class="card shadow-sm h-100 sale-card position-relative">
+
+                            <!-- Dropdown -->
+                            <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
+                                <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-bars text-primary"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">
+                                            Просмотреть
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">
+                                            Редактировать
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-success" href="javascript:void(0)" @click.prevent="openConfirmDeal(sale)">
+                                            Подтвердить оплату и доставку
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmCancelDeal(sale)">
+                                            Отменить сделку
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Индикатор статуса -->
+                            <div class="card-status-indicator" :class="'status-' + sale.status"></div>
+
+                            <div class="card-body">
+                                <SaleCard
+                                    :sale="sale"
+                                    :field_visible="field_visible"
+                                    :saleStatuses="saleStatuses"
+                                    @toggle-selection="toggleSelection"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Пагинация -->
+            <Pagination
+                v-if="salesStore.incompleteItems.length > 0"
+                :pagination="salesStore.incompletePagination"
+                @page-changed="fetchIncompleteByUrl"
+            />
+
+            <!-- Пусто -->
+            <div v-if="salesStore.incompleteItems.length === 0" class="alert alert-success mt-3 text-center">
+                <i class="fa-solid fa-check-circle fs-3 mb-2 d-block"></i>
+                У вас нет незавершённых сделок. Всё выполнено! 🎉
+            </div>
+        </template>
+    </template>
+
+
+
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSaleModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
@@ -557,7 +671,7 @@ export default {
     props: ["forSelect", "adminId", "agentId", "productId", "customerId", "supplierId"],
     data() {
         return {
-            viewMode: 'timeline', // 'list' или 'timeline'
+            currentTab: 'timeline', // 'list' или 'timeline'
             selectedMonth: this.getCurrentMonth(), // текущий месяц
             daysPerPage: 7,
 
@@ -612,16 +726,40 @@ export default {
             supplier_id: this.supplierId || null,
         })
 
-        // Загружаем данные в зависимости от режима
-        if (this.viewMode === 'timeline') {
-            this.loadMonthData()
-        } else {
-            this.salesStore.fetchFiltered()
-            this.salesStore.fetchBadData()
-        }
+        // Загружаем данные для текущей вкладки
+        this.loadTabData(this.currentTab);
     },
     methods: {
+        switchTab(tab) {
+            if (this.currentTab === tab) return;
+            this.currentTab = tab;
+            this.loadTabData(tab);
+        },
 
+        loadTabData(tab) {
+            switch (tab) {
+                case 'list':
+                    this.salesStore.fetchFiltered();
+                    this.salesStore.fetchBadData();
+                    break;
+                case 'incomplete':
+                    // Загружаем только если еще не загружали
+                    if (this.salesStore.incompleteItems.length === 0) {
+                        this.salesStore.fetchIncomplete(1);
+                    }
+                    break;
+                case 'timeline':
+                    this.loadMonthData();
+                    break;
+            }
+        },
+
+        fetchIncompleteByUrl(url) {
+            // Извлекаем номер страницы из URL
+            const match = url.match(/page=(\d+)/);
+            const page = match ? parseInt(match[1]) : 1;
+            this.salesStore.fetchIncomplete(page);
+        },
         getCurrentMonth() {
             const now = new Date()
             const year = now.getFullYear()
@@ -854,5 +992,135 @@ p {
 
 .sale-card:hover {
     transform: translateY(-2px);
+}
+
+/* 🔹 Красивые табы */
+.custom-tabs {
+    display: flex;
+    gap: 6px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 6px;
+    border-radius: 14px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.custom-tab {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #6c757d;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.custom-tab i {
+    font-size: 15px;
+    transition: transform 0.25s ease;
+}
+
+.custom-tab:hover {
+    color: #0d6efd;
+    background: rgba(13, 110, 253, 0.06);
+}
+
+.custom-tab:hover i {
+    transform: translateY(-1px);
+}
+
+.custom-tab.active {
+    background: #ffffff;
+    color: #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+    font-weight: 600;
+}
+
+.custom-tab.active i {
+    color: #0d6efd;
+}
+
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border-radius: 11px;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    margin-left: 4px;
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* Индикатор статуса на карточке */
+.card-status-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+}
+
+.card-status-indicator.status-pending {
+    background: linear-gradient(180deg, #ffc107 0%, #ff9800 100%);
+}
+
+.card-status-indicator.status-assigned {
+    background: linear-gradient(180deg, #0dcaf0 0%, #0d6efd 100%);
+}
+
+.card-status-indicator.status-delivered {
+    background: linear-gradient(180deg, #198754 0%, #0f5132 100%);
+}
+
+/* Адаптив для маленьких экранов */
+@media (max-width: 576px) {
+    .custom-tabs {
+        gap: 4px;
+        padding: 4px;
+    }
+
+    .custom-tab {
+        padding: 10px 8px;
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    .custom-tab span {
+        display: none;
+    }
+
+    .custom-tab i {
+        font-size: 18px;
+    }
+
+    .tab-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        min-width: 18px;
+        height: 18px;
+        font-size: 10px;
+    }
 }
 </style>

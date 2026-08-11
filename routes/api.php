@@ -76,6 +76,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::post('/remove-percentage', [PercentageController::class, 'remove']);
             Route::post('/store-percentage', [PercentageController::class, 'store']);
 
+            Route::get('/{id}/sales', [AgentController::class, 'agentSales']);
             // Получить конкретного агента по ID
             Route::get('/{id}', [AgentController::class, 'show']);
             Route::put('/{id}', [AgentController::class, 'update']);
@@ -145,6 +146,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             // Создать нового поставщика
             Route::post('/', [SupplierController::class, 'store']);
             // Получить конкретного поставщика по ID
+            Route::get('/{id}/sales', [SupplierController::class, 'supplierSales']);
             Route::get('/{id}', [SupplierController::class, 'show']);
             // Обновить данные поставщика
             Route::put('/{id}', [SupplierController::class, 'update']);
@@ -216,6 +218,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             // Список всех продаж
             Route::get('/', [SaleController::class, 'index']);
             Route::get('/bad-sales', [SaleController::class, 'getBadSales']);
+            Route::get('/incomplete', [SaleController::class, 'incomplete']);
             // Создать новую продажу
             Route::post('/', [SaleController::class, 'store']);
             Route::post('/not-verified', [SaleController::class, 'notVerified'])

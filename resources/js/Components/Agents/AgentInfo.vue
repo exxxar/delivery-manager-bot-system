@@ -1,75 +1,67 @@
 <template>
+    <div v-if="agent">
+        <!-- Основная информация -->
+        <div class="mb-3">
+            <p><strong>Имя:</strong> {{ agent.name || 'Не указано' }}</p>
+            <p><strong>Телефон:</strong> {{ agent.phone || 'Не указан' }}</p>
+            <p><strong>Email:</strong> {{ agent.email || 'Не указан' }}</p>
+            <p><strong>Регион:</strong> {{ agent.region || 'Не указан' }}</p>
+        </div>
 
+        <!-- Если есть вложенные объекты -->
+        <p v-if="agent.user">
+            <strong>Пользователь:</strong> {{ agent.user?.name || 'Не указан' }}
+        </p>
 
-
-    <ul class="list-group list-group-flush">
-        <li class="list-group-item">
-            <strong>ID:</strong> {{ agent.id }}
-        </li>
-        <li class="list-group-item">
-            <strong>Имя:</strong> {{ agent.name }}
-        </li>
-        <li class="list-group-item">
-            <strong>Имя из телеграм:</strong> {{ agent.fio_from_telegram }}
-        </li>
-
-        <li class="list-group-item">
-            <strong>Id из телеграм:</strong> {{ agent.telegram_chat_id }}
-        </li>
-
-        <li class="list-group-item">
-            <strong>Роль:</strong> {{ roleName }}
-        </li>
-
-
-        <li class="list-group-item">
+        <!-- Дата рождения -->
+        <p v-if="formattedBirthday !== 'не указана'">
             <strong>Дата рождения:</strong> {{ formattedBirthday }}
-        </li>
+        </p>
 
-        <li class="list-group-item">
-            <strong>Телефон:</strong> {{ agent.agent.phone }}
-        </li>
-        <li class="list-group-item">
-            <strong>Email:</strong> {{ agent.agent.email }}
-        </li>
-        <li class="list-group-item">
-            <strong>Регион:</strong> {{ agent.agent.region }}
-        </li>
-        <li v-if="agent.in_learning" class="list-group-item">
-            <strong>Обучается у: </strong>
-            <template v-if="agent.mentor">
-                {{ agent.mentor?.name || '-' }}
-            </template>
-            <template v-else>
-                Наставник не указан
-            </template>
-        </li>
+        <!-- Роль -->
+        <p v-if="roleName !== 'Неизвестно'">
+            <strong>Роль:</strong> {{ roleName }}
+        </p>
 
+        <!-- Для массивов процентов -->
+        <div v-if="agent.percentages?.length > 0" class="mt-3">
+            <strong>Проценты:</strong>
+            <PercentageList :percentages="agent.percentages" />
+        </div>
 
-    </ul>
+        <!-- Дополнительная информация из Telegram -->
+        <div v-if="agent.user_info" v-html="agent.user_info" class="mt-3"></div>
 
+        <!-- Статистика -->
+        <div v-if="agent.month_sales_count !== undefined" class="mt-3 p-2 bg-light rounded">
+            <strong>Статистика за месяц:</strong>
+            <div class="d-flex gap-3 mt-2">
+                <span class="badge bg-success">
+                    {{ agent.month_sales_count }} сделок
+                </span>
+                <span class="badge bg-info text-dark">
+                    {{ formatMoney(agent.month_turnover) }}
+                </span>
+            </div>
+        </div>
+    </div>
 
-
-
-    <h6 class="fw-bold my-2">Начисление процентов</h6>
-    <PercentageList
-        class="mb-3"
-        :for-select="false"
-        :agent-id="agent.id"></PercentageList>
-
-    <template v-if="edit">
-        <button class="btn btn-primary p-3 w-100" @click="$emit('edit', agent)">Редактировать</button>
-    </template>
+    <!-- Показываем loader, если агент не загружен -->
+    <div v-else class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="text-muted mt-2">Загрузка информации...</p>
+    </div>
 </template>
 
 <script>
-
 import PercentageList from "@/Components/Percentage/PercentageList.vue";
 import moment from "moment/moment.js";
 
 export default {
     name: 'AgentInfo',
-    components: {PercentageList},
+    components: { PercentageList },
     props: {
         edit: {
             type: Boolean,
@@ -78,28 +70,49 @@ export default {
         },
         agent: {
             type: Object,
-            required: true
+            required: true,
+            default: null
         }
     },
     mounted() {
-        console.log("agent",this.agent)
+        console.log("AgentInfo mounted, agent:", this.agent);
+        console.log("Agent phone:", this.agent?.phone);
+        console.log("Agent role:", this.agent?.role);
     },
-    computed:{
+    computed: {
         roleName() {
+            // Защита от undefined/null
+            if (!this.agent || this.agent.role === undefined || this.agent.role === null) {
+                return 'Неизвестно';
+            }
+
             switch (this.agent.role) {
-                case 0: return 'Пользователь'
-                case 1: return 'Администратор'
-                case 2: return 'Поставщик'
-                case 3: return 'Старший администратор'
-                case 4: return 'Суперадмин'
-                default: return 'Неизвестно'
+                case 0: return 'Пользователь';
+                case 1: return 'Администратор';
+                case 2: return 'Поставщик';
+                case 3: return 'Старший администратор';
+                case 4: return 'Суперадмин';
+                default: return 'Неизвестно';
             }
         },
-        formattedBirthday(){
-            return this.agent?.birthday
-                ? moment(this.agent.birthday).format('DD.MM.YYYY')
-                : 'не указана';
+        formattedBirthday() {
+            // Защита от undefined/null
+            if (!this.agent || !this.agent.birthday) {
+                return 'не указана';
+            }
+
+            try {
+                return moment(this.agent.birthday).format('DD.MM.YYYY');
+            } catch (e) {
+                console.error('Ошибка форматирования даты:', e);
+                return 'не указана';
+            }
         }
     },
+    methods: {
+        formatMoney(value) {
+            return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽';
+        }
+    }
 }
 </script>

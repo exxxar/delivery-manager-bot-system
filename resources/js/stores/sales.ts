@@ -31,12 +31,40 @@ export const useSalesStore = defineStore('sales', {
         filters: null,
         progress: 0,
         error: null as string | null,
+
+        incompleteItems: [],
+        incompletePagination: null,
+        incompleteLoading: false,
+
         sort: {field: 'id', direction: 'desc'} as { field: string; direction: 'asc' | 'desc' }
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+
+        async fetchIncomplete(page = 1, perPage = 20) {
+            this.incompleteLoading = true;
+            try {
+                const { data } = await makeAxiosFactory('/sales/incomplete', 'get', {
+                    params: { page, per_page: perPage }
+                });
+                this.incompleteItems = data.data;
+                this.incompletePagination = {
+                    current_page: data.current_page,
+                    last_page: data.last_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    from: data.from,
+                    to: data.to,
+                };
+            } catch (e) {
+                console.error('Ошибка загрузки незавершённых сделок:', e);
+                useAlertStore().show('Не удалось загрузить незавершённые сделки', 'error');
+            } finally {
+                this.incompleteLoading = false;
+            }
+        },
         // 🔹 НОВЫЙ: загрузка данных за месяц с группировкой
         async fetchMonthData(month: string, page = 1, daysPerPage = 7) {
             this.loading = true

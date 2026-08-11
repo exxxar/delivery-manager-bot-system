@@ -74,7 +74,7 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
             v-for="agent in filteredAgents" :key="agent.id"
             v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1,'bg-danger': !agent.registration_at}"
             class="list-group-item d-flex justify-content-between align-items-center">
-            <div @click="selectAgent(agent)">
+            <div >
                 <div class="fw-bold">
                     <p class="small mb-2">
                         <span class="badge bg-primary">Общ. {{agent.total_percent || 0}}%</span>
@@ -87,8 +87,14 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                 <!-- 🔹 НОВАЯ: статистика для активных/неактивных -->
                 <template v-if="viewMode === 'active' && agent.month_sales_count">
                     <div class="d-flex gap-2 mt-2">
-                        <span class="badge bg-success">
-                            <i class="fa-solid fa-receipt me-1"></i> {{ agent.month_sales_count }} сделок
+                        <span
+                            class="badge bg-success clickable-badge"
+                            @click.stop="openAgentSales(agent)"
+                            :title="`Посмотреть сделки агента за ${selectedMonth}`"
+                        >
+                            <i class="fa-solid fa-receipt me-1"></i>
+                            {{ agent.month_sales_count }} сделок
+                            <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
                         </span>
                         <span class="badge bg-info text-dark">
                             <i class="fa-solid fa-money-bill-trend-up me-1"></i> {{ formatMoney(agent.month_turnover) }}
@@ -247,6 +253,56 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
             </div>
         </div>
     </div>
+
+    <!-- Модалка со сделками агента -->
+    <div class="modal fade" id="agentSalesModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-user-tie text-primary me-2"></i>
+                        Сделки: <span class="text-primary">{{ selectedAgent?.name }}</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Загрузка -->
+                    <div v-if="agentStore.loading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+
+                    <template v-else>
+                        <!-- Список сделок -->
+                        <div v-if="agentStore.agentSales.length > 0">
+
+                            <SaleCard
+                                class="shadow-sm mb-2 rounded-2 p-2"
+                                :key="sale.id"
+                                :field_visible="field_visible"
+                                :saleStatuses="saleStatuses"
+                                v-for="sale in agentStore.agentSales"
+                                :sale="sale"></SaleCard>
+
+                            <!-- Пагинация -->
+                            <Pagination
+                                v-if="agentStore.agentSalesPagination?.total > 0"
+                                :pagination="agentStore.agentSalesPagination"
+                                @page-changed="fetchAgentSalesPage"
+                            />
+                        </div>
+
+                        <!-- Пусто -->
+                        <div v-else class="text-center text-muted py-5">
+                            <i class="fa-solid fa-inbox fs-1 mb-3 d-block"></i>
+                            <p class="mb-0">За выбранный период сделок не найдено</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -256,14 +312,22 @@ import {useAgentsStore} from "@/stores/agents";
 import {useAdminsStore} from "@/stores/admins";
 import {useBaseExports} from "@/stores/baseExports";
 import {useUsersStore} from "@/stores/users";
-
+import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 
 export default {
     name: 'AgentList',
-    components: {AgentForm},
+    components: {AgentForm, SaleCard},
     props: ["forSelect"],
     data() {
         return {
+            field_visible: null,
+            saleStatuses: {
+                pending: "В ожидании",
+                assigned: "Назначено",
+                completed: "Завершено",
+                rejected: "Отклонено",
+                delivered: "Доставляется"
+            },
             size:20,
             search: '',
             selectedAdmin: null,
@@ -310,7 +374,27 @@ export default {
 
     },
     methods: {
-        // 🔹 НОВЫЕ методы
+        async openAgentSales(agent) {
+            this.selectedAgent = agent
+            try {
+                await this.agentStore.fetchAgentSales(agent.id, this.selectedMonth)
+                new bootstrap.Modal(document.getElementById('agentSalesModal')).show()
+            } catch (e) {
+                console.error('Ошибка загрузки сделок агента:', e)
+            }
+        },
+
+        async fetchAgentSalesPage(url) {
+            const match = url.match(/page=(\d+)/)
+            const page = match ? parseInt(match[1]) : 1
+            if (this.selectedAgent) {
+                await this.agentStore.fetchAgentSales(
+                    this.selectedAgent.id,
+                    this.selectedMonth,
+                    page
+                )
+            }
+        },
         getCurrentMonth() {
             const now = new Date()
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -387,8 +471,19 @@ export default {
         },
 
         openAgentInfo(agent) {
-            this.selectedAgent = agent
-            new bootstrap.Modal(document.getElementById('agentInfoModal')).show()
+            // Сбрасываем перед установкой нового
+            this.selectedAgent = null
+
+            this.$nextTick(() => {
+                // Устанавливаем нового агента
+                this.selectedAgent = { ...agent } // Создаём копию, чтобы избежать проблем с реактивностью
+
+                // Показываем модалку только после того, как данные установлены
+                this.$nextTick(() => {
+                    const modal = new bootstrap.Modal(document.getElementById('agentInfoModal'))
+                    modal.show()
+                })
+            })
         },
         openPercents(agent) {
             this.selectedAgent = agent
@@ -423,3 +518,23 @@ export default {
     }
 }
 </script>
+<style scoped>
+.clickable-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.clickable-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3);
+    filter: brightness(1.1);
+}
+
+.clickable-badge:active {
+    transform: translateY(0);
+}
+</style>

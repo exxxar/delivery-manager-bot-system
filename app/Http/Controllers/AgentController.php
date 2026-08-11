@@ -22,6 +22,30 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class AgentController extends Controller
 {
 
+    public function agentSales(Request $request, $id)
+    {
+        $agent = Agent::findOrFail($id);
+        $month = $request->get('month', now()->format('Y-m'));
+
+        try {
+            $monthDate = Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный формат месяца'], 422);
+        }
+
+        $sales = Sale::query()
+            ->with(['product', 'supplier', 'customer', 'creator', 'agent'])
+            ->where('agent_id', $id)
+            ->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateString(),
+                $monthDate->endOfMonth()->toDateString()
+            ])
+            ->orderByDesc('actual_delivery_date')
+            ->paginate($request->get('per_page', 20));
+
+        return response()->json($sales);
+    }
+
     public function active(Request $request)
     {
         $month = $request->get('month', now()->format('Y-m'));
