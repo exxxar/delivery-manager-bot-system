@@ -70,7 +70,7 @@ export const useSalesStore = defineStore('sales', {
                     params.append('date_to', filters.date_to)
                 }
 
-                const { data } = await axios.get('/sales/incomplete', { params })
+                const { data } = await makeAxiosFactory('/sales/incomplete', 'get',{ params })
 
                 this.incompleteItems = data.data
                 this.incompletePagination = {
