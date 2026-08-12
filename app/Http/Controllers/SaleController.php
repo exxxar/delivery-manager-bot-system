@@ -83,12 +83,16 @@ class SaleController extends Controller
             return response()->json(['message' => 'Пользователь не авторизован'], 401);
         }
 
-        // 🔹 Получаем фильтры (все по умолчанию включены)
+        // 🔹 Критерии незавершённости
         $includeMissingDate  = $request->boolean('include_missing_date', true);
         $includeStatus       = $request->boolean('include_status', true);
         $includeMissingPrice = $request->boolean('include_missing_price', true);
 
-        // Если ни один фильтр не активен — возвращаем пустой результат
+        // 🔹 Фильтр по датам (по created_at)
+        $dateFrom = $request->input('date_from');
+        $dateTo   = $request->input('date_to');
+
+        // Если ни один фильтр не активен — пустой результат
         if (!$includeMissingDate && !$includeStatus && !$includeMissingPrice) {
             return response()->json([
                 'current_page' => 1,
@@ -105,7 +109,7 @@ class SaleController extends Controller
 
         $query = Sale::query()
             ->with(['product', 'agent', 'customer', 'supplier', 'creator'])
-            // 🔹 Динамическое OR-условие на основе активных фильтров
+            // 🔹 Динамическое OR-условие
             ->where(function ($q) use ($includeMissingDate, $includeStatus, $includeMissingPrice) {
                 if ($includeMissingDate) {
                     $q->orWhereNull('actual_delivery_date');
@@ -121,6 +125,14 @@ class SaleController extends Controller
                 }
             })
             ->where('status', '!=', 'rejected')
+            // 🔹 Фильтр по датам создания
+            ->when($dateFrom, function ($q) use ($dateFrom) {
+                $q->whereDate('created_at', '>=', $dateFrom);
+            })
+            ->when($dateTo, function ($q) use ($dateTo) {
+                $q->whereDate('created_at', '<=', $dateTo);
+            })
+            // 🔹 Права доступа
             ->where(function ($q) use ($botUser, $agent) {
                 if ($botUser->role >= RoleEnum::SUPERADMIN->value) {
                     return;
@@ -142,12 +154,13 @@ class SaleController extends Controller
 
         $sales = $query->paginate($request->get('per_page', 20));
 
-        // 🔹 Возвращаем активные фильтры, чтобы фронтенд их отобразил
         $response = $sales->toArray();
         $response['applied_filters'] = [
-            'include_missing_date' => $includeMissingDate,
-            'include_status' => $includeStatus,
+            'include_missing_date'  => $includeMissingDate,
+            'include_status'        => $includeStatus,
             'include_missing_price' => $includeMissingPrice,
+            'date_from'             => $dateFrom,
+            'date_to'               => $dateTo,
         ];
 
         return response()->json($response);

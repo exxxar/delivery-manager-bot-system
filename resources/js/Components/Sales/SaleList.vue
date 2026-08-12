@@ -516,6 +516,82 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
     <template v-if="currentTab === 'incomplete'">
 
         <!-- 🔹 Панель фильтров -->
+
+        <!-- 🔹 Фильтр по датам -->
+        <div class="date-range-filters card mb-3 shadow-sm">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="fa-solid fa-calendar-days text-primary me-2"></i>
+                        Период создания сделок
+                        <small class="text-muted fw-normal ms-2">(по дате создания)</small>
+                    </h6>
+
+                    <button
+                        v-if="incompleteFilters.date_from || incompleteFilters.date_to"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        @click="clearDateFilters"
+                    >
+                        <i class="fa-solid fa-xmark me-1"></i>
+                        Сбросить даты
+                    </button>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-12 col-md-6">
+                        <div class="form-floating">
+                            <input
+                                type="date"
+                                class="form-control"
+                                id="incompleteDateFrom"
+                                v-model="incompleteFilters.date_from"
+                                @change="onIncompleteFilterChange"
+                                :max="incompleteFilters.date_to || todayDate"
+                            />
+                            <label for="incompleteDateFrom">
+                                <i class="fa-solid fa-calendar-day me-1"></i>
+                                Созданы с
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="form-floating">
+                            <input
+                                type="date"
+                                class="form-control"
+                                id="incompleteDateTo"
+                                v-model="incompleteFilters.date_to"
+                                @change="onIncompleteFilterChange"
+                                :min="incompleteFilters.date_from"
+                                :max="todayDate"
+                            />
+                            <label for="incompleteDateTo">
+                                <i class="fa-solid fa-calendar-check me-1"></i>
+                                Созданы по
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Индикатор активного периода -->
+                <div
+                    v-if="incompleteFilters.date_from || incompleteFilters.date_to"
+                    class="mt-2 small text-primary"
+                >
+                    <i class="fa-solid fa-filter me-1"></i>
+                    Показаны сделки за период:
+                    <strong>
+                        {{ incompleteFilters.date_from ? formatDateShort(incompleteFilters.date_from) : 'начала' }}
+                    </strong>
+                    —
+                    <strong>
+                        {{ incompleteFilters.date_to ? formatDateShort(incompleteFilters.date_to) : 'сейчас' }}
+                    </strong>
+                </div>
+            </div>
+        </div>
+
         <div class="incomplete-filters card mb-3 shadow-sm">
             <div class="card-body p-3">
                 <h6 class="mb-3">
@@ -829,6 +905,8 @@ export default {
                 include_missing_date: true,
                 include_status: true,
                 include_missing_price: true,
+                date_from: '',  // 🔹 формат YYYY-MM-DD
+                date_to: '',    // 🔹 формат YYYY-MM-DD
             },
             dealForm: {
                 sale_date: null,
@@ -854,9 +932,22 @@ export default {
         },
         filteredBadSales() {
             return this.salesStore.bad_items ?? []
-        }
+        },
+        todayDate() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        },
     },
     created() {
+
+        const saved = localStorage.getItem('incomplete_filters');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                this.incompleteFilters = { ...this.incompleteFilters, ...parsed };
+            } catch (e) {}
+        }
+
         this.salesStore.setFilters({
             created_by_id: this.adminId || null,
             customer_id: this.customerId || null,
@@ -869,9 +960,8 @@ export default {
     },
     methods: {
         toggleIncompleteFilter(key) {
-            // Инвертируем значение
             this.incompleteFilters[key] = !this.incompleteFilters[key];
-            // Перезагружаем список
+            localStorage.setItem('incomplete_filters', JSON.stringify(this.incompleteFilters));
             this.onIncompleteFilterChange();
         },
         switchTab(tab) {
@@ -947,9 +1037,12 @@ export default {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
         onIncompleteFilterChange() {
+            // 🔹 Сохраняем в localStorage
+            localStorage.setItem('incomplete_filters', JSON.stringify(this.incompleteFilters));
             // Сбрасываем на первую страницу и перезагружаем
             this.salesStore.fetchIncomplete(1, 20, this.incompleteFilters);
         },
+
 
         async sendPaymentDocumentToTg(id) {
             await this.salesStore.sendPaymentDocumentToTg(id).then(() => {
@@ -1055,6 +1148,26 @@ export default {
             )
 
 
+        },
+
+        clearDateFilters() {
+            this.incompleteFilters.date_from = '';
+            this.incompleteFilters.date_to = '';
+            this.onIncompleteFilterChange();
+        },
+
+        formatDateShort(dateString) {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                });
+            } catch {
+                return dateString;
+            }
         },
         openConfirmDeal(sale) {
             this.selectedSale = null
@@ -1431,5 +1544,24 @@ p {
 /* Карточка с выделением */
 .sale-card.border-danger {
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
+}
+
+/* 🔹 Панель фильтра по датам */
+.date-range-filters {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+}
+
+.date-range-filters .form-floating .form-control {
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+}
+
+.date-range-filters .form-floating label {
+    font-size: 13px;
+}
+
+.date-range-filters .form-floating label i {
+    color: #0d6efd;
 }
 </style>
