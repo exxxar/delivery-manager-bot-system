@@ -88,7 +88,7 @@ class SaleController extends Controller
         $includeStatus       = $request->boolean('include_status', true);
         $includeMissingPrice = $request->boolean('include_missing_price', true);
 
-        // 🔹 Фильтр по датам (по created_at)
+        // 🔹 Фильтр по датам
         $dateFrom = $request->input('date_from');
         $dateTo   = $request->input('date_to');
 
@@ -109,19 +109,38 @@ class SaleController extends Controller
 
         $query = Sale::query()
             ->with(['product', 'agent', 'customer', 'supplier', 'creator'])
-            // 🔹 Динамическое OR-условие
+            // 🔹 ИСПРАВЛЕНО: Правильная логика OR внутри скобок
             ->where(function ($q) use ($includeMissingDate, $includeStatus, $includeMissingPrice) {
+                $conditions = [];
+
                 if ($includeMissingDate) {
-                    $q->orWhereNull('actual_delivery_date');
+                    $conditions[] = function($sub) {
+                        $sub->whereNull('actual_delivery_date');
+                    };
                 }
                 if ($includeStatus) {
-                    $q->orWhere('status', '!=', 'delivered');
+                    $conditions[] = function($sub) {
+                        $sub->where('status', '!=', 'delivered');
+                    };
                 }
                 if ($includeMissingPrice) {
-                    $q->orWhere(function ($sub) {
-                        $sub->whereNull('total_price')
-                            ->orWhere('total_price', 0);
-                    });
+                    $conditions[] = function($sub) {
+                        $sub->where(function($priceQuery) {
+                            $priceQuery->whereNull('total_price')
+                                ->orWhere('total_price', 0);
+                        });
+                    };
+                }
+
+                // Применяем первое условие без OR
+                if (!empty($conditions)) {
+                    $first = array_shift($conditions);
+                    $q->where($first);
+
+                    // Остальные условия с OR
+                    foreach ($conditions as $condition) {
+                        $q->orWhere($condition);
+                    }
                 }
             })
             ->where('status', '!=', 'rejected')
