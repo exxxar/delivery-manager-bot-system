@@ -51,7 +51,7 @@ export const useSalesStore = defineStore('sales', {
                 params.append('page', String(page))
                 params.append('per_page', String(perPage))
 
-                // 🔹 Передаём фильтры
+                // 🔹 Критерии незавершённости
                 if ('include_missing_date' in filters) {
                     params.append('include_missing_date', filters.include_missing_date ? '1' : '0')
                 }
@@ -62,7 +62,15 @@ export const useSalesStore = defineStore('sales', {
                     params.append('include_missing_price', filters.include_missing_price ? '1' : '0')
                 }
 
-                const { data } = await makeAxiosFactory('/sales/incomplete', 'GET', {},{ params })
+                // 🔹 ИСПРАВЛЕНО: Фильтр по датам (только если заполнено)
+                if (filters.date_from) {
+                    params.append('date_from', filters.date_from)
+                }
+                if (filters.date_to) {
+                    params.append('date_to', filters.date_to)
+                }
+
+                const { data } = await makeAxiosFactory('/sales/incomplete', 'GET', {}, { params })
 
                 this.incompleteItems = data.data
                 this.incompletePagination = {
