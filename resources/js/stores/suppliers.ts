@@ -56,6 +56,11 @@ export const useSuppliersStore = defineStore('suppliers', {
                     last_page: data.last_page,
                     from: data.from,
                     to: data.to,
+                    // 🔹 ДОБАВЬТЕ ЭТИ ПОЛЯ:
+                    prev_page_url: data.prev_page_url,
+                    next_page_url: data.next_page_url,
+                    first_page_url: data.first_page_url,
+                    last_page_url: data.last_page_url,
                 }
 
                 return data

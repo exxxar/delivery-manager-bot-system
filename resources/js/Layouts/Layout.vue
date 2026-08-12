@@ -1,16 +1,3 @@
-<script setup>
-import { Head } from '@inertiajs/vue3'
-import GlobalAlert from "@/Components/GlobalAlert.vue";
-import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
-import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
-import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
-import {
-    getQueue,
-    removeFromQueue,
-    base64ToFile,
-} from "@/utilites/offlineQueue.js";
-</script>
-
 <template>
     <Head>
         <title>Автоматический учет доставки</title>
@@ -29,7 +16,16 @@ import {
         <div class="navbar shadow shadow-sm">
             <div class="container flex-row-reverse p-2">
 
-                <!-- Счётчик офлайн-заявок (кликабельный) -->
+                <!-- Версия приложения -->
+                <span
+                    v-if="serverVersion"
+                    class="badge bg-secondary me-2 align-middle version-badge"
+                    :title="`Версия приложения: ${serverVersion}`"
+                >
+                    v{{ serverVersion }}
+                </span>
+
+                <!-- Счётчик офлайн-заявок -->
                 <span
                     v-if="offlineQueueCount > 0"
                     class="badge bg-warning text-dark me-2 align-middle queue-badge"
@@ -56,8 +52,8 @@ import {
         </div>
     </header>
 
-    <GlobalAlert />
-    <GlobalConfirmModal />
+    <GlobalAlert/>
+    <GlobalConfirmModal/>
 
     <div class="container-lg py-3">
         <slot/>
@@ -158,7 +154,8 @@ import {
     </div>
 
     <!-- 🔹 МОДАЛКА ОФЛАЙН-ОЧЕРЕДИ -->
-    <div class="modal fade" id="offlineQueueModal" tabindex="-1" aria-labelledby="offlineQueueModalLabel" aria-hidden="true">
+    <div class="modal fade" id="offlineQueueModal" tabindex="-1" aria-labelledby="offlineQueueModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -171,8 +168,6 @@ import {
                 </div>
 
                 <div class="modal-body">
-
-                    <!-- Блок: нет интернета -->
                     <div v-if="isOffline" class="alert alert-danger d-flex align-items-start mb-3">
                         <i class="fa-solid fa-triangle-exclamation fs-4 me-2 mt-1"></i>
                         <div>
@@ -184,7 +179,6 @@ import {
                         </div>
                     </div>
 
-                    <!-- Блок: есть интернет -->
                     <div v-else class="alert alert-success d-flex align-items-center mb-3">
                         <i class="fa-solid fa-circle-check fs-4 me-2"></i>
                         <div class="flex-grow-1">
@@ -193,7 +187,6 @@ import {
                         </div>
                     </div>
 
-                    <!-- Список задач -->
                     <div v-if="queueItems.length > 0">
                         <div
                             v-for="(item, index) in queueItems"
@@ -203,7 +196,6 @@ import {
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1 me-2">
-                                        <!-- Заголовок -->
                                         <div class="fw-bold mb-1">
                                             <i class="fa-solid fa-file-lines text-primary me-1"></i>
                                             {{ item.formData.title || 'Без названия' }}
@@ -213,12 +205,10 @@ import {
                                             </span>
                                         </div>
 
-                                        <!-- Описание (если есть) -->
                                         <p v-if="item.formData.description" class="small text-muted mb-2 text-truncate">
                                             {{ item.formData.description }}
                                         </p>
 
-                                        <!-- Метаданные -->
                                         <div class="small d-flex flex-wrap gap-3 text-muted">
                                             <span v-if="item.formData.total_price">
                                                 <i class="fa-solid fa-ruble-sign me-1"></i>
@@ -238,14 +228,12 @@ import {
                                             </span>
                                         </div>
 
-                                        <!-- Статус ошибки после попытки синхронизации -->
                                         <div v-if="item.error" class="small text-danger mt-1">
                                             <i class="fa-solid fa-circle-xmark me-1"></i>
                                             {{ item.error }}
                                         </div>
                                     </div>
 
-                                    <!-- Кнопка удаления -->
                                     <button
                                         type="button"
                                         class="btn btn-sm btn-outline-danger"
@@ -257,7 +245,6 @@ import {
                                     </button>
                                 </div>
 
-                                <!-- Индикатор отправки конкретной заявки -->
                                 <div v-if="syncingIds.includes(item.id)" class="mt-2">
                                     <div class="progress" style="height: 4px;">
                                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
@@ -272,7 +259,6 @@ import {
                         </div>
                     </div>
 
-                    <!-- Пусто -->
                     <div v-else class="text-center py-5 text-muted">
                         <i class="fa-solid fa-inbox fs-1 mb-3 d-block"></i>
                         <p class="mb-0">Очередь пуста</p>
@@ -285,7 +271,6 @@ import {
                     </button>
 
                     <div class="d-flex gap-2">
-                        <!-- Очистить всю очередь -->
                         <button
                             v-if="queueItems.length > 0"
                             type="button"
@@ -297,7 +282,6 @@ import {
                             Очистить всё
                         </button>
 
-                        <!-- Отправить все -->
                         <button
                             type="button"
                             class="btn btn-primary"
@@ -318,31 +302,75 @@ import {
             </div>
         </div>
     </div>
+
+    <!-- 🔹 МОДАЛКА ОБНОВЛЕНИЯ -->
+    <UpdateModal
+        v-if="updateAvailable"
+        :new-version="updateInfo.version"
+        :local-version="updateInfo.localVersion"
+        :message="updateInfo.message"
+        :force-update="updateInfo.forceUpdate"
+    />
 </template>
 
 <script>
-import { useUsersStore } from "@/stores/users";
-import { useSalesStore } from "@/stores/sales";
-import { useModalStore } from "@/stores/utillites/useConfitmModalStore";
-import { useAlertStore } from "@/stores/utillites/useAlertStore";
+import { Head, usePage } from '@inertiajs/vue3'
+import GlobalAlert from "@/Components/GlobalAlert.vue";
+import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
+import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
+import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
+import UpdateModal from "@/Components/UpdateModal.vue";
 import {
     getQueue,
     removeFromQueue,
     incrementAttempts,
     base64ToFile,
 } from "@/utilites/offlineQueue.js";
+import {
+    getLocalVersion,
+    setLocalVersion,
+    forceUpdate
+} from "@/utilites/versionCheck.js";
+import { useUsersStore } from "@/stores/users";
+import { useSalesStore } from "@/stores/sales";
+import { useModalStore } from "@/stores/utillites/useConfitmModalStore";
+import { useAlertStore } from "@/stores/utillites/useAlertStore";
 
 export default {
+    components: {
+        Head,
+        GlobalAlert,
+        GlobalConfirmModal,
+        UserProfileCard,
+        PrimaryForm,
+        UpdateModal
+    },
+
     data() {
         return {
+            // 🔹 Состояние сети и очереди
             offlineQueueCount: 0,
             queueItems: [],
             syncingIds: [],
+            isOffline: !navigator.onLine,
+
+            // 🔹 Состояние обновления
+            updateAvailable: false,
+            updateInfo: {
+                version: '',
+                localVersion: '',
+                message: '',
+                forceUpdate: false,
+            },
+
+            // 🔹 Stores
             userStore: useUsersStore(),
             salesStore: useSalesStore(),
             modalStore: useModalStore(),
             alertStore: useAlertStore(),
-            isOffline: !navigator.onLine,
+
+            // 🔹 Inertia page для доступа к shared props
+            page: usePage(),
         };
     },
 
@@ -356,6 +384,16 @@ export default {
         self() {
             return this.userStore.self;
         },
+
+        // 🔹 Версия из Inertia shared props
+        serverVersion() {
+            return this.page.props.appVersion || null;
+        },
+
+        // 🔹 Флаг принудительного обновления
+        forceUpdateFlag() {
+            return this.page.props.forceUpdate || false;
+        },
     },
 
     watch: {
@@ -365,16 +403,28 @@ export default {
                 document.body.classList.toggle('has-offline-banner', isOffline);
             },
         },
+
+        // 🔹 Следим за изменениями версии (работает при SPA-навигации Inertia)
+        serverVersion: {
+            immediate: true,
+            handler(newVersion) {
+                if (!newVersion) return;
+                this.checkAndShowUpdateModal(newVersion);
+            },
+        },
     },
 
     mounted() {
+        // 🔹 Слушатели сети
         window.addEventListener('online', this.handleOnline);
         window.addEventListener('offline', this.handleOffline);
         window.addEventListener('offline-queue-changed', this.onQueueChanged);
 
+        // 🔹 Инициализация очереди
         this.offlineQueueCount = getQueue().length;
         this.queueItems = getQueue();
 
+        // 🔹 Telegram WebApp
         if (this.canUseTG) {
             this.tg?.expand();
             this.tg?.BackButton?.hide();
@@ -382,6 +432,7 @@ export default {
     },
 
     beforeUnmount() {
+        // 🔹 Очистка слушателей
         window.removeEventListener('online', this.handleOnline);
         window.removeEventListener('offline', this.handleOffline);
         window.removeEventListener('offline-queue-changed', this.onQueueChanged);
@@ -389,14 +440,41 @@ export default {
     },
 
     methods: {
-        onQueueChanged(event) {
-            this.offlineQueueCount = event.detail.count;
-            // Обновляем список, если модалка открыта
-            if (document.getElementById('offlineQueueModal')?.classList.contains('show')) {
-                this.queueItems = getQueue();
+        // 🔹 Проверка версии и показ модалки обновления
+        checkAndShowUpdateModal(newVersion) {
+            const localVersion = getLocalVersion();
+
+            // Первый запуск — сохраняем версию без модалки
+            if (!localVersion) {
+                setLocalVersion(newVersion);
+                return;
             }
+
+            // Версии совпадают и нет принудительного обновления
+            if (localVersion === newVersion && !this.forceUpdateFlag) {
+                return;
+            }
+
+            // Версии отличаются или принудительное обновление
+            this.updateAvailable = true;
+            this.updateInfo = {
+                version: newVersion,
+                localVersion: localVersion,
+                message: 'Доступна новая версия приложения. Пожалуйста, обновите для продолжения работы.',
+                forceUpdate: this.forceUpdateFlag,
+            };
+
+            // Показываем модалку
+            this.$nextTick(() => {
+                const modalEl = document.getElementById('updateModal');
+                if (modalEl && !modalEl.classList.contains('show')) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            });
         },
 
+        // 🔹 Обработчики сети
         handleOnline() {
             this.isOffline = false;
             window.dispatchEvent(new CustomEvent('trigger-queue-sync'));
@@ -406,10 +484,18 @@ export default {
             this.isOffline = true;
         },
 
+        onQueueChanged(event) {
+            this.offlineQueueCount = event.detail.count;
+            if (document.getElementById('offlineQueueModal')?.classList.contains('show')) {
+                this.queueItems = getQueue();
+            }
+        },
+
         refreshQueueList() {
             this.queueItems = getQueue();
         },
 
+        // 🔹 Форматирование
         formatMoney(value) {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽';
         },
@@ -428,6 +514,7 @@ export default {
             }
         },
 
+        // 🔹 Управление очередью
         confirmRemoveFromQueue(item) {
             this.modalStore.open(
                 `Удалить заявку "${item.formData.title || 'без названия'}" из очереди?`,
@@ -468,7 +555,6 @@ export default {
                 }
 
                 this.syncingIds.push(item.id);
-                // Небольшая задержка, чтобы UI успел обновиться
                 await new Promise(r => setTimeout(r, 50));
 
                 try {
@@ -489,7 +575,6 @@ export default {
                     errorCount++;
                     incrementAttempts(item.id);
 
-                    // Помечаем ошибку в карточке
                     const idx = this.queueItems.findIndex(q => q.id === item.id);
                     if (idx !== -1) {
                         this.queueItems[idx].error =
@@ -498,7 +583,6 @@ export default {
                             'Не удалось отправить';
                     }
 
-                    // 401 — удаляем сразу
                     if (e?.response?.status === 401) {
                         removeFromQueue(item.id);
                     }
@@ -516,12 +600,12 @@ export default {
                 this.alertStore.show(`Ошибок при отправке: ${errorCount}`, 'error');
             }
             if (successCount > 0 && this.queueItems.length === 0) {
-                // Закрываем модалку, если всё отправлено
                 const modal = bootstrap.Modal.getInstance(document.getElementById('offlineQueueModal'));
                 modal?.hide();
             }
         },
 
+        // 🔹 Навигация и утилиты
         onPrimaryFormSuccess() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('primaryUserModal'));
             modal?.hide();
@@ -599,7 +683,7 @@ body.has-offline-banner .fixed-top-menu {
     text-align: center;
     padding: 8px 16px;
     height: 36px;
-    z-index: 1100;
+    z-index: 1055;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     display: flex;
     align-items: center;
@@ -628,7 +712,6 @@ body.has-offline-banner .fixed-top-menu {
     transition: top 0.3s ease;
 }
 
-/* 🔹 Кликабельный badge с анимацией */
 .queue-badge {
     cursor: pointer;
     transition: all 0.2s ease;
@@ -643,12 +726,22 @@ body.has-offline-banner .fixed-top-menu {
     background: #ffca2c !important;
 }
 
-@keyframes pulse-badge {
-    0%, 100% { box-shadow: 0 2px 6px rgba(255, 193, 7, 0.4); }
-    50% { box-shadow: 0 2px 12px rgba(255, 193, 7, 0.7); }
+.version-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    opacity: 0.8;
+    cursor: help;
 }
 
-/* 🔹 Карточки в списке очереди */
+@keyframes pulse-badge {
+    0%, 100% {
+        box-shadow: 0 2px 6px rgba(255, 193, 7, 0.4);
+    }
+    50% {
+        box-shadow: 0 2px 12px rgba(255, 193, 7, 0.7);
+    }
+}
+
 .queue-item {
     border: 1px solid #e9ecef;
     transition: all 0.2s ease;

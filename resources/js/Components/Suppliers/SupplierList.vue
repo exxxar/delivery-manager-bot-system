@@ -1,14 +1,5 @@
-<script setup>
-import Pagination from "@/Components/Pagination.vue";
-import SupplierFilter from "@/Components/Suppliers/SupplierFilter.vue";
-import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
-import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
-</script>
-
 <template>
-
-    <div
-        class="form-check form-switch mb-2">
+    <div class="form-check form-switch mb-2">
         <input
             class="form-check-input"
             type="checkbox"
@@ -127,10 +118,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                        @click="removeAll"
                        class="small text-danger mx-2">Удалить выделенное</a>
                 </template>
-
             </div>
         </template>
-
 
         <ul class="list-group">
             <li
@@ -155,36 +144,36 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                     <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
                     <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
 
-                    <!-- 🔹 НОВАЯ: статистика для активных/неактивных -->
+                    <!-- 🔹 Статистика для активных/неактивных -->
                     <template v-if="viewMode === 'active' && supplier.month_sales_count">
                         <div class="d-flex gap-2 mt-1">
-                           <span
-                               class="badge bg-success clickable-badge"
-                               @click.stop="openSupplierSales(supplier)"
-                               :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
-                           >
+                            <span
+                                class="badge bg-success clickable-badge"
+                                @click.stop="openSupplierSales(supplier)"
+                                :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
+                            >
                                 <i class="fa-solid fa-receipt me-1"></i>
                                 {{ supplier.month_sales_count }} сделок
                                 <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
                             </span>
                             <span class="badge bg-info text-dark">
-                        <i class="fa-solid fa-money-bill-trend-up me-1"></i>
-                        {{ formatMoney(supplier.month_turnover) }}
-                    </span>
+                                <i class="fa-solid fa-money-bill-trend-up me-1"></i>
+                                {{ formatMoney(supplier.month_turnover) }}
+                            </span>
                         </div>
                     </template>
 
                     <template v-if="viewMode === 'inactive'">
                         <div class="mt-1">
-                    <span class="badge bg-secondary">
-                        <i class="fa-solid fa-pause me-1"></i>
-                        Нет сделок за выбранный месяц
-                    </span>
+                            <span class="badge bg-secondary">
+                                <i class="fa-solid fa-pause me-1"></i>
+                                Нет сделок за выбранный месяц
+                            </span>
                         </div>
                     </template>
                 </div>
 
-                <!-- Правая часть (меню) — без изменений -->
+                <!-- Правая часть (меню) -->
                 <div class="d-flex justify-content-between">
                     <button
                         type="button"
@@ -195,7 +184,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                         <span v-if="!favorites.includes(supplier.id)">
                             <i class="fa-regular fa-star text-danger"></i>
                         </span>
-                                            <span v-else>
+                        <span v-else>
                             <i class="fa-solid fa-star text-danger"></i>
                         </span>
                     </button>
@@ -223,12 +212,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
             </li>
         </ul>
 
-
-
-
         <template v-if="suppliersStore.pagination?.total>0">
-
-
             <div class="form-floating my-2">
                 <select
                     id="itemsPerPage"
@@ -256,8 +240,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
         <div v-if="suppliersStore.items?.length === 0" class="alert alert-info mt-3">
             Поставщиков пока нет.
         </div>
-
     </template>
+
     <!-- Модалка редактирования -->
     <div class="modal fade" id="editSupplierModal" tabindex="-1">
         <div class="modal-dialog">
@@ -267,12 +251,10 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Заглушка под форму -->
                     <SupplierForm
                         v-if="selectedSupplier"
                         :initial-data="selectedSupplier" @saved="fetchData"/>
                 </div>
-
             </div>
         </div>
     </div>
@@ -329,15 +311,23 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 </template>
 
 <script>
-import axios from 'axios'
+import Pagination from "@/Components/Pagination.vue";
+import SupplierFilter from "@/Components/Suppliers/SupplierFilter.vue";
+import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
+import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 import {useUsersStore} from "@/stores/users";
-import debounce from 'lodash.debounce'
 import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     name: 'SupplierListGroup',
+    components: {
+        Pagination,
+        SupplierFilter,
+        SupplierForm,
+        SaleCard
+    },
     props: ["forSelect"],
     data() {
         return {
@@ -354,12 +344,11 @@ export default {
                 delivered: "Доставляется"
             },
             search: null,
-            size:30,
+            size: 30,
             showSimpleSupplierForm: false,
             selectedSupplier: null,
             suppliersStore: useSuppliersStore(),
-
-            viewMode: 'all', // 'all' | 'active' | 'inactive'
+            viewMode: 'all',
             selectedMonth: this.getCurrentMonth(),
         }
     },
@@ -378,25 +367,13 @@ export default {
         user() {
             return this.userStore?.self || null
         }
-        /* filteredSuppliers() {
-             if (!this.search) return this.suppliersStore.items || []
-             const q = this.search.toLowerCase()
-             return this.suppliersStore.items.filter(supplier =>
-                 Object.values(supplier).some(val =>
-                     val ? String(val).toLowerCase().includes(q) : false
-                 )
-             )
-         }*/
     },
     created() {
         if (!this.userStore.self) {
             this.userStore.fetchSelf()
         }
-
         this.loadByMode()
     },
-
-
     methods: {
         async openSupplierSales(supplier) {
             this.selectedSupplier = supplier
@@ -420,11 +397,7 @@ export default {
                 )
             }
         },
-        searchDebounced() {
-            debounce(() => {
-                this.findSupplier()
-            }, 300)
-        },
+
         findSupplier() {
             this.suppliersStore.setFilters({
                 name: this.search || ''
@@ -432,11 +405,12 @@ export default {
             this.suppliersStore.setSort('id', 'desc')
             this.suppliersStore.fetchFiltered(0, this.size)
         },
+
         addNewSupplier(supplier) {
             this.$emit("select", supplier)
         },
-        applyFilters(filters) {
 
+        applyFilters(filters) {
             this.field_visible = filters.field_visible
             let size = filters.size || this.size || 30
             let page = filters.page || 0
@@ -445,6 +419,7 @@ export default {
             this.suppliersStore.setSort(filters.sort.field, filters.sort.direction)
             this.suppliersStore.fetchFiltered(page, size)
         },
+
         toggleFavorites(id) {
             if (!this.user) {
                 this.alertStore.show('Необходимо авторизоваться', 'warning')
@@ -474,21 +449,18 @@ export default {
                     this.selection = []
                 }
             )
-
-
         },
+
         openEditModal(supplier) {
             this.selectedSupplier = null
             this.$nextTick(() => {
-                this.selectedSupplier = supplier;
-                new bootstrap.Modal(document.getElementById("editSupplierModal")).show();
+                this.selectedSupplier = supplier
+                new bootstrap.Modal(document.getElementById("editSupplierModal")).show()
             })
-
         },
-        toggleSelection(supplier) {
 
-            if (this.forSelect)
-            {
+        toggleSelection(supplier) {
+            if (this.forSelect) {
                 this.selectSupplier(supplier)
                 return
             }
@@ -502,6 +474,7 @@ export default {
 
             this.$emit("select", this.selection)
         },
+
         selectAll() {
             if (this.selection.length === 0)
                 this.suppliersStore.items.forEach(i => {
@@ -513,19 +486,23 @@ export default {
 
             this.$emit("select", this.selection)
         },
+
         async fetchData(page = 0) {
             await this.suppliersStore.fetchAllByPage(page, this.size)
         },
+
         async fetchDataByUrl(url) {
             await this.suppliersStore.fetchByUrl(url)
         },
+
         selectSupplier(supplier) {
             if (!this.forSelect)
                 return
             this.$emit("select", supplier)
         },
+
         openDeleteModal(supplier) {
-            this.selectedSupplier = supplier;
+            this.selectedSupplier = supplier
             this.modalStore.open(
                 `Вы уверены, что хотите удалить ${this.selectedSupplier.name}?`,
                 () => {
@@ -555,8 +532,7 @@ export default {
                 const year = date.getFullYear()
                 const month = String(date.getMonth() + 1).padStart(2, '0')
                 const key = `${year}-${month}`
-
-                months.push({ key, label: key })
+                months.push({key, label: key})
             }
 
             return months
@@ -580,7 +556,6 @@ export default {
         formatMoney(value) {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
-
     }
 }
 </script>
@@ -605,4 +580,3 @@ export default {
     transform: translateY(0);
 }
 </style>
-

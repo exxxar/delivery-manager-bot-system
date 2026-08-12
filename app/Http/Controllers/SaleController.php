@@ -25,6 +25,56 @@ use Telegram\Bot\FileUpload\InputFile;
 class SaleController extends Controller
 {
 
+    public function bulkDelete(Request $request)
+    {
+        $botUser = $request->botUser;
+
+        // 🔹 Проверяем авторизацию
+        if (!$botUser) {
+            return response()->json(['message' => 'Пользователь не авторизован'], 401);
+        }
+
+        // 🔹 Проверяем права (только старшие админы и выше)
+        if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+            return response()->json(['message' => 'Недостаточно прав'], 403);
+        }
+
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:sales,id',
+        ]);
+
+        $ids = $request->ids;
+
+        // 🔹 Получаем сделки для логирования
+        $sales = Sale::query()
+            ->with(['product', 'supplier', 'agent'])
+            ->whereIn('id', $ids)
+            ->get();
+
+        // 🔹 Формируем текст для лога
+        $salesInfo = $sales->map(function ($sale) {
+            $title = $sale->title ?: "Сделка #{$sale->id}";
+            $sum = $sale->total_price ? "{$sale->total_price}₽" : "без суммы";
+            return "• #{$sale->id} — {$title} ({$sum})";
+        })->implode("\n");
+
+        // 🔹 Удаляем
+        Sale::query()->whereIn('id', $ids)->delete();
+
+        // 🔹 Логируем массовое удаление
+        $userLink = $botUser->getUserTelegramLink();
+        UserLog::logSuper(
+            "#массовое_удаление_сделок\n" .
+            "Удалено сделок: <b>{$sales->count()}</b>\n\n{$salesInfo}\n\n{$userLink}"
+        );
+
+        return response()->json([
+            'message' => "Успешно удалено сделок: {$sales->count()}",
+            'deleted_count' => $sales->count(),
+        ]);
+    }
+
     public function incomplete(Request $request)
     {
         $botUser = $request->botUser;
@@ -33,23 +83,44 @@ class SaleController extends Controller
             return response()->json(['message' => 'Пользователь не авторизован'], 401);
         }
 
+        // 🔹 Получаем фильтры (все по умолчанию включены)
+        $includeMissingDate  = $request->boolean('include_missing_date', true);
+        $includeStatus       = $request->boolean('include_status', true);
+        $includeMissingPrice = $request->boolean('include_missing_price', true);
+
+        // Если ни один фильтр не активен — возвращаем пустой результат
+        if (!$includeMissingDate && !$includeStatus && !$includeMissingPrice) {
+            return response()->json([
+                'current_page' => 1,
+                'data' => [],
+                'total' => 0,
+                'last_page' => 1,
+                'per_page' => 20,
+                'from' => null,
+                'to' => null,
+            ]);
+        }
+
         $agent = Agent::where('user_id', $botUser->id)->first();
 
         $query = Sale::query()
             ->with(['product', 'agent', 'customer', 'supplier', 'creator'])
-            // 🔹 Критерий "незакрытой сделки":
-            // хотя бы одно из условий истинно
-            ->where(function ($q) {
-                $q->whereNull('actual_delivery_date')
-                    ->orWhere(function ($sub) {
+            // 🔹 Динамическое OR-условие на основе активных фильтров
+            ->where(function ($q) use ($includeMissingDate, $includeStatus, $includeMissingPrice) {
+                if ($includeMissingDate) {
+                    $q->orWhereNull('actual_delivery_date');
+                }
+                if ($includeStatus) {
+                    $q->orWhere('status', '!=', 'delivered');
+                }
+                if ($includeMissingPrice) {
+                    $q->orWhere(function ($sub) {
                         $sub->whereNull('total_price')
                             ->orWhere('total_price', 0);
-                    })
-                    ->orWhere('status', '!=', 'delivered');
+                    });
+                }
             })
-            // 🔹 Исключаем отклонённые — они не подлежат закрытию
             ->where('status', '!=', 'rejected')
-            // 🔹 Права доступа (как было)
             ->where(function ($q) use ($botUser, $agent) {
                 if ($botUser->role >= RoleEnum::SUPERADMIN->value) {
                     return;
@@ -61,7 +132,6 @@ class SaleController extends Controller
                         ->orWhere('created_by_id', $botUser->id);
                 }
             })
-            // 🔹 Сортировка: сначала почти готовые (delivered), потом pending
             ->orderByRaw("CASE
             WHEN status = 'delivered' THEN 1
             WHEN status = 'assigned' THEN 2
@@ -72,7 +142,15 @@ class SaleController extends Controller
 
         $sales = $query->paginate($request->get('per_page', 20));
 
-        return response()->json($sales);
+        // 🔹 Возвращаем активные фильтры, чтобы фронтенд их отобразил
+        $response = $sales->toArray();
+        $response['applied_filters'] = [
+            'include_missing_date' => $includeMissingDate,
+            'include_status' => $includeStatus,
+            'include_missing_price' => $includeMissingPrice,
+        ];
+
+        return response()->json($response);
     }
 
     public function index(Request $request)

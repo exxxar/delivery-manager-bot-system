@@ -1,6 +1,7 @@
 import {defineStore} from 'pinia'
 import {makeAxiosFactory} from './utillites/makeAxiosFactory'
 import axios, {AxiosError} from "axios";
+import {useAlertStore} from "./utillites/useAlertStore";
 
 export interface Sale {
     id: number
@@ -43,13 +44,27 @@ export const useSalesStore = defineStore('sales', {
     },
     actions: {
 
-        async fetchIncomplete(page = 1, perPage = 20) {
-            this.incompleteLoading = true;
+        async fetchIncomplete(page = 1, perPage = 20, filters = {}) {
+            this.incompleteLoading = true
             try {
-                const { data } = await makeAxiosFactory('/sales/incomplete', 'get', {
-                    params: { page, per_page: perPage }
-                });
-                this.incompleteItems = data.data;
+                const params = new URLSearchParams()
+                params.append('page', String(page))
+                params.append('per_page', String(perPage))
+
+                // 🔹 Передаём фильтры
+                if ('include_missing_date' in filters) {
+                    params.append('include_missing_date', filters.include_missing_date ? '1' : '0')
+                }
+                if ('include_status' in filters) {
+                    params.append('include_status', filters.include_status ? '1' : '0')
+                }
+                if ('include_missing_price' in filters) {
+                    params.append('include_missing_price', filters.include_missing_price ? '1' : '0')
+                }
+
+                const { data } = await makeAxiosFactory('/sales/incomplete', 'GET',{ params })
+
+                this.incompleteItems = data.data
                 this.incompletePagination = {
                     current_page: data.current_page,
                     last_page: data.last_page,
@@ -57,12 +72,42 @@ export const useSalesStore = defineStore('sales', {
                     total: data.total,
                     from: data.from,
                     to: data.to,
-                };
+                }
             } catch (e) {
-                console.error('Ошибка загрузки незавершённых сделок:', e);
-                useAlertStore().show('Не удалось загрузить незавершённые сделки', 'error');
+                console.error('Ошибка загрузки незавершённых сделок:', e)
+                useAlertStore().show('Не удалось загрузить незавершённые сделки', 'error')
             } finally {
-                this.incompleteLoading = false;
+                this.incompleteLoading = false
+            }
+        },
+        async bulkDelete(ids: number[]) {
+            if (!ids || ids.length === 0) {
+                useAlertStore().show('Не выбрано ни одной сделки', 'warning')
+                return
+            }
+
+            this.loading = true
+            try {
+                const { data } = await makeAxiosFactory('/sales/bulk-delete', 'POST',{ ids })
+
+                // Удаляем из всех локальных списков
+                this.items = this.items.filter((item: any) => !ids.includes(item.id))
+                this.incompleteItems = this.incompleteItems.filter((item: any) => !ids.includes(item.id))
+                this.bad_items = (this.bad_items || []).filter((item: any) => !ids.includes(item.id))
+
+                // Обновляем пагинацию (примерное значение)
+                if (this.incompletePagination) {
+                    this.incompletePagination.total = Math.max(0, this.incompletePagination.total - ids.length)
+                }
+
+                useAlertStore().show(data.message || `Удалено сделок: ${ids.length}`, 'success')
+                return data
+            } catch (e: any) {
+                const message = e?.response?.data?.message || 'Ошибка массового удаления'
+                useAlertStore().show(message, 'error')
+                throw e
+            } finally {
+                this.loading = false
             }
         },
         // 🔹 НОВЫЙ: загрузка данных за месяц с группировкой

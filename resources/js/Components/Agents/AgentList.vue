@@ -1,60 +1,51 @@
-<script setup>
-import AgentInfo from "@/Components/Agents/AgentInfo.vue";
-import Pagination from "@/Components/Pagination.vue";
-import UserForm from "@/Components/Users/UserForm.vue";
-import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGenerator.vue";
-</script>
-
 <template>
+    <!-- 🔹 Табы режимов -->
+    <ul class="nav nav-pills nav-fill mb-3">
+        <li class="nav-item">
+            <button class="nav-link" :class="{ active: viewMode === 'all' }" @click="switchMode('all')">
+                <i class="fa-solid fa-list me-1"></i> Все
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" :class="{ active: viewMode === 'active' }" @click="switchMode('active')">
+                <i class="fa-solid fa-bolt text-success me-1"></i> Активные
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" :class="{ active: viewMode === 'inactive' }" @click="switchMode('inactive')">
+                <i class="fa-solid fa-moon text-secondary me-1"></i> Неактивные
+            </button>
+        </li>
+    </ul>
 
-        <!-- 🔹 Табы режимов -->
-        <ul class="nav nav-pills nav-fill mb-3">
-            <li class="nav-item">
-                <button class="nav-link" :class="{ active: viewMode === 'all' }" @click="switchMode('all')">
-                    <i class="fa-solid fa-list me-1"></i> Все
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" :class="{ active: viewMode === 'active' }" @click="switchMode('active')">
-                    <i class="fa-solid fa-bolt text-success me-1"></i> Активные
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" :class="{ active: viewMode === 'inactive' }" @click="switchMode('inactive')">
-                    <i class="fa-solid fa-moon text-secondary me-1"></i> Неактивные
-                </button>
-            </li>
-        </ul>
-
-        <!-- 🔹 Селектор месяца и статистика (только для активных/неактивных) -->
-        <template v-if="viewMode !== 'all'">
-            <div class="form-floating mb-3">
-                <select class="form-select" v-model="selectedMonth" @change="loadByMode" id="monthSelect">
-                    <option v-for="m in getMonthList()" :key="m.key" :value="m.key">{{ m.label }}</option>
-                </select>
-                <label for="monthSelect"><i class="fa-solid fa-calendar-days me-1"></i> Месяц</label>
-            </div>
-
-            <div v-if="agentStore.stats" class="alert alert-info mb-3 py-2">
-                <div class="row text-center small">
-                    <div class="col-6">
-                        <div class="text-muted">Администраторов</div>
-                        <div class="fw-bold fs-5">{{ agentStore.stats.total_agents }}</div>
-                    </div>
-                    <div class="col-6" v-if="agentStore.stats.total_turnover !== undefined">
-                        <div class="text-muted">Общий товарооборот</div>
-                        <div class="fw-bold fs-5 text-success">{{ formatMoney(agentStore.stats.total_turnover) }}</div>
-                    </div>
-                </div>
-            </div>
-        </template>
-
-        <!-- 🔹 Поиск (теперь работает и с API для активных/неактивных) -->
+    <!-- 🔹 Селектор месяца и статистика (только для активных/неактивных) -->
+    <template v-if="viewMode !== 'all'">
         <div class="form-floating mb-3">
-            <input type="search" v-model="search" class="form-control" id="searchInput" placeholder="Поиск по имени или телефону..."/>
-            <label for="searchInput">Поиск</label>
+            <select class="form-select" v-model="selectedMonth" @change="loadByMode" id="monthSelect">
+                <option v-for="m in getMonthList()" :key="m.key" :value="m.key">{{ m.label }}</option>
+            </select>
+            <label for="monthSelect"><i class="fa-solid fa-calendar-days me-1"></i> Месяц</label>
         </div>
 
+        <div v-if="agentStore.stats" class="alert alert-info mb-3 py-2">
+            <div class="row text-center small">
+                <div class="col-6">
+                    <div class="text-muted">Администраторов</div>
+                    <div class="fw-bold fs-5">{{ agentStore.stats.total_agents }}</div>
+                </div>
+                <div class="col-6" v-if="agentStore.stats.total_turnover !== undefined">
+                    <div class="text-muted">Общий товарооборот</div>
+                    <div class="fw-bold fs-5 text-success">{{ formatMoney(agentStore.stats.total_turnover) }}</div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 🔹 Поиск (теперь работает и с API для активных/неактивных) -->
+    <div class="form-floating mb-3">
+        <input type="search" v-model="search" class="form-control" id="searchInput" placeholder="Поиск по имени или телефону..."/>
+        <label for="searchInput">Поиск</label>
+    </div>
 
     <template v-if="!forSelect">
         <div class="d-flex justify-content-between" v-if="(user?.role || 0) >= 3">
@@ -70,11 +61,10 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
 
     <ul class="list-group">
         <li
-
             v-for="agent in filteredAgents" :key="agent.id"
             v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1,'bg-danger': !agent.registration_at}"
             class="list-group-item d-flex justify-content-between align-items-center">
-            <div >
+            <div>
                 <div class="fw-bold">
                     <p class="small mb-2">
                         <span class="badge bg-primary">Общ. {{agent.total_percent || 0}}%</span>
@@ -84,7 +74,7 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                 </div>
                 <small class="text-muted">{{ agent.phone || 'телефон не указан'}}</small>
 
-                <!-- 🔹 НОВАЯ: статистика для активных/неактивных -->
+                <!-- 🔹 Статистика для активных/неактивных -->
                 <template v-if="viewMode === 'active' && agent.month_sales_count">
                     <div class="d-flex gap-2 mt-2">
                         <span
@@ -142,8 +132,6 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
     </ul>
 
     <template v-if="agentStore.pagination?.total>0">
-
-
         <div class="form-floating my-2">
             <select
                 id="itemsPerPage"
@@ -167,7 +155,6 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
         />
     </template>
 
-
     <!-- Модалка просмотра агента -->
     <div class="modal fade" id="agentInfoModal" tabindex="-1">
         <div class="modal-dialog">
@@ -184,7 +171,6 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
             </div>
         </div>
     </div>
-
 
     <!-- Модалка подтверждения удаления -->
     <div class="modal fade" id="deleteModal" tabindex="-1">
@@ -220,7 +206,7 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
         </div>
     </div>
 
-    <!-- Модалка редактирования -->
+    <!-- Модалка редактирования пользователя -->
     <div class="modal fade" id="editUserModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -235,8 +221,7 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
         </div>
     </div>
 
-
-    <!-- Модалка редактирования -->
+    <!-- Модалка персональной статистики -->
     <div class="modal fade" id="personalStatisticModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -245,10 +230,10 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                <ReportIndividualGenerator
-                    v-if="selectedAgent"
-                    :agent-id="selectedAgent.id"
-                    v-on:generate-report="generateReport"></ReportIndividualGenerator>
+                    <ReportIndividualGenerator
+                        v-if="selectedAgent"
+                        :agent-id="selectedAgent.id"
+                        v-on:generate-report="generateReport"></ReportIndividualGenerator>
                 </div>
             </div>
         </div>
@@ -276,7 +261,6 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
                     <template v-else>
                         <!-- Список сделок -->
                         <div v-if="agentStore.agentSales.length > 0">
-
                             <SaleCard
                                 class="shadow-sm mb-2 rounded-2 p-2"
                                 :key="sale.id"
@@ -306,17 +290,27 @@ import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGener
 </template>
 
 <script>
-
 import AgentForm from './AgentForm.vue'
+import AgentInfo from "@/Components/Agents/AgentInfo.vue";
+import Pagination from "@/Components/Pagination.vue";
+import UserForm from "@/Components/Users/UserForm.vue";
+import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGenerator.vue";
+import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 import {useAgentsStore} from "@/stores/agents";
 import {useAdminsStore} from "@/stores/admins";
 import {useBaseExports} from "@/stores/baseExports";
 import {useUsersStore} from "@/stores/users";
-import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 
 export default {
     name: 'AgentList',
-    components: {AgentForm, SaleCard},
+    components: {
+        AgentForm,
+        AgentInfo,
+        Pagination,
+        UserForm,
+        ReportIndividualGenerator,
+        SaleCard
+    },
     props: ["forSelect"],
     data() {
         return {
@@ -328,7 +322,7 @@ export default {
                 rejected: "Отклонено",
                 delivered: "Доставляется"
             },
-            size:20,
+            size: 20,
             search: '',
             selectedAdmin: null,
             agentStore: useAgentsStore(),
@@ -339,19 +333,17 @@ export default {
                 startDate: '',
                 endDate: '',
             },
-
             viewMode: 'all',
             selectedMonth: this.getCurrentMonth(),
         }
     },
-    watch:{
-      'size':function (){
-          this.fetchAgents()
-      },
-        // 🔹 Обновляем watcher поиска, чтобы он вызывал loadByMode для API-запросов
+    watch: {
+        size: function () {
+            this.fetchAgents()
+        },
         search: function (newVal) {
             if (this.viewMode !== 'all') {
-                this.loadByMode(1) // Сбрасываем на 1 страницу при новом поиске
+                this.loadByMode(1)
             }
         }
     },
@@ -371,7 +363,6 @@ export default {
     },
     created() {
         this.fetchAgents()
-
     },
     methods: {
         async openAgentSales(agent) {
@@ -395,10 +386,12 @@ export default {
                 )
             }
         },
+
         getCurrentMonth() {
             const now = new Date()
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
         },
+
         getMonthList() {
             const months = []
             const now = new Date()
@@ -406,14 +399,16 @@ export default {
                 const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
                 const year = date.getFullYear()
                 const month = String(date.getMonth() + 1).padStart(2, '0')
-                months.push({ key: `${year}-${month}`, label: `${year}-${month}` })
+                months.push({key: `${year}-${month}`, label: `${year}-${month}`})
             }
             return months
         },
+
         switchMode(mode) {
             this.viewMode = mode
             this.loadByMode(1)
         },
+
         async loadByMode(page = 1) {
             if (this.viewMode === 'active') {
                 await this.agentStore.fetchActive(this.selectedMonth, page, this.size, this.search)
@@ -423,9 +418,11 @@ export default {
                 await this.fetchAgents(page)
             }
         },
+
         formatMoney(value) {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
+
         toggleSelection(id) {
             let index = this.selection.findIndex(i => i === id)
             if (index === -1)
@@ -435,6 +432,7 @@ export default {
 
             this.$emit("select", this.selection)
         },
+
         selectAll() {
             if (this.selection.length === 0)
                 this.agentStore.items.forEach(i => {
@@ -446,24 +444,28 @@ export default {
 
             this.$emit("select", this.selection)
         },
+
         generateReport() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('personalStatisticModal'))
             modal.hide()
         },
+
         openEdit(user) {
             this.selectedAdmin = null
             this.$nextTick(() => {
                 this.selectedAdmin = user
                 new bootstrap.Modal(document.getElementById('editUserModal')).show()
             })
-
         },
+
         async fetchAgents(page = 1) {
             await this.agentStore.fetchAllByPage(page, this.size)
         },
+
         async fetchAgentsByUrl(url) {
             await this.agentStore.fetchByUrl(url)
         },
+
         selectAgent(agent) {
             if (!this.forSelect)
                 return
@@ -471,28 +473,26 @@ export default {
         },
 
         openAgentInfo(agent) {
-            // Сбрасываем перед установкой нового
             this.selectedAgent = null
-
             this.$nextTick(() => {
-                // Устанавливаем нового агента
-                this.selectedAgent = { ...agent } // Создаём копию, чтобы избежать проблем с реактивностью
-
-                // Показываем модалку только после того, как данные установлены
+                this.selectedAgent = {...agent}
                 this.$nextTick(() => {
                     const modal = new bootstrap.Modal(document.getElementById('agentInfoModal'))
                     modal.show()
                 })
             })
         },
+
         openPercents(agent) {
             this.selectedAgent = agent
             new bootstrap.Modal(document.getElementById('percentsModal')).show()
         },
+
         confirmDelete(agent) {
             this.selectedAgent = agent
             new bootstrap.Modal(document.getElementById('deleteModal')).show()
         },
+
         async deleteAgent() {
             try {
                 await this.agentStore.remove(this.selectedAgent.id)
@@ -501,6 +501,7 @@ export default {
                 console.error('Ошибка удаления:', error)
             }
         },
+
         getPersonalStatistic(agent) {
             this.selectedAgent = null
             this.$nextTick(() => {
@@ -508,16 +509,22 @@ export default {
                 new bootstrap.Modal(document.getElementById('personalStatisticModal')).show()
             })
         },
+
         openEditAgent(agent) {
             this.selectedAgent = null
             this.$nextTick(() => {
                 this.selectedAgent = agent
                 new bootstrap.Modal(document.getElementById('editAgentModal')).show()
             })
+        },
+
+        fetchData() {
+            this.fetchAgents()
         }
     }
 }
 </script>
+
 <style scoped>
 .clickable-badge {
     cursor: pointer;

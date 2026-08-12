@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+        Inertia::share('appVersion', env('APP_VERSION', '1.0.0'));
+        Inertia::share('forceUpdate', env('APP_FORCE_UPDATE', false));
     }
 }

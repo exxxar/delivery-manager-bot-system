@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::get('/version', [\App\Http\Controllers\VersionController::class, 'check']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -219,6 +220,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/', [SaleController::class, 'index']);
             Route::get('/bad-sales', [SaleController::class, 'getBadSales']);
             Route::get('/incomplete', [SaleController::class, 'incomplete']);
+            Route::post('/bulk-delete', [SaleController::class, 'bulkDelete']);
             // Создать новую продажу
             Route::post('/', [SaleController::class, 'store']);
             Route::post('/not-verified', [SaleController::class, 'notVerified'])

@@ -515,6 +515,101 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
     <!-- 🔹 РЕЖИМ: НЕЗАВЕРШЁННЫЕ СДЕЛКИ -->
     <template v-if="currentTab === 'incomplete'">
 
+        <!-- 🔹 Панель фильтров -->
+        <div class="incomplete-filters card mb-3 shadow-sm">
+            <div class="card-body p-3">
+                <h6 class="mb-3">
+                    <i class="fa-solid fa-filter text-primary me-2"></i>
+                    Критерии незавершённости
+                    <small class="text-muted fw-normal ms-2">(выберите, что считать проблемой)</small>
+                </h6>
+
+                <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                        <div
+                            class="filter-toggle"
+                            :class="{ active: incompleteFilters.include_missing_date }"
+                            @click="toggleIncompleteFilter('include_missing_date')"
+                        >
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                            <div class="filter-info">
+                                <div class="filter-title">Нет даты доставки</div>
+                                <div class="filter-desc">actual_delivery_date не заполнен</div>
+                            </div>
+                            <i class="fa-solid fa-check filter-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div
+                            class="filter-toggle"
+                            :class="{ active: incompleteFilters.include_status }"
+                            @click="toggleIncompleteFilter('include_status')"
+                        >
+                            <i class="fa-solid fa-truck-clock"></i>
+                            <div class="filter-info">
+                                <div class="filter-title">Статус не "доставлено"</div>
+                                <div class="filter-desc">status ≠ delivered</div>
+                            </div>
+                            <i class="fa-solid fa-check filter-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div
+                            class="filter-toggle"
+                            :class="{ active: incompleteFilters.include_missing_price }"
+                            @click="toggleIncompleteFilter('include_missing_price')"
+                        >
+                            <i class="fa-solid fa-money-bill-circle"></i>
+                            <div class="filter-info">
+                                <div class="filter-title">Нет суммы сделки</div>
+                                <div class="filter-desc">total_price = 0 или не указан</div>
+                            </div>
+                            <i class="fa-solid fa-check filter-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Предупреждение, если все фильтры выключены -->
+                <div
+                    v-if="!incompleteFilters.include_missing_date && !incompleteFilters.include_status && !incompleteFilters.include_missing_price"
+                    class="alert alert-warning mt-3 mb-0 small"
+                >
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                    Включите хотя бы один фильтр, чтобы увидеть список сделок
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔹 Панель массовых действий (только для админов) -->
+        <div v-if="(user?.role || 0) >= 3" class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex gap-3 align-items-center">
+                <a href="javascript:void(0)"
+                   @click="toggleSelectAllIncomplete"
+                   class="small fw-bold text-decoration-none">
+                    <i class="fa-solid fa-check-double me-1"></i>
+                    {{ incompleteSelection.length === salesStore.incompleteItems.length && salesStore.incompleteItems.length > 0
+                    ? 'Снять выделение'
+                    : 'Выделить все' }}
+                </a>
+
+                <span v-if="incompleteSelection.length > 0" class="small text-muted">
+                Выбрано: <strong class="text-primary">{{ incompleteSelection.length }}</strong>
+            </span>
+            </div>
+
+            <button
+                v-if="incompleteSelection.length > 0"
+                type="button"
+                class="btn btn-sm btn-danger"
+                @click="confirmBulkDeleteIncomplete"
+            >
+                <i class="fa-solid fa-trash me-1"></i>
+                Удалить выбранные ({{ incompleteSelection.length }})
+            </button>
+        </div>
+
         <!-- Загрузка -->
         <div v-if="salesStore.incompleteLoading" class="text-center my-5">
             <div class="spinner-border text-primary" role="status">
@@ -542,7 +637,24 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                         :key="sale.id"
                         class="col-12 col-md-6 col-xxl-4"
                     >
-                        <div class="card shadow-sm h-100 sale-card position-relative">
+                        <div
+                            class="card shadow-sm h-100 sale-card position-relative"
+                            :class="{ 'border-danger border-3': incompleteSelection.includes(sale.id) }"
+                        >
+
+                            <!-- 🔹 Чекбокс (только для админов) -->
+                            <div
+                                v-if="(user?.role || 0) >= 3"
+                                class="incomplete-checkbox position-absolute top-0 start-0 m-2 z-3"
+                                @click.stop="toggleIncompleteSelection(sale.id)"
+                            >
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    :checked="incompleteSelection.includes(sale.id)"
+                                    @click.stop="toggleIncompleteSelection(sale.id)"
+                                />
+                            </div>
 
                             <!-- Dropdown -->
                             <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
@@ -577,6 +689,26 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                             <!-- Индикатор статуса -->
                             <div class="card-status-indicator" :class="'status-' + sale.status"></div>
 
+                            <!-- 🔹 Бейджи причин "незавершённости" -->
+                            <div class="incomplete-reasons position-absolute z-3 d-flex flex-wrap gap-1"
+                                 :class="(user?.role || 0) >= 3 ? 'top-0 start-0 mt-5 ms-2' : 'top-0 start-0 m-2'">
+                            <span v-if="incompleteFilters.include_missing_date && !sale.actual_delivery_date"
+                                  class="badge bg-warning text-dark"
+                                  title="Отсутствует дата доставки">
+                                <i class="fa-solid fa-calendar-xmark"></i>
+                            </span>
+                                <span v-if="incompleteFilters.include_status && sale.status !== 'delivered'"
+                                      class="badge bg-info text-dark"
+                                      :title="`Статус: ${saleStatuses[sale.status] || sale.status}`">
+                                <i class="fa-solid fa-truck"></i>
+                            </span>
+                                <span v-if="incompleteFilters.include_missing_price && (!sale.total_price || sale.total_price == 0)"
+                                      class="badge bg-danger"
+                                      title="Не указана сумма сделки">
+                                <i class="fa-solid fa-money-bill"></i>
+                            </span>
+                            </div>
+
                             <div class="card-body">
                                 <SaleCard
                                     :sale="sale"
@@ -600,7 +732,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
             <!-- Пусто -->
             <div v-if="salesStore.incompleteItems.length === 0" class="alert alert-success mt-3 text-center">
                 <i class="fa-solid fa-check-circle fs-3 mb-2 d-block"></i>
-                У вас нет незавершённых сделок. Всё выполнено! 🎉
+                По выбранным критериям незавершённых сделок не найдено
             </div>
         </template>
     </template>
@@ -671,6 +803,7 @@ export default {
     props: ["forSelect", "adminId", "agentId", "productId", "customerId", "supplierId"],
     data() {
         return {
+            incompleteSelection: [],
             currentTab: 'timeline', // 'list' или 'timeline'
             selectedMonth: this.getCurrentMonth(), // текущий месяц
             daysPerPage: 7,
@@ -691,6 +824,11 @@ export default {
                 completed: "Завершено",
                 rejected: "Отклонено",
                 delivered: "Доставляется"
+            },
+            incompleteFilters: {
+                include_missing_date: true,
+                include_status: true,
+                include_missing_price: true,
             },
             dealForm: {
                 sale_date: null,
@@ -730,6 +868,12 @@ export default {
         this.loadTabData(this.currentTab);
     },
     methods: {
+        toggleIncompleteFilter(key) {
+            // Инвертируем значение
+            this.incompleteFilters[key] = !this.incompleteFilters[key];
+            // Перезагружаем список
+            this.onIncompleteFilterChange();
+        },
         switchTab(tab) {
             if (this.currentTab === tab) return;
             this.currentTab = tab;
@@ -743,10 +887,8 @@ export default {
                     this.salesStore.fetchBadData();
                     break;
                 case 'incomplete':
-                    // Загружаем только если еще не загружали
-                    if (this.salesStore.incompleteItems.length === 0) {
-                        this.salesStore.fetchIncomplete(1);
-                    }
+                    // 🔹 Всегда перезагружаем с текущими фильтрами
+                    this.salesStore.fetchIncomplete(1, 20, this.incompleteFilters);
                     break;
                 case 'timeline':
                     this.loadMonthData();
@@ -755,10 +897,10 @@ export default {
         },
 
         fetchIncompleteByUrl(url) {
-            // Извлекаем номер страницы из URL
             const match = url.match(/page=(\d+)/);
             const page = match ? parseInt(match[1]) : 1;
-            this.salesStore.fetchIncomplete(page);
+            // 🔹 Передаём текущие фильтры
+            this.salesStore.fetchIncomplete(page, 20, this.incompleteFilters);
         },
         getCurrentMonth() {
             const now = new Date()
@@ -804,7 +946,10 @@ export default {
         formatMoney(value) {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
-
+        onIncompleteFilterChange() {
+            // Сбрасываем на первую страницу и перезагружаем
+            this.salesStore.fetchIncomplete(1, 20, this.incompleteFilters);
+        },
 
         async sendPaymentDocumentToTg(id) {
             await this.salesStore.sendPaymentDocumentToTg(id).then(() => {
@@ -968,6 +1113,54 @@ export default {
                 this.salesStore.fetchFiltered(page, size)
         },
 
+        toggleIncompleteSelection(id) {
+            const index = this.incompleteSelection.indexOf(id);
+            if (index === -1) {
+                this.incompleteSelection.push(id);
+            } else {
+                this.incompleteSelection.splice(index, 1);
+            }
+        },
+
+        toggleSelectAllIncomplete() {
+            if (this.incompleteSelection.length === this.salesStore.incompleteItems.length
+                && this.salesStore.incompleteItems.length > 0) {
+                // Снять все
+                this.incompleteSelection = [];
+            } else {
+                // Выделить все видимые на текущей странице
+                this.incompleteSelection = this.salesStore.incompleteItems.map(sale => sale.id);
+            }
+        },
+
+        confirmBulkDeleteIncomplete() {
+            const count = this.incompleteSelection.length;
+            this.modalStore.open(
+                `Вы уверены, что хотите удалить <b>${count}</b> ${this.pluralize(count, ['сделку', 'сделки', 'сделок'])}?<br>Это действие необратимо.`,
+                async () => {
+                    try {
+                        await this.salesStore.bulkDelete([...this.incompleteSelection]);
+                        this.incompleteSelection = [];
+                        // Перезагружаем список с текущими фильтрами
+                        this.salesStore.fetchIncomplete(1, 20, this.incompleteFilters);
+                    } catch (e) {
+                        console.error('Ошибка массового удаления:', e);
+                    }
+                    this.modalStore.close();
+                },
+                () => this.modalStore.close()
+            );
+        },
+
+        pluralize(n, forms) {
+            const abs = Math.abs(n) % 100;
+            const n1 = abs % 10;
+            if (abs > 10 && abs < 20) return forms[2];
+            if (n1 > 1 && n1 < 5) return forms[1];
+            if (n1 === 1) return forms[0];
+            return forms[2];
+        },
+
     }
 }
 </script>
@@ -1122,5 +1315,121 @@ p {
         height: 18px;
         font-size: 10px;
     }
+}
+
+/* 🔹 Панель фильтров для незавершённых сделок */
+.incomplete-filters {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+}
+
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    user-select: none;
+    position: relative;
+}
+
+.filter-toggle:hover {
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.03);
+}
+
+.filter-toggle.active {
+    border-color: #0d6efd;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.12);
+}
+
+.filter-toggle > i:first-child {
+    font-size: 18px;
+    color: #6c757d;
+    transition: color 0.2s ease;
+}
+
+.filter-toggle.active > i:first-child {
+    color: #0d6efd;
+}
+
+.filter-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.filter-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #212529;
+    line-height: 1.2;
+}
+
+.filter-desc {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.filter-check {
+    font-size: 14px;
+    color: transparent;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.filter-toggle.active .filter-check {
+    color: #0d6efd;
+    transform: scale(1.1);
+}
+
+/* Бейджи причин незавершённости на карточке */
+.incomplete-reasons .badge {
+    font-size: 11px;
+    padding: 4px 7px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+    .filter-toggle {
+        padding: 10px 12px;
+    }
+
+    .filter-title {
+        font-size: 12px;
+    }
+
+    .filter-desc {
+        font-size: 10px;
+    }
+}
+
+/* Чекбокс для массового выделения в режиме incomplete */
+.incomplete-checkbox {
+    cursor: pointer;
+}
+
+.incomplete-checkbox .form-check-input {
+    cursor: pointer;
+    width: 1.3em;
+    height: 1.3em;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.incomplete-checkbox .form-check-input:checked {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+/* Карточка с выделением */
+.sale-card.border-danger {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
 }
 </style>

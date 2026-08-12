@@ -1,9 +1,15 @@
 // sw.js
 
-const CACHE_NAME = 'myprocent-cache-v3.1.2';
+// Версия инжектится Vite при сборке
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined'
+    ? __APP_VERSION__
+    : '1.0.0';
+
+const CACHE_NAME = `myprocent-cache-v${APP_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE = `${CACHE_NAME}-dynamic`;
 const IMAGES_CACHE = `${CACHE_NAME}-images`;
+
 
 // Статические ассеты (без glob-паттернов!)
 // Vite генерирует файлы с хешами, поэтому точные пути нужно обновлять при сборке
@@ -264,5 +270,30 @@ self.addEventListener('message', event => {
         );
     }
 });
+
+// ==================== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ====================
+
+/**
+ * Обработка запроса на принудительное обновление
+ */
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+
+    if (event.data && event.data.type === 'CLEAR_CACHE') {
+        event.waitUntil(
+            caches.keys().then(keys => Promise.all(
+                keys.map(key => {
+                    console.log('[SW] Deleting cache:', key);
+                    return caches.delete(key);
+                })
+            )).then(() => {
+                console.log('[SW] All caches cleared');
+            })
+        );
+    }
+});
+
 
 console.log('[SW] Service Worker loaded');
