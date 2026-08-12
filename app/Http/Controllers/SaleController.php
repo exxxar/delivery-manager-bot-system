@@ -109,7 +109,6 @@ class SaleController extends Controller
 
         $query = Sale::query()
             ->with(['product', 'agent', 'customer', 'supplier', 'creator'])
-            // 🔹 ИСПРАВЛЕНО: Правильная логика OR внутри скобок
             ->where(function ($q) use ($includeMissingDate, $includeStatus, $includeMissingPrice) {
                 $conditions = [];
 
@@ -144,14 +143,12 @@ class SaleController extends Controller
                 }
             })
             ->where('status', '!=', 'rejected')
-            // 🔹 Фильтр по датам создания
             ->when($dateFrom, function ($q) use ($dateFrom) {
                 $q->whereDate('created_at', '>=', $dateFrom);
             })
             ->when($dateTo, function ($q) use ($dateTo) {
                 $q->whereDate('created_at', '<=', $dateTo);
             })
-            // 🔹 Права доступа
             ->where(function ($q) use ($botUser, $agent) {
                 if ($botUser->role >= RoleEnum::SUPERADMIN->value) {
                     return;
