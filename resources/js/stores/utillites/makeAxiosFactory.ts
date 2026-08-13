@@ -2,6 +2,24 @@ import axios, {AxiosResponse, AxiosRequestConfig} from "axios";
 import {useAlertStore} from "./useAlertStore";
 import {useConfigStore} from "../config.js";
 
+import { markOffline, markOnline } from '@/utilites/networkStatus.js'
+
+// 🔹 Перехватчик ответов
+axios.interceptors.response.use(
+    (response) => {
+        // Любой успешный ответ = мы онлайн
+        markOnline()
+        return response
+    },
+    (error) => {
+        // Ошибка сети (не 4xx/5xx) = мы офлайн
+        if (!error.response) {
+            markOffline()
+        }
+        return Promise.reject(error)
+    }
+)
+
 export async function makeAxiosFactory(
     link: string,
     method: string = "GET",

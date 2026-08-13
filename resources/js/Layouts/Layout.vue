@@ -331,6 +331,13 @@ import {
     setLocalVersion,
     forceUpdate
 } from "@/utilites/versionCheck.js";
+
+import {
+    startMonitoring,
+    stopMonitoring,
+    onStatusChange,
+} from "@/utilites/networkStatus.js";
+
 import { useUsersStore } from "@/stores/users";
 import { useSalesStore } from "@/stores/sales";
 import { useModalStore } from "@/stores/utillites/useConfitmModalStore";
@@ -348,6 +355,7 @@ export default {
 
     data() {
         return {
+            unsubscribeNetwork: null,
             // 🔹 Состояние сети и очереди
             offlineQueueCount: 0,
             queueItems: [],
@@ -397,12 +405,7 @@ export default {
     },
 
     watch: {
-        isOffline: {
-            immediate: true,
-            handler(isOffline) {
-                document.body.classList.toggle('has-offline-banner', isOffline);
-            },
-        },
+
 
         // 🔹 Следим за изменениями версии (работает при SPA-навигации Inertia)
         serverVersion: {
@@ -415,10 +418,22 @@ export default {
     },
 
     mounted() {
+
+        startMonitoring();
+
         // 🔹 Слушатели сети
         window.addEventListener('online', this.handleOnline);
         window.addEventListener('offline', this.handleOffline);
         window.addEventListener('offline-queue-changed', this.onQueueChanged);
+
+        this.unsubscribeNetwork = onStatusChange((isOnline) => {
+            this.isOffline = !isOnline;
+            if (isOnline) {
+                window.dispatchEvent(new CustomEvent('trigger-queue-sync'));
+            }
+        });
+
+
 
         // 🔹 Инициализация очереди
         this.offlineQueueCount = getQueue().length;
