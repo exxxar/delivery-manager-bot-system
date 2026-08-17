@@ -132,7 +132,6 @@
                 <div class="flex-grow-1 me-3 text-break" @click="selectSupplier(supplier)">
                     <div class="fw-bold" @click="toggleSelection(supplier)">
                         <span class="badge bg-primary" v-if="field_visible?.id||false">#{{ supplier.id }}</span>
-                        <i v-if="supplier.is_favorite" class="fa-solid fa-star text-warning me-1" title="В избранном"></i>
                         {{ supplier.name }}
                         <span
                             v-if="field_visible?.percent||false"
@@ -145,44 +144,34 @@
                     <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
                     <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
 
-                    <!-- 🔹 Статистика для активных (ВСЕ активные, включая избранных) -->
+                    <!-- 🔹 Статистика для активных (чистая, без пометок избранного) -->
                     <template v-if="viewMode === 'active' && supplier.month_sales_count">
                         <div class="d-flex gap-2 mt-1">
-                            <span
-                                class="badge bg-success clickable-badge"
-                                @click.stop="openSupplierSales(supplier)"
-                                :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
-                            >
-                                <i class="fa-solid fa-receipt me-1"></i>
-                                {{ supplier.month_sales_count }} сделок
-                                <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
-                            </span>
+            <span
+                class="badge bg-success clickable-badge"
+                @click.stop="openSupplierSales(supplier)"
+                :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
+            >
+                <i class="fa-solid fa-receipt me-1"></i>
+                {{ supplier.month_sales_count }} сделок
+                <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
+            </span>
                             <span class="badge bg-info text-dark">
-                                <i class="fa-solid fa-money-bill-trend-up me-1"></i>
-                                {{ formatMoney(supplier.month_turnover) }}
-                            </span>
-                                                <!-- 🔹 Пометка для избранных -->
-                                                <span v-if="supplier.is_favorite" class="badge bg-warning text-dark">
-                                <i class="fa-solid fa-star me-1"></i> Избранный
-                            </span>
+                <i class="fa-solid fa-money-bill-trend-up me-1"></i>
+                {{ formatMoney(supplier.month_turnover) }}
+            </span>
                         </div>
                     </template>
 
-                    <!-- 🔹 Для неактивных (ВСЕ неактивные, включая избранных) -->
+                    <!-- 🔹 Для неактивных (чистая, без пометок избранного) -->
                     <template v-if="viewMode === 'inactive'">
-                        <div class="mt-1 d-flex gap-2">
-                            <span class="badge bg-secondary">
-                                <i class="fa-solid fa-pause me-1"></i>
-                                Нет сделок за выбранный месяц
-                            </span>
-                                                <!-- 🔹 Пометка для избранных -->
-                                                <span v-if="supplier.is_favorite" class="badge bg-warning text-dark">
-                                <i class="fa-solid fa-star me-1"></i> Избранный
-                            </span>
+                        <div class="mt-1">
+            <span class="badge bg-secondary">
+                <i class="fa-solid fa-pause me-1"></i>
+                Нет сделок за выбранный месяц
+            </span>
                         </div>
                     </template>
-
-
                 </div>
 
                 <!-- Правая часть (меню) -->

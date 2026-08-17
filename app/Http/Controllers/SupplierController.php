@@ -266,7 +266,7 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
+       // $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
 
         // 🔹 1. Замыкание для статистики (ИСКЛЮЧАЕТ избранных)
         $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request, $favoriteIds) {
@@ -277,9 +277,9 @@ class SupplierController extends Controller
                     $monthDate->endOfMonth()->toDateString()
                 ]);
 
-            if (!empty($favoriteIds)) {
+          /*  if (!empty($favoriteIds)) {
                 $q->whereNotIn('supplier_id', $favoriteIds);
-            }
+            }*/
 
             $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
 
@@ -333,10 +333,10 @@ class SupplierController extends Controller
         $suppliers = $query->paginate($perPage);
 
         // 🔹 Помечаем флагом is_favorite
-        $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
+      /*  $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
             $supplier->is_favorite = in_array($supplier->id, $favoriteIds);
             return $supplier;
-        });
+        });*/
 
         // 🔹 4. СУММАРНАЯ СТАТИСТИКА (без учёта пагинации)
 
@@ -382,7 +382,7 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
+    /*    $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];*/
 
         // 🔹 Для статистики (без избранных)
         $salesQuery = function ($q) use ($monthDate, $botUser, $agent, $favoriteIds) {
@@ -438,10 +438,10 @@ class SupplierController extends Controller
         $suppliers = $query->paginate($perPage);
 
         // 🔹 Помечаем флагом
-        $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
+       /* $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
             $supplier->is_favorite = in_array($supplier->id, $favoriteIds);
             return $supplier;
-        });
+        });*/
 
         // 🔹 СУММАРНАЯ СТАТИСТИКА (без учёта пагинации)
 
