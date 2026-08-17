@@ -269,7 +269,7 @@ class SupplierController extends Controller
        // $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
 
         // 🔹 1. Замыкание для статистики (ИСКЛЮЧАЕТ избранных)
-        $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request, $favoriteIds) {
+        $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request) {
             $q->where('status', 'completed')
                 ->whereNotNull('supplier_id')
                 ->whereBetween('actual_delivery_date', [
@@ -351,9 +351,9 @@ class SupplierController extends Controller
             ->withCount(['sales as month_sales_count' => $realSalesFilter])
             ->having('month_sales_count', '>', 0);
 
-        if (!empty($favoriteIds)) {
+       /* if (!empty($favoriteIds)) {
             $nonFavoriteCountQuery->whereNotIn('suppliers.id', $favoriteIds);
-        }
+        }*/
 
         if ($request->filled('name')) {
             $nonFavoriteCountQuery->where('name', 'like', '%' . $request->name . '%');
@@ -385,16 +385,16 @@ class SupplierController extends Controller
     /*    $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];*/
 
         // 🔹 Для статистики (без избранных)
-        $salesQuery = function ($q) use ($monthDate, $botUser, $agent, $favoriteIds) {
+        $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
             $q->where('status', 'completed')
                 ->whereBetween('actual_delivery_date', [
                     $monthDate->startOfMonth()->toDateString(),
                     $monthDate->endOfMonth()->toDateString()
                 ]);
 
-            if (!empty($favoriteIds)) {
+         /*   if (!empty($favoriteIds)) {
                 $q->whereNotIn('supplier_id', $favoriteIds);
-            }
+            }*/
 
             if ($botUser->role < RoleEnum::SUPERADMIN->value) {
                 $q->where(function ($subQ) use ($botUser, $agent) {
@@ -451,9 +451,9 @@ class SupplierController extends Controller
             ->withCount(['sales as month_sales_count' => $realSalesQuery])
             ->having('month_sales_count', '=', 0);
 
-        if (!empty($favoriteIds)) {
+        /*if (!empty($favoriteIds)) {
             $nonFavoriteCountQuery->whereNotIn('suppliers.id', $favoriteIds);
-        }
+        }*/
 
         if ($request->filled('name')) {
             $nonFavoriteCountQuery->where('name', 'like', '%' . $request->name . '%');
