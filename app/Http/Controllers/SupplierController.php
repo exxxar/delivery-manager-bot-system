@@ -266,8 +266,39 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 1. Единое замыкание фильтров (идентично Sale::scopeFilter + completed)
-        $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request) {
+        // 🔹 Избранные поставщики агента
+        $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
+
+        // 🔹 1. Замыкание фильтров (ИСКЛЮЧАЕТ избранных для подсчёта статистики)
+        $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request, $favoriteIds) {
+            $q->where('status', 'completed')
+                ->whereNotNull('supplier_id')
+                ->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+
+            // 🔹 Для статистики — исключаем избранных
+            if (!empty($favoriteIds)) {
+                $q->whereNotIn('supplier_id', $favoriteIds);
+            }
+
+            $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
+
+            if ($onlySelfSales) {
+                $q->where(function ($roleQuery) use ($botUser, $agent) {
+                    if (is_null($agent)) {
+                        $roleQuery->where('created_by_id', $botUser->id);
+                    } else {
+                        $roleQuery->where('agent_id', $agent->id)
+                            ->orWhere('created_by_id', $botUser->id);
+                    }
+                });
+            }
+        };
+
+        // 🔹 2. Замыкание для подсчёта РЕАЛЬНЫХ сделок поставщика (без исключения избранных)
+        $realSalesFilter = function ($q) use ($monthDate, $botUser, $agent, $request) {
             $q->where('status', 'completed')
                 ->whereNotNull('supplier_id')
                 ->whereBetween('actual_delivery_date', [
@@ -289,11 +320,11 @@ class SupplierController extends Controller
             }
         };
 
-        // 🔹 2. Получаем пагинированный список поставщиков с их личной статистикой
+        // 🔹 3. Все поставщики с РЕАЛЬНЫМ подсчётом сделок
         $query = Supplier::query()
-            ->withCount(['sales as month_sales_count' => $salesFilter])
-            ->withSum(['sales as month_turnover' => $salesFilter], 'total_price')
-            ->having('month_sales_count', '>', 0)
+            ->withCount(['sales as month_sales_count' => $realSalesFilter])
+            ->withSum(['sales as month_turnover' => $realSalesFilter], 'total_price')
+            ->having('month_sales_count', '>', 0)  // 🔹 только активные!
             ->orderByDesc('month_turnover');
 
         if ($request->filled('name')) {
@@ -303,18 +334,26 @@ class SupplierController extends Controller
         $perPage = (int) $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
-        // 🔹 3. СЧИТАЕМ ИСТИННЫЙ ОБЩИЙ ТОВАРООБОРОТ (без учета пагинации и поиска по имени)
-        // Мы применяем те же самые фильтры к модели Sale и делаем SUM по всей таблице
-        $grandTotalQuery = \App\Models\Sale::query();
-        $salesFilter($grandTotalQuery); // Применяем то же самое замыкание!
+        // 🔹 4. Помечаем флагом is_favorite
+        $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
+            $supplier->is_favorite = in_array($supplier->id, $favoriteIds);
+            return $supplier;
+        });
 
+        // 🔹 5. Статистика БЕЗ избранных (для шапки)
+        $grandTotalQuery = \App\Models\Sale::query();
+        $salesFilter($grandTotalQuery);
         $totalTurnover = $grandTotalQuery->sum('total_price');
 
-        // 🔹 4. Формируем ответ
+        // Количество не-избранных активных
+        $nonFavoriteCount = $suppliers->getCollection()
+            ->filter(fn($s) => !$s->is_favorite)
+            ->count();
+
         $response = $suppliers->toArray();
         $response['stats'] = [
-            'total_suppliers' => $suppliers->total(),
-            'total_turnover' => round($totalTurnover, 2), // <-- ТЕПЕРЬ ЭТО ТОЧНАЯ СУММА ЗА МЕСЯЦ
+            'total_suppliers' => $nonFavoriteCount,
+            'total_turnover' => round($totalTurnover, 2),
         ];
 
         return response()->json($response);
@@ -332,8 +371,33 @@ class SupplierController extends Controller
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 Единое замыкание для фильтрации продаж (такое же, как в active)
-        $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
+        // 🔹 Избранные поставщики
+        $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
+
+        // 🔹 Для статистики (без избранных)
+        $salesQuery = function ($q) use ($monthDate, $botUser, $agent, $favoriteIds) {
+            $q->where('status', 'completed')
+                ->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateString(),
+                    $monthDate->endOfMonth()->toDateString()
+                ]);
+
+            if (!empty($favoriteIds)) {
+                $q->whereNotIn('supplier_id', $favoriteIds);
+            }
+
+            if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+                $q->where(function ($subQ) use ($botUser, $agent) {
+                    if ($agent) {
+                        $subQ->where('agent_id', $agent->id);
+                    }
+                    $subQ->orWhere('created_by_id', $botUser->id);
+                });
+            }
+        };
+
+        // 🔹 Реальный подсчёт для отображения (не исключает избранных)
+        $realSalesQuery = function ($q) use ($monthDate, $botUser, $agent) {
             $q->where('status', 'completed')
                 ->whereBetween('actual_delivery_date', [
                     $monthDate->startOfMonth()->toDateString(),
@@ -350,11 +414,12 @@ class SupplierController extends Controller
             }
         };
 
+        // 🔹 Все поставщики с count=0
         $query = Supplier::query()
-            ->withCount(['sales as month_sales_count' => $salesQuery])
-            ->having('month_sales_count', '=', 0);
+            ->withCount(['sales as month_sales_count' => $realSalesQuery])
+            ->having('month_sales_count', '=', 0)  // 🔹 только неактивные!
+            ->orderBy('name', 'asc');
 
-        // 🔹 Поиск по имени
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
@@ -362,10 +427,20 @@ class SupplierController extends Controller
         $perPage = $request->get('per_page', $request->size ?? 30);
         $suppliers = $query->paginate($perPage);
 
-        // 🔹 Добавляем статистику в ответ
+        // 🔹 Помечаем флагом
+        $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
+            $supplier->is_favorite = in_array($supplier->id, $favoriteIds);
+            return $supplier;
+        });
+
+        // 🔹 Количество не-избранных неактивных (для статистики)
+        $nonFavoriteCount = $suppliers->getCollection()
+            ->filter(fn($s) => !$s->is_favorite)
+            ->count();
+
         $response = $suppliers->toArray();
         $response['stats'] = [
-            'total_suppliers' => $suppliers->total(),
+            'total_suppliers' => $nonFavoriteCount,
         ];
 
         return response()->json($response);
