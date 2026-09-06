@@ -222,7 +222,9 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/incomplete', [SaleController::class, 'incomplete']);
             Route::post('/bulk-delete', [SaleController::class, 'bulkDelete']);
             // Создать новую продажу
-            Route::post('/', [SaleController::class, 'store']);
+            Route::post('/', [SaleController::class, 'store'])
+                ->middleware(['idempotent']);
+
             Route::post('/not-verified', [SaleController::class, 'notVerified'])
                 ->middleware(["tg.role:admin"]);
 

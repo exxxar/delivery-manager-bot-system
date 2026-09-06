@@ -1,6 +1,7 @@
 import axios, {AxiosResponse, AxiosRequestConfig} from "axios";
 import {useAlertStore} from "./useAlertStore";
 import {useConfigStore} from "../config.js";
+import { generateIdempotencyKey } from '@/utilites/idempotency.js'
 
 import { markOffline, markOnline } from '@/utilites/networkStatus.js'
 
@@ -19,6 +20,17 @@ axios.interceptors.response.use(
         return Promise.reject(error)
     }
 )
+
+// 🔹 Автоматически добавляем токен ко всем POST-запросам
+axios.interceptors.request.use((config) => {
+    if (config.method === 'post' || config.method === 'put' || config.method === 'patch') {
+        // Не переопределяем, если токен уже установлен вручную
+        if (!config.headers['X-Idempotency-Key']) {
+            config.headers['X-Idempotency-Key'] = generateIdempotencyKey()
+        }
+    }
+    return config
+})
 
 export async function makeAxiosFactory(
     link: string,

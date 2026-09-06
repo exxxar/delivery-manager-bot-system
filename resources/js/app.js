@@ -10,6 +10,7 @@ import router from './router'
 import {useAlertStore} from './stores/utillites/useAlertStore'
 import {i18n} from "./i18n";
 import VueTheMask from "vue-the-mask";
+import preventDoubleSubmit from '@/directives/preventDoubleSubmit.js'
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -22,7 +23,7 @@ createInertiaApp({
 
         app.use(createPinia())
         app.config.globalProperties.$notify = useAlertStore()
-
+      /*  app.directive('prevent-double-click', preventDoubleSubmit)*/
 
         return app
             .use(router)

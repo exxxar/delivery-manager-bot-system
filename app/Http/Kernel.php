@@ -79,5 +79,6 @@ class Kernel extends HttpKernel
         'tg.auth' => TelegramAuthCheck::class,
         'tg.role' => \App\Http\Middleware\CheckRole::class,
         'bot.user' => \App\Http\Middleware\BotUserResolver::class,
+        'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
     ];
 }

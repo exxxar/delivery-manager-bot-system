@@ -159,6 +159,7 @@ const today = new Date().toISOString().split('T')[0]
 
             <!-- Кнопка отправки -->
             <button :disabled="spent_time > 0 || salesStore.loading"
+
                     type="submit" class="btn btn-primary w-100 p-3">
                 <span v-if="spent_time > 0">{{ spent_time }} сек.</span>
                 <span v-else-if="!isOnline">
@@ -499,3 +500,28 @@ export default {
     }
 }
 </script>
+<style>
+.btn-submitting {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-submitting::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+    to { transform: rotate(360deg); }
+}
+</style>
