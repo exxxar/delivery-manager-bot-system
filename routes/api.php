@@ -15,6 +15,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserSettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,10 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
 Route::middleware(['auth:sanctum','bot.user'])->group(function(){
+
+    Route::get('/user/font-settings', [UserSettingsController::class, 'getFontSettings']);
+    Route::post('/user/font-settings', [UserSettingsController::class, 'updateFontSettings']);
+    Route::post('/user/font-settings/reset', [UserSettingsController::class, 'resetFontSettings']);
 
     Route::prefix('forms')
         ->middleware(["tg.role:user"])

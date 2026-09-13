@@ -30,6 +30,7 @@ class User extends Authenticatable
         "role",
         "percent",
         "mentor_percent",
+        'font_settings' ,
         "is_work",
         "birthday",
         "email_verified_at",
@@ -50,6 +51,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
 
+
     ];
 
     /**
@@ -59,6 +61,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'font_settings' => 'array',
         'is_work' => 'boolean',
         'password' => 'hashed',
         'birthday' => 'date',
@@ -66,14 +69,32 @@ class User extends Authenticatable
 
     protected $with = ['agent'];
 
-    protected $appends = ["phone"];
+    protected $appends = ["phone","font_settings"];
 
     public function getPhoneAttribute()
     {
         return $this->agent->phone ?? '';
     }
 
+    public static function defaultFontSettings(): array
+    {
+        return [
+            'font_family' => 'system',      // system | serif | sans | mono
+            'font_size' => 16,               // 12–22 px
+            'line_height' => 1.5,            // 1.2–2.0
+            'letter_spacing' => 0,           // -0.5–2 px
+            'high_contrast' => false,        // повышенный контраст
+        ];
+    }
 
+    /**
+     * Получить настройки с дефолтами
+     */
+    public function getFontSettingsAttribute($value): array
+    {
+        $settings = $value ? json_decode($value, true) : [];
+        return array_merge(self::defaultFontSettings(), $settings ?? []);
+    }
 
     public function getUserTelegramLink(): string
     {

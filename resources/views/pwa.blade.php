@@ -21,7 +21,54 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <style>
+        /* 🔹 CSS-переменные для пользовательских настроек */
+        :root {
+            --user-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --user-font-size: 16px;
+            --user-line-height: 1.5;
+            --user-letter-spacing: 0px;
+        }
+
+        /* Применяем ко всему документу */
+        body {
+            font-family: var(--user-font-family) !important;
+            font-size: var(--user-font-size) !important;
+            line-height: var(--user-line-height) !important;
+            letter-spacing: var(--user-letter-spacing) !important;
+        }
+
+        /* 🔹 Режим высокого контраста */
+        body.high-contrast {
+            --bs-body-bg: #000;
+            --bs-body-color: #fff;
+        }
+
+        body.high-contrast .card,
+        body.high-contrast .modal-content,
+        body.high-contrast .list-group-item {
+            background-color: #1a1a1a !important;
+            color: #fff !important;
+            border-color: #444 !important;
+        }
+
+        body.high-contrast a {
+            color: #ffff00 !important;
+        }
+
+        body.high-contrast .btn-primary {
+            background-color: #0066cc !important;
+            border-color: #004499 !important;
+        }
+
+        body.high-contrast .text-muted {
+            color: #cccccc !important;
+        }
+    </style>
+
     <link rel="stylesheet" href="../themes/theme8.bootstrap.min.css">
+
 </head>
 
 <body class="font-sans antialiased">

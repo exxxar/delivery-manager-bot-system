@@ -197,10 +197,10 @@ class SaleController extends Controller
                 return response()->json(['message' => 'Неверный формат месяца'], 422);
             }
 
-            // 🔹 1. ЖЕСТКО ограничиваем статусом "completed", чтобы цифры совпадали с активной статистикой
+            // 🔹 1. ЖЕСТКО ограничиваем статусом "completed"
             $query->where('status', 'completed');
 
-            // 🔹 2. Фильтруем СТРОГО по actual_delivery_date (без fallback на due_date)
+            // 🔹 2. Фильтруем по actual_delivery_date
             $query->whereBetween('actual_delivery_date', [
                 $monthDate->startOfMonth()->toDateString(),
                 $monthDate->endOfMonth()->toDateString()
@@ -208,22 +208,33 @@ class SaleController extends Controller
 
             $sales = $query->get();
 
+            // 🔹 3. Получаем параметры сортировки (чтобы применить внутри групп)
+            $sortField = $request->get('sort_field', 'id');
+            $sortDirection = $request->get('sort_direction', 'desc');
+
             // Группируем по дням
             $byDays = $sales->groupBy(function ($sale) {
                 return \Carbon\Carbon::parse($sale->actual_delivery_date)->format('Y-m-d');
-            })->map(function ($dayItems, $dayKey) {
+            })->map(function ($dayItems, $dayKey) use ($sortField, $sortDirection) {
+                // 🔹 4. Сортируем items внутри каждого дня
+                if ($sortDirection === 'asc') {
+                    $sortedItems = $dayItems->sortBy($sortField)->values();
+                } else {
+                    $sortedItems = $dayItems->sortByDesc($sortField)->values();
+                }
+
                 return [
                     'date' => $dayKey,
                     'count' => $dayItems->count(),
                     'total' => round($dayItems->sum('total_price'), 2),
-                    'items' => $dayItems->values(),
+                    'items' => $sortedItems,
                 ];
-            })->sortByDesc('date')->values();
+            })->sortByDesc('date')->values(); // Дни сортируем по дате (новые сверху)
 
             $daysPerPage = (int) $request->get('days_per_page', 7);
             $currentPage = (int) $request->get('page', 1);
             $totalDays = $byDays->count();
-            $totalPages = ceil($totalDays / $daysPerPage);
+            $totalPages = (int) ceil($totalDays / $daysPerPage);
 
             $paginatedDays = $byDays->forPage($currentPage, $daysPerPage)->values();
 
@@ -248,10 +259,11 @@ class SaleController extends Controller
             ]);
         }
 
-        // Обычная пагинация
+        // 🔹 Обычная пагинация (сортировка уже применена через scopeSort)
         $sales = $query->paginate($request->get('per_page', $request->size ?? 10));
         return response()->json($sales);
     }
+
     public function approve(Request $request, $id)
     {
         $sale = Sale::query()

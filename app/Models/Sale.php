@@ -212,23 +212,27 @@ class Sale extends Model
         $allowedFields = [
             'id', 'title', 'description', 'status', 'due_date', 'sale_date',
             'quantity', 'total_price', 'agent_id', 'customer_id',
-            'supplier_id', 'product_id'
+            'supplier_id', 'product_id', 'actual_delivery_date', 'created_at'
         ];
 
-        $field = $request->get('sort_field', 'id');
+        $field = $request->get('sort_field');
         $direction = $request->get('sort_direction', 'desc');
 
-        // 🔹 Если пользователь НЕ указал поле сортировки — применяем дефолтную
-        if (!$field || $field == "id") {
-            return $query
-                ->orderByRaw("CASE WHEN status = 'completed' THEN 1 ELSE 0 END ASC")
-                ->orderBy('due_date', 'desc');
+        // 🔹 Если поле не указано — сортируем по id DESC (по умолчанию)
+        if (empty($field)) {
+            return $query->orderBy('id', 'desc');
         }
 
-        if (in_array($field, $allowedFields) && in_array($direction, ['asc', 'desc'])) {
-            $query->orderBy($field, $direction);
+        // 🔹 Если поле не из разрешённых — тоже id DESC
+        if (!in_array($field, $allowedFields)) {
+            return $query->orderBy('id', 'desc');
         }
 
-        return $query;
+        // 🔹 Валидация направления
+        if (!in_array($direction, ['asc', 'desc'])) {
+            $direction = 'desc';
+        }
+
+        return $query->orderBy($field, $direction);
     }
 }
