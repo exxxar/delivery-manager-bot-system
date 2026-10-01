@@ -202,8 +202,8 @@ class SaleController extends Controller
 
             // 🔹 2. Фильтруем по actual_delivery_date
             $query->whereBetween('actual_delivery_date', [
-                $monthDate->startOfMonth()->toDateString(),
-                $monthDate->endOfMonth()->toDateString()
+                $monthDate->startOfMonth()->toDateTimeString(),
+                $monthDate->endOfMonth()->toDateTimeString()
             ]);
 
             $sales = $query->get();
@@ -314,7 +314,7 @@ class SaleController extends Controller
         if ($request->date_from || $request->date_to) {
             $sales = $sales->whereBetween('actual_delivery_date', [
                     $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
+                    $request->date_to ?? now()->toDateTimeString()
             ]);
         }
 

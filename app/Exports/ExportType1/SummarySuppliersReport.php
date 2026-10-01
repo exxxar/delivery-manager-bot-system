@@ -62,8 +62,8 @@ class SummarySuppliersReport implements WithMultipleSheets
             ->whereNotNull('supplier_id')
             ->where('total_price', '>', 0)
             ->whereBetween('actual_delivery_date', [
-                $from->toDateString(),
-                $to->toDateString()
+                $from->toDateTimeString(),
+                $to->toDateTimeString()
             ])
             ->distinct()
             ->pluck('supplier_id')

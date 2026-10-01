@@ -183,7 +183,7 @@ class Sale extends Model
         if (($request->date_from || $request->date_to) && !$request->filled('month')) {
             $query->whereBetween('actual_delivery_date', [
                     $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
+                    $request->date_to ?? now()->toDateTimeString()
             ]);
         }
 

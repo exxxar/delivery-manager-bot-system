@@ -41,8 +41,8 @@ class SupplierController extends Controller
             ->where('supplier_id', $id)
             ->where('status', 'completed')
             ->whereBetween('actual_delivery_date', [
-                $monthDate->startOfMonth()->toDateString(),
-                $monthDate->endOfMonth()->toDateString()
+                $monthDate->startOfMonth()->toDateTimeString(),
+                $monthDate->endOfMonth()->toDateTimeString()
             ])
             ->where(function ($q) use ($botUser, $agent) {
                 // Супер-админы видят все сделки поставщика
@@ -102,7 +102,7 @@ class SupplierController extends Controller
         if ($request->filled('birthday_from') || $request->filled('birthday_to')) {
             $query->whereBetween('birthday', [
                     $request->birthday_from ?? '1900-01-01',
-                    $request->birthday_to ?? now()->toDateString()
+                    $request->birthday_to ?? now()->toDateTimeString()
             ]);
         }
 
@@ -110,7 +110,7 @@ class SupplierController extends Controller
         if ($request->filled('date_type') && ($request->filled('date_from') || $request->filled('date_to'))) {
             $query->whereBetween($request->date_type, [
                     $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
+                    $request->date_to ?? now()->toDateTimeString()
             ]);
         }
 
@@ -273,8 +273,8 @@ class SupplierController extends Controller
             $q->where('status', 'completed')
                 ->whereNotNull('supplier_id')
                 ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
+                    $monthDate->startOfMonth()->toDateTimeString(),
+                    $monthDate->endOfMonth()->toDateTimeString()
                 ]);
 
           /*  if (!empty($favoriteIds)) {
@@ -300,8 +300,8 @@ class SupplierController extends Controller
             $q->where('status', 'completed')
                 ->whereNotNull('supplier_id')
                 ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
+                    $monthDate->startOfMonth()->toDateTimeString(),
+                    $monthDate->endOfMonth()->toDateTimeString()
                 ]);
 
             $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
@@ -388,8 +388,8 @@ class SupplierController extends Controller
         $salesQuery = function ($q) use ($monthDate, $botUser, $agent) {
             $q->where('status', 'completed')
                 ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
+                    $monthDate->startOfMonth()->toDateTimeString(),
+                    $monthDate->endOfMonth()->toDateTimeString()
                 ]);
 
          /*   if (!empty($favoriteIds)) {
@@ -410,8 +410,8 @@ class SupplierController extends Controller
         $realSalesQuery = function ($q) use ($monthDate, $botUser, $agent) {
             $q->where('status', 'completed')
                 ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
+                    $monthDate->startOfMonth()->toDateTimeString(),
+                    $monthDate->endOfMonth()->toDateTimeString()
                 ]);
 
             if ($botUser->role < RoleEnum::SUPERADMIN->value) {

@@ -34,7 +34,7 @@ class ProductCategoryController extends Controller
         if ($request->filled('date_type') && ($request->filled('date_from') || $request->filled('date_to'))) {
             $query->whereBetween($request->date_type, [
                     $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
+                    $request->date_to ?? now()->toDateTimeString()
             ]);
         }
 

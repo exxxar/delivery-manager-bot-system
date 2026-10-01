@@ -37,8 +37,8 @@ class AgentController extends Controller
             ->with(['product', 'supplier', 'customer', 'creator', 'agent'])
             ->where('agent_id', $id)
             ->whereBetween('actual_delivery_date', [
-                $monthDate->startOfMonth()->toDateString(),
-                $monthDate->endOfMonth()->toDateString()
+                $monthDate->startOfMonth()->toDateTimeString(),
+                $monthDate->endOfMonth()->toDateTimeString()
             ])
             ->orderByDesc('actual_delivery_date')
             ->paginate($request->get('per_page', 20));
@@ -117,8 +117,8 @@ class AgentController extends Controller
         $query = Agent::query()
             ->withCount(['sales as month_sales_count' => function ($q) use ($monthDate) {
                 $q->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateString(),
-                    $monthDate->endOfMonth()->toDateString()
+                    $monthDate->startOfMonth()->toDateTimeString(),
+                    $monthDate->endOfMonth()->toDateTimeString()
                 ]);
             }])
             ->having('month_sales_count', '=', 0);
@@ -170,7 +170,7 @@ class AgentController extends Controller
         if ($request->filled('date_type') && ($request->filled('date_from') || $request->filled('date_to'))) {
             $query->whereBetween($request->date_type, [
                     $request->date_from ?? '1900-01-01',
-                    $request->date_to ?? now()->toDateString()
+                    $request->date_to ?? now()->toDateTimeString()
             ]);
         }
 
