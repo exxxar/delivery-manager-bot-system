@@ -51,22 +51,21 @@ class AgentController extends Controller
         $month = $request->get('month', now()->format('Y-m'));
 
         try {
+            // Используем copy(), чтобы не мутировать исходный объект при вызове start/end
             $monthDate = \Carbon\Carbon::parse($month . '-01');
+            $startDate = $monthDate->copy()->startOfMonth()->toDateTimeString();
+            $endDate = $monthDate->copy()->endOfMonth()->toDateTimeString();
         } catch (\Exception $e) {
             return response()->json(['message' => 'Неверный формат месяца'], 422);
         }
 
-        // 🔹 Создаем единое замыкание для фильтрации продаж
-        $salesQuery = function ($q) use ($monthDate) {
-            // 1. СТРОГО по фактической дате доставки
-            $q->whereBetween('actual_delivery_date', [
-                $monthDate->startOfMonth()->toDateString(),
-                $monthDate->endOfMonth()->toDateString()
-            ]);
+        // 🔹 Единое замыкание для фильтрации продаж
+        $salesQuery = function ($q) use ($startDate, $endDate) {
+            // 1. Обязательно фильтруем по статусу (как во втором методе)
+            $q->where('status', 'completed');
 
-            // 🔹 ВАЖНО: Если нужно считать в оборот только завершенные сделки,
-            // раскомментируйте строку ниже (рекомендуется):
-            // $q->where('status', 'completed');
+            // 2. Используем корректные границы дат (с временем 23:59:59 для конца месяца)
+            $q->whereBetween('actual_delivery_date', [$startDate, $endDate]);
         };
 
         $query = Agent::query()
@@ -86,10 +85,20 @@ class AgentController extends Controller
         $perPage = (int) $request->get('per_page', $request->size ?? 20);
         $agents = $query->paginate($perPage);
 
+        // 🔹 4. СУММАРНАЯ СТАТИСТИКА (БЕЗ учета пагинации, как во втором методе)
+        // Считаем общий оборот по всем агентам, удовлетворяющим условиям
+        $grandTotalTurnover = \App\Models\Sale::query()
+            ->where('status', 'completed')
+            ->whereBetween('actual_delivery_date', [$startDate, $endDate])
+            // Если нужен поиск, его условия тоже надо применить к этому запросу,
+            // но для суммы оборота всех агентов это обычно не требуется.
+            // Если требуется - добавьте сюда join с agents или whereIn.
+            ->sum('total_price');
+
         $response = $agents->toArray();
         $response['stats'] = [
-            'total_agents' => $agents->total(),
-            'total_turnover' => round(collect($agents->items())->sum('month_turnover'), 2),
+            'total_agents' => $agents->total(), // Корректное общее количество агентов из пагинатора
+            'total_turnover' => round((float)$grandTotalTurnover, 2), // Глобальная сумма, а не сумма страницы
         ];
 
         return response()->json($response);
