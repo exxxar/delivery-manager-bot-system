@@ -7,7 +7,7 @@
 
         <div class="container position-relative" style="z-index: 10;">
             <div class="row justify-content-center">
-                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="col-12 col-md-10 col-lg-8 col-xl-7 col-xxl-6">
 
                     <!-- Проверка токена -->
                     <div v-if="validationStatus === 'loading'" class="text-center py-5">
@@ -20,7 +20,9 @@
                     </div>
 
                     <!-- Ошибка валидации -->
-                    <div v-else-if="validationStatus === 'invalid'" class="card border-0 shadow-lg error-card">
+                    <div v-else-if="validationStatus === 'invalid'"
+                         style="max-width: 550px;"
+                         class="card border-0 shadow-lg error-card">
                         <div class="card-body text-center p-5">
                             <div class="error-icon mb-4">
                                 <i class="fa-solid fa-xmark"></i>
@@ -40,7 +42,9 @@
                     <!-- Форма регистрации -->
                     <template v-else-if="validationStatus === 'valid'">
                         <!-- Успех -->
-                        <div v-if="registered" class="card border-0 shadow-lg success-card">
+                        <div v-if="registered"
+                             style="max-width: 550px;"
+                             class="card border-0 shadow-lg success-card">
                             <div class="card-body text-center p-5">
                                 <div class="success-icon mb-4">
                                     <i class="fa-solid fa-check"></i>
@@ -58,7 +62,9 @@
                         </div>
 
                         <!-- Сама форма -->
-                        <form v-else @submit.prevent="submitForm" class="card border-0 shadow-lg register-card">
+                        <form
+                            style="max-width: 550px;"
+                            v-else @submit.prevent="submitForm" class="card border-0 shadow-lg register-card">
                             <div class="card-body p-3">
                                 <!-- Заголовок -->
                                 <div class="text-center mb-4">
@@ -855,5 +861,35 @@ export default {
 /* Правый отступ для кнопок внутри полей */
 .form-floating-custom .form-control.pe-5 {
     padding-right: 3.5rem !important;
+}
+
+/* 📋 Карточки */
+.register-card,
+.success-card,
+.error-card {
+    width: 100%;
+    max-width: 550px;
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+    animation: cardAppear 0.5s ease;
+}
+
+/* Широкие экраны — не растягиваем на всю ширину */
+@media (min-width: 1400px) {
+    .register-card,
+    .success-card,
+    .error-card {
+        max-width: 600px;
+    }
+}
+
+/* Мобильные — карточка занимает всю ширину */
+@media (max-width: 576px) {
+    .register-card,
+    .success-card,
+    .error-card {
+        max-width: 100%;
+        border-radius: 0.75rem;
+    }
 }
 </style>
