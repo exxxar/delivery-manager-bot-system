@@ -5,6 +5,7 @@ use App\Exports\ExportType4\RevenueExportSheet;
 use App\Exports\SalesByAgentReport;
 use App\Facades\BotMethods;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminRegisterPageController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\CustomerController;
@@ -82,7 +83,8 @@ Route::get("/test-admin-report", function(){
             InputFile::createFromContents($content, $fileName));*/
 });
 
-
+Route::get('/admin/register/{token}', [AdminRegisterPageController::class, 'show'])
+    ->name('admin.register');
 
 
 Route::get("/upload-suppliers", function () {

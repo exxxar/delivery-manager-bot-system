@@ -59,6 +59,8 @@
         <slot/>
     </div>
 
+
+
     <footer class="text-body-secondary" style="padding: 0 0 90px 0;">
         <div class="container d-flex justify-content-center flex-column align-items-center">
             <p class="d-flex justify-content-center my-3">
@@ -105,6 +107,7 @@
                 </div>
             </template>
 
+
             <ul class="list-group list-group-flush my-3">
                 <li class="p-2 list-group-item">
                     <a
@@ -118,6 +121,21 @@
                         Главное меню
                     </a>
                 </li>
+
+                <template v-if="self && self.role >= 4">
+                    <li class="p-2 list-group-item">
+                        <a
+                            data-bs-dismiss="offcanvas"
+                            data-bs-toggle="modal"
+                            data-bs-target="#inviteManagerModal"
+                            href="javascript:void(0)"
+                            class="text-decoration-none fw-normal"
+                        >
+                            <i class="fa-solid fa-user-plus me-2 text-warning"></i>
+                            Ссылка для администратора
+                        </a>
+                    </li>
+                </template>
 
                 <li class="p-2 list-group-item">
                     <a
@@ -311,6 +329,23 @@
         :message="updateInfo.message"
         :force-update="updateInfo.forceUpdate"
     />
+
+    <div class="modal fade" id="inviteManagerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-user-shield text-primary me-2"></i>
+                        Управление ссылкой
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+               <AdminInviteLinkManager />
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -320,6 +355,7 @@ import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
 import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
 import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
 import UpdateModal from "@/Components/UpdateModal.vue";
+import AdminInviteLinkManager from "@/Components/Admins/AdminInviteLinkManager.vue";
 import {
     getQueue,
     removeFromQueue,
@@ -350,7 +386,8 @@ export default {
         GlobalConfirmModal,
         UserProfileCard,
         PrimaryForm,
-        UpdateModal
+        UpdateModal,
+        AdminInviteLinkManager
     },
 
     data() {
@@ -364,6 +401,7 @@ export default {
 
             // 🔹 Состояние обновления
             updateAvailable: false,
+
             updateInfo: {
                 version: '',
                 localVersion: '',

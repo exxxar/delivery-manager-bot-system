@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BirthdayController;
@@ -42,13 +43,26 @@ Route::get('/auth/me', [AuthController::class, 'me']);
 Route::post('/auth/register', [\App\Http\Controllers\AuthController::class, 'register']);
 Route::post('/telegram', [\App\Http\Controllers\AuthController::class, 'loginTelegram']);
 
+Route::prefix('admin-invite')->group(function () {
+    Route::get('/validate/{token}', [AdminInviteController::class, 'validateToken']);
+    Route::post('/register/{token}', [AdminInviteController::class, 'register']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout']);
+
+
 });
 
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
 Route::middleware(['auth:sanctum','bot.user'])->group(function(){
+
+    Route::prefix('admin-invite')->group(function () {
+        Route::get('/current', [AdminInviteController::class, 'getCurrent']);
+        Route::post('/generate', [AdminInviteController::class, 'generate']);
+        Route::post('/revoke', [AdminInviteController::class, 'revoke']);
+    });
 
     Route::get('/user/font-settings', [UserSettingsController::class, 'getFontSettings']);
     Route::post('/user/font-settings', [UserSettingsController::class, 'updateFontSettings']);
