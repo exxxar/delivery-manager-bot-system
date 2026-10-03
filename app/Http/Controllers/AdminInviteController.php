@@ -166,7 +166,7 @@ class AdminInviteController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'confirmed', 
+                'confirmed',
 
             ],
             'password_confirmation' => 'required|string',

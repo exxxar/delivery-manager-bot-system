@@ -754,37 +754,6 @@ export default {
     75% { transform: translateX(10px); }
 }
 
-/* 📱 Адаптив */
-@media (max-width: 576px) {
-    .register-wrapper {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-
-    .register-card,
-    .success-card,
-    .error-card {
-        border-radius: 0.75rem;
-    }
-
-    .card-body {
-        padding: 1.5rem !important;
-    }
-
-    .brand-icon {
-        width: 70px;
-        height: 70px;
-        font-size: 1.75rem;
-    }
-
-    .submit-btn {
-        height: 3rem;
-    }
-
-    h3 {
-        font-size: 1.4rem;
-    }
-}
 
 /* 👁️ Кнопка показа/скрытия пароля */
 .form-floating-custom .password-toggle {
