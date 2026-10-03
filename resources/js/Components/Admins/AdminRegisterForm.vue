@@ -155,7 +155,7 @@
                                         class="form-control pe-5"
                                         id="password"
                                         v-model="form.password"
-                                        placeholder="••••••••"
+
                                         required
                                         :disabled="submitting"
                                         @input="checkPasswordStrength"
@@ -206,7 +206,7 @@
                                         class="form-control pe-5"
                                         id="password_confirmation"
                                         v-model="form.password_confirmation"
-                                        placeholder="••••••••"
+                                       
                                         required
                                         :disabled="submitting"
                                     />
