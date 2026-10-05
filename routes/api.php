@@ -15,6 +15,7 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierInviteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserSettingsController;
 use Illuminate\Http\Request;
@@ -48,6 +49,11 @@ Route::prefix('admin-invite')->group(function () {
     Route::post('/register/{token}', [AdminInviteController::class, 'register']);
 });
 
+Route::prefix('supplier-invite')->group(function () {
+    Route::get('/validate/{token}', [SupplierInviteController::class, 'validateToken']);
+    Route::post('/register/{token}', [SupplierInviteController::class, 'register']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout']);
 
@@ -62,6 +68,12 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
         Route::get('/current', [AdminInviteController::class, 'getCurrent']);
         Route::post('/generate', [AdminInviteController::class, 'generate']);
         Route::post('/revoke', [AdminInviteController::class, 'revoke']);
+    });
+
+    Route::prefix('supplier-invite')->group(function () {
+        Route::get('/current', [SupplierInviteController::class, 'getCurrent']);
+        Route::post('/generate', [SupplierInviteController::class, 'generate']);
+        Route::post('/revoke', [SupplierInviteController::class, 'revoke']);
     });
 
     Route::get('/user/font-settings', [UserSettingsController::class, 'getFontSettings']);

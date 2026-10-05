@@ -62,7 +62,7 @@ export const useSalesStore = defineStore('sales', {
                     params.append('include_missing_price', filters.include_missing_price ? '1' : '0')
                 }
 
-                // 🔹 ИСПРАВЛЕНО: Фильтр по датам (только если заполнено)
+                // 🔹 Фильтр по датам
                 if (filters.date_from) {
                     params.append('date_from', filters.date_from)
                 }
@@ -73,6 +73,8 @@ export const useSalesStore = defineStore('sales', {
                 const { data } = await makeAxiosFactory('/sales/incomplete', 'GET', {}, { params })
 
                 this.incompleteItems = data.data
+
+                // 🔹 ИСПРАВЛЕНО: сохраняем ПОЛНУЮ структуру пагинации Laravel
                 this.incompletePagination = {
                     current_page: data.current_page,
                     last_page: data.last_page,
@@ -80,6 +82,13 @@ export const useSalesStore = defineStore('sales', {
                     total: data.total,
                     from: data.from,
                     to: data.to,
+                    // 🔹 ВАЖНО: эти поля нужны для работы компонента Pagination
+                    prev_page_url: data.prev_page_url,
+                    next_page_url: data.next_page_url,
+                    first_page_url: data.first_page_url,
+                    last_page_url: data.last_page_url,
+                    links: data.links || [],
+                    path: data.path,
                 }
             } catch (e) {
                 console.error('Ошибка загрузки незавершённых сделок:', e)

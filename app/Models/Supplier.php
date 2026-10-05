@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
@@ -16,6 +17,7 @@ class Supplier extends Model
      * @var array
      */
     protected $fillable = [
+        'user_id',
         'name',
         'address',
         'description',
@@ -41,5 +43,10 @@ class Supplier extends Model
     public function sales(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

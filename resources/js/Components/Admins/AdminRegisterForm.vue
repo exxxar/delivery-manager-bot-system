@@ -206,7 +206,7 @@
                                         class="form-control pe-5"
                                         id="password_confirmation"
                                         v-model="form.password_confirmation"
-                                       
+
                                         required
                                         :disabled="submitting"
                                     />

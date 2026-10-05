@@ -9,9 +9,6 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 <template>
 
 
-
-
-
     <!-- 🔹 Красивые табы -->
     <div class="custom-tabs mb-3">
         <button
@@ -23,7 +20,6 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
             <i class="fa-solid fa-list"></i>
             <span>Все сделки</span>
         </button>
-
 
 
         <button
@@ -359,7 +355,10 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 </div>
                 <div class="col-4">
                     <div class="small text-muted">Общая сумма</div>
-                    <div class="fw-bold fs-5 text-success">{{ formatMoney(salesStore.groupedMonth.month_stats.total_sum) }}</div>
+                    <div class="fw-bold fs-5 text-success">{{
+                            formatMoney(salesStore.groupedMonth.month_stats.total_sum)
+                        }}
+                    </div>
                 </div>
                 <div class="col-4">
                     <div class="small text-muted">Средний чек</div>
@@ -380,7 +379,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
             <div v-for="day in salesStore.groupedMonth.days" :key="day.date" class="day-group mb-4">
 
                 <!-- Заголовок дня -->
-                <div class="day-header d-flex justify-content-between align-items-center mb-2 px-3 py-2 bg-light rounded border-start border-primary border-3">
+                <div
+                    class="day-header d-flex justify-content-between align-items-center mb-2 px-3 py-2 bg-light rounded border-start border-primary border-3">
                     <div>
                         <i class="fa-regular fa-calendar me-2 text-primary"></i>
                         <strong>{{ day.date }}</strong>
@@ -416,43 +416,54 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <template v-if="forSelect">
                                             <li>
-                                                <a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">
+                                                <a class="dropdown-item" href="#"
+                                                   @click.prevent="$emit('select', sale)">
                                                     Выбрать
                                                 </a>
                                             </li>
                                         </template>
                                         <template v-else>
                                             <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">
+                                                <a class="dropdown-item" href="javascript:void(0)"
+                                                   @click.prevent="openView(sale)">
                                                     Просмотреть
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">
+                                                <a class="dropdown-item" href="javascript:void(0)"
+                                                   @click.prevent="openEdit(sale)">
                                                     Редактировать
                                                 </a>
                                             </li>
                                             <li v-if="sale.status !== 'completed'">
-                                                <a class="dropdown-item text-success" href="javascript:void(0)" @click.prevent="openConfirmDeal(sale)">
+                                                <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                   @click.prevent="openConfirmDeal(sale)">
                                                     Подтвердить оплату и доставку
                                                 </a>
                                             </li>
                                             <template v-if="sale.payment_document_name">
-                                                <li><hr class="dropdown-divider"></li>
                                                 <li>
-                                                    <a class="dropdown-item text-success" href="javascript:void(0)" @click.prevent="sendPaymentDocumentToTg(sale.id)">
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">
                                                         Отправить документ в чат
                                                     </a>
                                                 </li>
                                             </template>
-                                            <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmDelete(sale)">
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                   @click.prevent="confirmDelete(sale)">
                                                     Удалить
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmCancelDeal(sale)">
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                   @click.prevent="confirmCancelDeal(sale)">
                                                     Отменить сделку
                                                 </a>
                                             </li>
@@ -479,7 +490,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 <nav aria-label="Пагинация по дням">
                     <ul class="pagination justify-content-center">
                         <li class="page-item" :class="{ disabled: salesStore.pagination.current_page === 1 }">
-                            <a class="page-link" href="javascript:void(0)" @click="changePage(salesStore.pagination.current_page - 1)">
+                            <a class="page-link" href="javascript:void(0)"
+                               @click="changePage(salesStore.pagination.current_page - 1)">
                                 &laquo;
                             </a>
                         </li>
@@ -493,15 +505,18 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                 {{ page }}
                             </a>
                         </li>
-                        <li class="page-item" :class="{ disabled: salesStore.pagination.current_page === salesStore.pagination.last_page }">
-                            <a class="page-link" href="javascript:void(0)" @click="changePage(salesStore.pagination.current_page + 1)">
+                        <li class="page-item"
+                            :class="{ disabled: salesStore.pagination.current_page === salesStore.pagination.last_page }">
+                            <a class="page-link" href="javascript:void(0)"
+                               @click="changePage(salesStore.pagination.current_page + 1)">
                                 &raquo;
                             </a>
                         </li>
                     </ul>
                 </nav>
                 <div class="text-center text-muted small">
-                    Показаны дни {{ salesStore.pagination.from }}-{{ salesStore.pagination.to }} из {{ salesStore.pagination.total }}
+                    Показаны дни {{ salesStore.pagination.from }}-{{ salesStore.pagination.to }} из
+                    {{ salesStore.pagination.total }}
                 </div>
             </div>
         </div>
@@ -665,9 +680,11 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                    @click="toggleSelectAllIncomplete"
                    class="small fw-bold text-decoration-none">
                     <i class="fa-solid fa-check-double me-1"></i>
-                    {{ incompleteSelection.length === salesStore.incompleteItems.length && salesStore.incompleteItems.length > 0
-                    ? 'Снять выделение'
-                    : 'Выделить все' }}
+                    {{
+                        incompleteSelection.length === salesStore.incompleteItems.length && salesStore.incompleteItems.length > 0
+                            ? 'Снять выделение'
+                            : 'Выделить все'
+                    }}
                 </a>
 
                 <span v-if="incompleteSelection.length > 0" class="small text-muted">
@@ -739,23 +756,29 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
-                                        <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">
+                                        <a class="dropdown-item" href="javascript:void(0)"
+                                           @click.prevent="openView(sale)">
                                             Просмотреть
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">
+                                        <a class="dropdown-item" href="javascript:void(0)"
+                                           @click.prevent="openEdit(sale)">
                                             Редактировать
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item text-success" href="javascript:void(0)" @click.prevent="openConfirmDeal(sale)">
+                                        <a class="dropdown-item text-success" href="javascript:void(0)"
+                                           @click.prevent="openConfirmDeal(sale)">
                                             Подтвердить оплату и доставку
                                         </a>
                                     </li>
-                                    <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="confirmCancelDeal(sale)">
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                           @click.prevent="confirmCancelDeal(sale)">
                                             Отменить сделку
                                         </a>
                                     </li>
@@ -778,9 +801,10 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                       :title="`Статус: ${saleStatuses[sale.status] || sale.status}`">
                                 <i class="fa-solid fa-truck"></i>
                             </span>
-                                <span v-if="incompleteFilters.include_missing_price && (!sale.total_price || sale.total_price == 0)"
-                                      class="badge bg-danger"
-                                      title="Не указана сумма сделки">
+                                <span
+                                    v-if="incompleteFilters.include_missing_price && (!sale.total_price || sale.total_price == 0)"
+                                    class="badge bg-danger"
+                                    title="Не указана сумма сделки">
                                 <i class="fa-solid fa-money-bill"></i>
                             </span>
                             </div>
@@ -812,7 +836,6 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
             </div>
         </template>
     </template>
-
 
 
     <!-- Модалка редактирования -->
@@ -944,8 +967,9 @@ export default {
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                this.incompleteFilters = { ...this.incompleteFilters, ...parsed };
-            } catch (e) {}
+                this.incompleteFilters = {...this.incompleteFilters, ...parsed};
+            } catch (e) {
+            }
         }
 
         this.salesStore.setFilters({
@@ -986,11 +1010,19 @@ export default {
             }
         },
 
-        fetchIncompleteByUrl(url) {
-            const match = url.match(/page=(\d+)/);
-            const page = match ? parseInt(match[1]) : 1;
-            // 🔹 Передаём текущие фильтры
-            this.salesStore.fetchIncomplete(page, 20, this.incompleteFilters);
+        fetchIncompleteByUrl(urlOrPage) {
+            let page = 1
+
+            if (typeof urlOrPage === 'number') {
+                // Получили просто номер страницы
+                page = urlOrPage
+            } else if (typeof urlOrPage === 'string') {
+                // Получили URL — извлекаем номер страницы
+                const match = urlOrPage.match(/page=(\d+)/)
+                page = match ? parseInt(match[1]) : 1
+            }
+
+            this.salesStore.fetchIncomplete(page, 20, this.incompleteFilters)
         },
         getCurrentMonth() {
             const now = new Date()
@@ -1373,8 +1405,12 @@ p {
 }
 
 @keyframes pulse-badge {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
 }
 
 /* Индикатор статуса на карточке */

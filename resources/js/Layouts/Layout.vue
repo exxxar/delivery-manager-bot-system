@@ -135,6 +135,19 @@
                             Ссылка для администратора
                         </a>
                     </li>
+
+                    <li class="p-2 list-group-item">
+                        <a
+                            data-bs-dismiss="offcanvas"
+                            data-bs-toggle="modal"
+                            data-bs-target="#supplierInviteModal"
+                            href="javascript:void(0)"
+                            class="text-decoration-none fw-normal"
+                        >
+                            <i class="fa-solid fa-truck me-2 text-success"></i>
+                            Ссылка для поставщика
+                        </a>
+                    </li>
                 </template>
 
                 <li class="p-2 list-group-item">
@@ -346,6 +359,24 @@
             </div>
         </div>
     </div>
+
+    <!-- Модалка управления ссылкой поставщика -->
+    <div class="modal fade" id="supplierInviteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-truck text-success me-2"></i>
+                        Управление ссылкой поставщика
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <SupplierInviteLinkManager />
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -356,6 +387,7 @@ import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
 import PrimaryForm from "@/Components/Users/Forms/PrimaryForm.vue";
 import UpdateModal from "@/Components/UpdateModal.vue";
 import AdminInviteLinkManager from "@/Components/Admins/AdminInviteLinkManager.vue";
+import SupplierInviteLinkManager from "@/Components/Suppliers/SupplierInviteLinkManager.vue";
 import {
     getQueue,
     removeFromQueue,
@@ -387,6 +419,7 @@ export default {
         UserProfileCard,
         PrimaryForm,
         UpdateModal,
+        SupplierInviteLinkManager,
         AdminInviteLinkManager
     },
 
