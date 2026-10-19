@@ -87,6 +87,7 @@ Route::get("/test-admin-report", function(){
 Route::get('/admin/register/{token}', [AdminRegisterPageController::class, 'show'])
     ->name('admin.register');
 
+
 Route::get('/supplier/register/{token}', [SupplierRegisterPageController::class, 'show'])
     ->name('supplier.register');
 
@@ -180,7 +181,8 @@ Route::get("/login", function (){
     return Inertia::render('AuthPage',[
         "api_type"=>"api"
     ]);
-});
+})->name("login");
+
 Route::get("/blocked", [\App\Http\Controllers\TelegramController::class, "blockedPage"])
     ->name("blocked");
 

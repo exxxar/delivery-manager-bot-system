@@ -79,6 +79,7 @@ class AuthController extends Controller
         ], 201);
     }
 
+
     public function login(Request $request)
     {
 
@@ -154,7 +155,7 @@ class AuthController extends Controller
                 'name' => $request->first_name,
                 'fio_from_telegram' => $request->username,
                 'email' => $telegramId.'@telegram.local',
-                'password' => bcrypt(str()->random(32))
+                'password' => Hash::make(str()->random(32))
             ]
         );
 
