@@ -82,7 +82,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-
+        // Ваш дебаг-блок оставлен без изменений, как вы и просили
         if (env("APP_DEBUG")) {
             $user = User::query()->first();
             $user->role = RoleEnum::SUPERADMIN->value;
@@ -91,36 +91,38 @@ class AuthController extends Controller
             Auth::login($user);
             UserLog::log("Вход в систему");
             $request->session()->regenerate();
-
-        }
-        else  {
+        } else {
             $request->validate([
-                'login' => 'required',
-                'password' => 'required'
+                'login' => 'required|string',
+                'password' => 'required|string'
             ]);
 
-
+            // Auth::attempt ПРОВЕРЯЕТ пароль и АВТОМАТИЧЕСКИ авторизует пользователя при успехе.
+            // Делать после этого дополнительный запрос к БД и повторный Auth::login() не нужно.
             if (!Auth::attempt([
-                'email' => $request->login,
+                'email' => $request->login, // ⚠️ Если в вашей таблице поле называется 'login', замените 'email' на 'login'
                 'password' => $request->password
             ])) {
+                // Исправлена опечатка и добавлен контекст для отладки
+                Log::info('error login', [
+                    'attempted_login' => $request->login,
+                    'ip' => $request->ip()
+                ]);
 
-                Log::info("errror login");
                 return response()->json([
                     'message' => 'Неверный логин или пароль'
                 ], 401);
             }
 
-            $user = User::query()->where("email",  $request->login)
-                ->first();
+            // Получаем уже авторизованного пользователя (без лишнего запроса к БД)
+            $user = Auth::user();
 
-            Auth::login($user);
+            // Регенерируем сессию для защиты от фиксации сессии
             $request->session()->regenerate();
 
-            UserLog::log("Вход в систему");
-
+            // Логируем вход, передавая ID пользователя для надежности
+            UserLog::log("Вход в систему", $user->id);
         }
-
 
         return response()->json(Auth::user());
     }
