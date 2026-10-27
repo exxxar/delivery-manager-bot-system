@@ -2,20 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'user_id',
         'name',
@@ -33,14 +31,20 @@ class Supplier extends Model
     protected $casts = [
         'id' => 'integer',
         'birthday' => 'date',
+        'percent' => 'float',
     ];
 
-    public function products(): \Illuminate\Database\Eloquent\Relations\HasMany
+    protected $appends = ['total_percent'];
+
+    // 🔴 УБРАЛИ $with = ['percentages']
+    // protected $with = ['percentages'];
+
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }
 
-    public function sales(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
     }
@@ -48,5 +52,25 @@ class Supplier extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function percentages(): MorphMany
+    {
+        return $this->morphMany(Percentage::class, 'percentable');
+    }
+
+    public function totalPercent(): Attribute
+    {
+        return Attribute::get(function () {
+            if ($this->relationLoaded('percentages')) {
+                return $this->percentages
+                    ->where('is_active', true)
+                    ->sum('percentage');
+            }
+
+            return $this->percentages()
+                ->where('is_active', true)
+                ->sum('percentage');
+        });
     }
 }

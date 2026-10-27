@@ -37,13 +37,54 @@ export const useSalesStore = defineStore('sales', {
         incompletePagination: null,
         incompleteLoading: false,
 
+        myDeliveries: [],
+        myDeliveriesPagination: null,
+        myDeliveriesStats: null,
+        myDeliveriesLoading: false,
+
         sort: {field: 'id', direction: 'desc'} as { field: string; direction: 'asc' | 'desc' }
     }),
     getters: {
         byId: (s) => (id: number) => s.items.find(x => x.id === id),
     },
     actions: {
+        async fetchMyDeliveries(page = 1, month = null, status = 'all', perPage = 20) {
+            this.myDeliveriesLoading = true
+            try {
+                const params = new URLSearchParams()
+                params.append('page', String(page))
+                params.append('per_page', String(perPage))
+                params.append('status', status)
 
+                if (month) {
+                    params.append('month', month)
+                }
+
+                const { data } = await makeAxiosFactory(
+                    `/supplier/my-deliveries?${params.toString()}`,
+                    'GET'
+                )
+
+                this.myDeliveries = data.data
+                this.myDeliveriesPagination = {
+                    current_page: data.current_page,
+                    last_page: data.last_page,
+                    per_page: data.per_page,
+                    total: data.total,
+                    from: data.from,
+                    to: data.to,
+                    links: data.links || [],
+                }
+                this.myDeliveriesStats = data.stats
+
+                return data
+            } catch (e) {
+                console.error('Ошибка загрузки моих доставок:', e)
+                useAlertStore().show('Не удалось загрузить доставки', 'error')
+            } finally {
+                this.myDeliveriesLoading = false
+            }
+        },
         async fetchIncomplete(page = 1, perPage = 20, filters = {}) {
             this.incompleteLoading = true
             try {

@@ -4,7 +4,7 @@ const today = new Date().toISOString().split('T')[0]
 
 <template>
 
-    <form @submit.prevent="submitForm">
+    <form class="sale-form" @submit.prevent="submitForm">
 
         <!-- Индикатор офлайн-очереди -->
         <div v-if="offlineCount > 0" class="alert alert-warning d-flex align-items-center mb-3 py-2">
@@ -26,150 +26,162 @@ const today = new Date().toISOString().split('T')[0]
         </div>
 
         <template v-if="tab==='main'">
+            <header class="sale-form__header">
+                <div class="sale-form__header-icon">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                </div>
+                <div class="sale-form__header-copy">
+                    <span class="sale-form__eyebrow">{{ isEdit ? 'Редактирование' : 'Новая операция' }}</span>
+                    <h2>{{ isEdit ? 'Изменение сделки' : 'Создание сделки' }}</h2>
+                    <p>Заполните данные, чтобы сохранить заявку в системе</p>
+                </div>
+            </header>
 
-            <div class="form-check form-switch mb-2">
-                <input
-                    v-model="form.need_automatic_naming"
-                    class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
-                <label class="form-check-label" for="need_automatic_naming">
-                    Автоматическое название и описание
-                    <span class="fw-bold text-primary" v-if="form.need_automatic_naming">включено</span>
-                    <span class="fw-bold text-primary" v-else>выключено</span>
-                </label>
-            </div>
-
-            <template v-if="!form.need_automatic_naming">
-                <div class="form-floating mb-2">
-                    <input v-model="form.title" type="text" class="form-control" id="title"
-                           placeholder="Название" required>
-                    <label for="title">Название задания</label>
+            <div class="sale-form__section">
+                <div class="form-check form-switch mb-2 sale-form__switch">
+                    <input
+                        v-model="form.need_automatic_naming"
+                        class="form-check-input" type="checkbox" role="switch" id="need_automatic_naming">
+                    <label class="form-check-label" for="need_automatic_naming">
+                        Автоматическое название и описание
+                        <span class="fw-bold text-primary" v-if="form.need_automatic_naming">включено</span>
+                        <span class="fw-bold text-primary" v-else>выключено</span>
+                    </label>
                 </div>
 
-                <div class="form-floating mb-2">
+                <template v-if="!form.need_automatic_naming">
+                    <div class="form-floating mb-2">
+                        <input v-model="form.title" type="text" class="form-control" id="title"
+                               placeholder="Название" required>
+                        <label for="title">Название задания</label>
+                    </div>
+
+                    <div class="form-floating mb-2">
                     <textarea v-model="form.description" class="form-control" id="description"
                               placeholder="Описание" style="height: 120px" required></textarea>
-                    <label for="description">Описание задания</label>
-                </div>
-            </template>
+                        <label for="description">Описание задания</label>
+                    </div>
+                </template>
 
-            <!-- Поставщик -->
-            <div class="input-group mb-2">
-                <div class="form-floating flex-grow-1">
-                    <input required type="text" class="form-control" id="supplier"
-                           :value="supplierName" placeholder="Поставщик" readonly>
-                    <label for="supplier">Поставщик</label>
+                <!-- Поставщик -->
+                <div class="input-group mb-2">
+                    <div class="form-floating flex-grow-1">
+                        <input required type="text" class="form-control" id="supplier"
+                               :value="supplierName" placeholder="Поставщик" readonly>
+                        <label for="supplier">Поставщик</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-light text-primary find-btn"
+                            @click="tab='supplier'">Выбрать</button>
                 </div>
-                <button type="button" class="btn btn-outline-light text-primary find-btn"
-                        @click="tab='supplier'">Выбрать</button>
-            </div>
 
-            <!-- Продукт -->
-            <div class="input-group mb-2">
-                <div class="form-floating flex-grow-1">
-                    <input type="text" required class="form-control" id="product"
-                           :value="productName" placeholder="Продукт" readonly>
-                    <label for="product">Продукт</label>
+                <!-- Продукт -->
+                <div class="input-group mb-2">
+                    <div class="form-floating flex-grow-1">
+                        <input type="text" required class="form-control" id="product"
+                               :value="productName" placeholder="Продукт" readonly>
+                        <label for="product">Продукт</label>
+                    </div>
+                    <button type="button" :disabled="form.supplier_id == null"
+                            class="btn btn-outline-light text-primary find-btn"
+                            @click="tab='product'">Выбрать</button>
                 </div>
-                <button type="button" :disabled="form.supplier_id == null"
-                        class="btn btn-outline-light text-primary find-btn"
-                        @click="tab='product'">Выбрать</button>
-            </div>
 
-            <template v-if="form.supplier_id && form.product_id">
+                <template v-if="form.supplier_id && form.product_id">
+                    <div class="form-floating mb-2">
+                        <input v-model="form.total_price" required type="number" step="0.01"
+                               class="form-control" id="total_price" placeholder="Сумма">
+                        <label for="total_price">Сумма сделки</label>
+                    </div>
+                </template>
+
                 <div class="form-floating mb-2">
-                    <input v-model="form.total_price" required type="number" step="0.01"
-                           class="form-control" id="total_price" placeholder="Сумма">
-                    <label for="total_price">Сумма сделки</label>
+                    <select class="form-select" v-model="form.payment_type" id="payment-type"
+                            aria-label="Floating label select example">
+                        <option :value="'0'">Наличный расчет</option>
+                        <option :value="'1'">Безналичный расчет</option>
+                    </select>
+                    <label for="payment-type">Тип оплаты</label>
                 </div>
-            </template>
 
-            <div class="form-floating mb-2">
-                <select class="form-select" v-model="form.payment_type" id="payment-type"
-                        aria-label="Floating label select example">
-                    <option :value="'0'">Наличный расчет</option>
-                    <option :value="'1'">Безналичный расчет</option>
-                </select>
-                <label for="payment-type">Тип оплаты</label>
-            </div>
+                <template v-if="form.payment_type==='1'">
+                    <h6>Фотография чека</h6>
 
-            <template v-if="form.payment_type==='1'">
-                <h6>Фотография чека</h6>
-
-                <template v-if="form.payment_document_name">
+                    <template v-if="form.payment_document_name">
                     <span @click="sendPaymentDocumentToTg"
                           style="cursor:pointer;text-align:left;"
                           class="mb-2 w-100 badge bg-success text-decoration-underline">
                         <i style="margin-right:5px;" class="fa-brands fa-telegram"></i>
                         Чек прикреплен к сделке.
                     </span>
+                    </template>
+
+                    <div class="form-floating mb-2">
+                        <input type="file" class="form-control" @change="onFileChange"
+                               accept=".jpg,.png,.pdf"/>
+                        <label for="payment-type">
+                            Прикрепить <span class="text-primary fw-bold">(не обязательно)</span>
+                        </label>
+                    </div>
                 </template>
 
-                <div class="form-floating mb-2">
-                    <input type="file" class="form-control" @change="onFileChange"
-                           accept=".jpg,.png,.pdf"/>
-                    <label for="payment-type">
-                        Прикрепить <span class="text-primary fw-bold">(не обязательно)</span>
-                    </label>
+                <div class="form-floating mb-2" v-if="isEdit">
+                    <select v-model="form.status" class="form-select" id="status" required>
+                        <option value="pending">Ожидает</option>
+                        <option value="assigned">Назначено</option>
+                        <option value="delivered">Доставляется</option>
+                        <option value="completed">Завершено</option>
+                        <option value="rejected">Отклонено</option>
+                    </select>
+                    <label for="status">Статус</label>
                 </div>
-            </template>
 
-            <div class="form-floating mb-2" v-if="isEdit">
-                <select v-model="form.status" class="form-select" id="status" required>
-                    <option value="pending">Ожидает</option>
-                    <option value="assigned">Назначено</option>
-                    <option value="delivered">Доставляется</option>
-                    <option value="completed">Завершено</option>
-                    <option value="rejected">Отклонено</option>
-                </select>
-                <label for="status">Статус</label>
-            </div>
+                <CustomDatePicker
+                    v-model="form.actual_delivery_date"
+                    input-id="actual_delivery_date"
+                    label="Фактическая дата доставки"
+                    placeholder="Выберите дату"
+                    :required="true"
+                    class="mb-2"
+                />
 
-            <CustomDatePicker
-                v-model="form.actual_delivery_date"
-                input-id="actual_delivery_date"
-                label="Фактическая дата доставки"
-                placeholder="Выберите дату"
-                :required="true"
-                class="mb-2"
-            />
+                <template v-if="user?.role>=3">
+                    <p class="alert alert-info mb-2">Назначение ответственного по данной задаче</p>
 
-            <template v-if="user?.role>=3">
-                <p class="alert alert-info mb-2">Назначение ответственного по данной задаче</p>
-
-                <div class="input-group mb-2">
-                    <div class="form-floating flex-grow-1">
-                        <input type="text" class="form-control" id="agent" :value="agentName"
-                               placeholder="администратор" readonly>
-                        <label for="agent">Администратор</label>
+                    <div class="input-group mb-2">
+                        <div class="form-floating flex-grow-1">
+                            <input type="text" class="form-control" id="agent" :value="agentName"
+                                   placeholder="администратор" readonly>
+                            <label for="agent">Администратор</label>
+                        </div>
+                        <button type="button" class="btn btn-outline-light text-primary find-btn"
+                                @click="tab='agent'">Выбрать</button>
                     </div>
-                    <button type="button" class="btn btn-outline-light text-primary find-btn"
-                            @click="tab='agent'">Выбрать</button>
-                </div>
-            </template>
+                </template>
 
-            <template v-if="!isEdit">
-                <div class="form-check form-switch mb-2">
-                    <input v-model="form.is_already_delivered" class="form-check-input"
-                           type="checkbox" role="switch" id="is_already_delivered">
-                    <label class="form-check-label" for="is_already_delivered">
-                        Товар уже доставлен
-                    </label>
-                </div>
-            </template>
+                <template v-if="!isEdit">
+                    <div class="form-check form-switch mb-2">
+                        <input v-model="form.is_already_delivered" class="form-check-input"
+                               type="checkbox" role="switch" id="is_already_delivered">
+                        <label class="form-check-label" for="is_already_delivered">
+                            Товар уже доставлен
+                        </label>
+                    </div>
+                </template>
 
-            <!-- Кнопка отправки -->
-            <button :disabled="spent_time > 0 || salesStore.loading"
+                <!-- Кнопка отправки -->
+                <button :disabled="spent_time > 0 || salesStore.loading"
 
-                    type="submit" class="btn btn-primary w-100 p-3">
-                <span v-if="spent_time > 0">{{ spent_time }} сек.</span>
-                <span v-else-if="!isOnline">
+                        type="submit" class="btn btn-primary w-100 p-3">
+                    <span v-if="spent_time > 0">{{ spent_time }} сек.</span>
+                    <span v-else-if="!isOnline">
                     <i class="fa-solid fa-wifi me-1"></i>
                     Сохранить офлайн
                 </span>
-                <span v-else>
+                    <span v-else>
                     {{ isEdit ? 'Сохранить изменения' : 'Создать задание' }}
                 </span>
-            </button>
+                </button>
+            </div>
         </template>
 
         <template v-if="tab==='agent'">
@@ -500,14 +512,204 @@ export default {
     }
 }
 </script>
+
 <style>
-.btn-submitting {
+.sale-form {
+    --mp-blue: #2457d6;
+    --mp-blue-dark: #173b91;
+    --mp-red: #df3548;
+    --mp-text: #17233b;
+    --mp-muted: #778399;
+    --mp-border: #e5eaf2;
+    color: var(--mp-text);
+    width: 100%;
+    font-size: 14px;
+}
+.sale-form__header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    border: 1px solid var(--mp-border);
+    border-radius: 18px;
+    background: linear-gradient(120deg, #fff 0%, #f5f8ff 100%);
+}
+.sale-form__header-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    color: #fff;
+    border-radius: 15px;
+    background: linear-gradient(145deg, var(--mp-blue), var(--mp-blue-dark));
+    box-shadow: 0 7px 16px rgba(36,87,214,.2);
+    font-size: 21px;
+}
+.sale-form__eyebrow {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--mp-blue);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+.sale-form__header h2 {
+    margin: 0;
+    color: var(--mp-text);
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+.sale-form__header p {
+    margin: 5px 0 0;
+    color: var(--mp-muted);
+    font-size: 12px;
+}
+.sale-form__section {
+    padding: 20px;
+    border: 1px solid var(--mp-border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 26px rgba(23,35,59,.045);
+}
+.sale-form .form-floating,
+.sale-form .input-group {
+    //margin-bottom: 14px !important;
+}
+.sale-form .form-control,
+.sale-form .form-select {
+    min-height: 48px;
+    border: 1px solid #dce3ef;
+    border-radius: 11px;
+    color: var(--mp-text);
+    background-color: #fff;
+    box-shadow: none;
+    font-size: 14px;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+.sale-form textarea.form-control {
+    min-height: 120px;
+}
+.sale-form .form-control:focus,
+.sale-form .form-select:focus {
+    border-color: #8ba9f4;
+    box-shadow: 0 0 0 3px rgba(36,87,214,.1);
+}
+.sale-form .form-floating > label {
+    color: var(--mp-muted);
+    font-size: 13px;
+}
+.sale-form .input-group .form-floating {
+    min-width: 0;
+}
+.sale-form .input-group .form-control {
+    border-radius: 11px 0 0 11px;
+}
+.sale-form .find-btn {
+    padding: 0 17px;
+    border: 1px solid #dce3ef !important;
+    border-radius: 0 11px 11px 0 !important;
+    background: #f5f8ff !important;
+    color: var(--mp-blue) !important;
+    font-weight: 700;
+}
+.sale-form .find-btn:hover:not(:disabled) {
+    background: #eaf0ff !important;
+}
+.sale-form .find-btn:disabled {
+    opacity: .45;
+}
+.sale-form .form-check {
+    padding: 12px 14px 12px 2.7em;
+    border: 1px solid var(--mp-border);
+    border-radius: 11px;
+    background: #f8faff;
+}
+.sale-form .form-check-input {
+    cursor: pointer;
+}
+.sale-form .form-check-input:checked {
+    border-color: var(--mp-blue);
+    background-color: var(--mp-blue);
+}
+.sale-form .form-check-label {
+    color: var(--mp-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+.sale-form .alert {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 13px;
+}
+.sale-form .alert-info {
+    color: #21499d;
+    border-color: #dce7ff;
+    background: #f1f5ff;
+}
+.sale-form .alert-warning {
+    border-color: #f5dfaa;
+}
+.sale-form .badge {
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-weight: 700;
+}
+.sale-form .bg-success {
+    background-color: #e5f7ed !important;
+    color: #18794e !important;
+}
+.sale-form .bg-warning {
+    background-color: #fff3d6 !important;
+    color: #8b5b00 !important;
+}
+.sale-form .btn-primary {
+    min-height: 50px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--mp-blue), var(--mp-blue-dark));
+    box-shadow: 0 7px 15px rgba(36,87,214,.18);
+    font-size: 14px;
+    font-weight: 800;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+.sale-form .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(36,87,214,.24);
+}
+.sale-form .btn-primary:disabled {
+    opacity: .65;
+    box-shadow: none;
+}
+.sale-form > form,
+.sale-form .btn-light {
+    border-radius: 10px;
+}
+.sale-form > button.btn-light,
+.sale-form button.btn-light {
+    border: 1px solid var(--mp-border);
+    background: #fff;
+    color: var(--mp-blue) !important;
+    font-weight: 700;
+}
+.sale-form h6 {
+    margin: 14px 0 9px;
+    color: var(--mp-text);
+    font-size: 13px;
+    font-weight: 800;
+}
+.sale-form .text-primary {
+    color: var(--mp-blue) !important;
+}
+.sale-form .btn-submitting {
     position: relative;
     pointer-events: none;
-    opacity: 0.7;
+    opacity: .7;
 }
-
-.btn-submitting::after {
+.sale-form .btn-submitting::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -518,10 +720,37 @@ export default {
     border: 2px solid #fff;
     border-top-color: transparent;
     border-radius: 50%;
-    animation: btn-spin 0.8s linear infinite;
+    animation: sale-form-spin .8s linear infinite;
 }
-
-@keyframes btn-spin {
+@keyframes sale-form-spin {
     to { transform: rotate(360deg); }
+}
+@media (max-width: 575.98px) {
+    .sale-form__header {
+        gap: 12px;
+        padding: 16px;
+        border-radius: 14px;
+    }
+    .sale-form__header-icon {
+        flex-basis: 44px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        font-size: 18px;
+    }
+    .sale-form__header h2 {
+        font-size: 18px;
+    }
+    .sale-form__header p {
+        font-size: 11px;
+    }
+    .sale-form__section {
+        padding: 14px;
+        border-radius: 14px;
+    }
+    .sale-form .find-btn {
+        padding: 0 10px;
+        font-size: 12px;
+    }
 }
 </style>

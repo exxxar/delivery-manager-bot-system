@@ -7,17 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Agent extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'user_id',
         'mentor_id',
@@ -34,57 +30,24 @@ class Agent extends Model
         'updated_at',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected $casts = [
         'id' => 'integer',
         'user_id' => 'integer',
         'mentor_id' => 'integer',
         'in_learning' => 'boolean',
         'is_test' => 'boolean',
-        'favorite_suppliers' => 'array'
+        'favorite_suppliers' => 'array',
     ];
 
-    protected $appends = ["user_info","registration_at", "percent", "total_percent"];
+    protected $appends = ['user_info', 'registration_at', 'percent', 'total_percent'];
 
-    protected $with = ["percentages"];
+    // 🔴 УБРАЛИ $with = ['percentages'] — загружаем только по необходимости
+    // protected $with = ['percentages'];
 
-    public function sales(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
     }
-
-    public function getUserInfoAttribute(){
-        $user = $this->user()->first();
-
-        if (!is_null($user))
-            return $user->toHtmlText();
-        else
-            return "123123";
-    }
-
-    public function getPercentAttribute(){
-        $user = $this->user()->first();
-
-        if (!is_null($user))
-            return $user->percent;
-        else
-            return 0;
-    }
-
-
-    public function getRegistrationAtAttribute(){
-        $user = $this->user()->first();
-
-        if (!is_null($user))
-            return $user->registration_at;
-        else
-            return null;
-    }
-
 
     public function user(): BelongsTo
     {
@@ -93,20 +56,60 @@ class Agent extends Model
 
     public function mentor(): BelongsTo
     {
-        return $this->belongsTo(User::class,'mentor_id','id');
+        return $this->belongsTo(User::class, 'mentor_id', 'id');
     }
 
-    public function percentages(): HasMany
+    public function percentages(): MorphMany
     {
-        return $this->hasMany(Percentage::class,'agent_id','id');
+        return $this->morphMany(Percentage::class, 'percentable');
+    }
+
+    public function legacyPercentages(): HasMany
+    {
+        return $this->hasMany(Percentage::class, 'agent_id', 'id');
     }
 
     public function totalPercent(): Attribute
     {
         return Attribute::get(function () {
+            // Используем relationLoaded, чтобы не делать лишних запросов
+            if ($this->relationLoaded('percentages')) {
+                return $this->percentages
+                    ->where('is_active', true)
+                    ->sum('percentage');
+            }
+
             return $this->percentages()
                 ->where('is_active', true)
                 ->sum('percentage');
         });
+    }
+
+    // 🔴 БЕЗОПАСНЫЕ appends — проверяем, загружен ли user
+    public function getUserInfoAttribute()
+    {
+        if (!$this->relationLoaded('user')) {
+            return '';
+        }
+        $user = $this->user;
+        return $user ? $user->toHtmlText() : '';
+    }
+
+    public function getPercentAttribute()
+    {
+        if (!$this->relationLoaded('user')) {
+            return 0;
+        }
+        $user = $this->user;
+        return $user ? $user->percent : 0;
+    }
+
+    public function getRegistrationAtAttribute()
+    {
+        if (!$this->relationLoaded('user')) {
+            return null;
+        }
+        $user = $this->user;
+        return $user ? $user->registration_at : null;
     }
 }

@@ -220,6 +220,101 @@ class SupplierController extends Controller
         return response()->json($supplier);
     }
 
+    /**
+     * Получить доставки текущего авторизованного поставщика
+     * Доступно только пользователям с ролью SUPPLIER
+     */
+    public function myDeliveries(Request $request)
+    {
+        $botUser = $request->botUser;
+
+        // 🔹 Проверка: пользователь должен быть поставщиком
+        if ($botUser->role !== RoleEnum::SUPPLIER->value) {
+            return response()->json([
+                'message' => 'Доступ только для поставщиков'
+            ], 403);
+        }
+
+        // 🔹 Получаем поставщика, привязанного к пользователю
+        $supplier = Supplier::where('user_id', $botUser->id)->first();
+
+        if (!$supplier) {
+            return response()->json([
+                'message' => 'Поставщик не найден'
+            ], 404);
+        }
+
+        $month = $request->get('month', now()->format('Y-m'));
+        $status = $request->get('status'); // all, completed, pending, incomplete
+
+        try {
+            $monthDate = Carbon::parse($month . '-01');
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Неверный формат месяца'], 422);
+        }
+
+        // 🔹 Базовый запрос
+        $query = Sale::query()
+            ->with(['product', 'supplier', 'customer', 'creator', 'agent'])
+            ->where('supplier_id', $supplier->id)
+            ->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateTimeString(),
+                $monthDate->endOfMonth()->toDateTimeString()
+            ]);
+
+        // 🔹 Фильтр по статусу
+        switch ($status) {
+            case 'completed':
+                $query->where('status', 'completed');
+                break;
+            case 'pending':
+                $query->whereIn('status', ['pending', 'assigned', 'delivered']);
+                break;
+            case 'incomplete':
+                // Незавершённые: статус не completed ИЛИ нет даты доставки ИЛИ нет суммы
+                $query->where(function ($q) {
+                    $q->where('status', '!=', 'completed')
+                        ->orWhereNull('actual_delivery_date')
+                        ->orWhere('total_price', 0)
+                        ->orWhereNull('total_price');
+                })->where('status', '!=', 'rejected');
+                break;
+            case 'rejected':
+                $query->where('status', 'rejected');
+                break;
+            // 'all' или ничего — без фильтра
+        }
+
+        $sales = $query
+            ->orderByDesc('actual_delivery_date')
+            ->paginate($request->get('per_page', 20));
+
+        // 🔹 Статистика за месяц (без учёта пагинации)
+        $statsQuery = Sale::query()
+            ->where('supplier_id', $supplier->id)
+            ->where('status', 'completed')
+            ->whereBetween('actual_delivery_date', [
+                $monthDate->startOfMonth()->toDateTimeString(),
+                $monthDate->endOfMonth()->toDateTimeString()
+            ]);
+
+        $response = $sales->toArray();
+        $response['stats'] = [
+            'total_deliveries' => $statsQuery->count(),
+            'total_sum' => round($statsQuery->sum('total_price'), 2),
+            'pending_count' => Sale::query()
+                ->where('supplier_id', $supplier->id)
+                ->whereIn('status', ['pending', 'assigned', 'delivered'])
+                ->whereBetween('actual_delivery_date', [
+                    $monthDate->startOfMonth()->toDateTimeString(),
+                    $monthDate->endOfMonth()->toDateTimeString()
+                ])
+                ->count(),
+        ];
+
+        return response()->json($response);
+    }
+
     public function update(Request $request, $id)
     {
 

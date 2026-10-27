@@ -70,6 +70,14 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
         Route::post('/revoke', [AdminInviteController::class, 'revoke']);
     });
 
+
+    Route::prefix('percentages')->group(function () {
+        Route::get('/', [PercentageController::class, 'index']);
+        Route::post('/', [PercentageController::class, 'store']);
+        Route::put('/{percentage}', [PercentageController::class, 'update']);
+        Route::delete('/{percentage}', [PercentageController::class, 'destroy']);
+    });
+
     Route::prefix('supplier-invite')->group(function () {
         Route::get('/current', [SupplierInviteController::class, 'getCurrent']);
         Route::post('/generate', [SupplierInviteController::class, 'generate']);
@@ -162,6 +170,12 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
         });
 
     Route::prefix('suppliers')
+        ->middleware(["tg.role:supplier"])
+        ->group(function () {
+            Route::get('/my-deliveries', [SupplierController::class, 'myDeliveries']);
+        });
+
+    Route::prefix('suppliers')
         ->middleware(["tg.role:agent"])
         ->group(function () {
             Route::get('/with-products', [SupplierController::class, 'indexWithProducts']);
@@ -173,6 +187,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/', [SupplierController::class, 'index']);
             Route::get('/active', [SupplierController::class, 'active'])->name('suppliers.active');
             Route::get('/inactive', [SupplierController::class, 'inactive'])->name('suppliers.inactive');
+
 
 
             // Создать нового поставщика

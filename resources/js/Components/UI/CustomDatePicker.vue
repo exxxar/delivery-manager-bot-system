@@ -1,93 +1,67 @@
 <template>
     <div class="custom-datepicker">
-        <div
-            class="form-floating"
-            @click="openPicker"
-            style="cursor: pointer;"
-        >
-            <input
-                type="text"
-                class="form-control"
-                :id="inputId"
-                :value="displayValue"
-                :placeholder="placeholder"
-                readonly
-                :class="{ 'is-invalid': invalid }"
-            >
-            <label :for="inputId">
-                <i class="fa-solid fa-calendar-days text-primary me-1"></i>
-                {{ label }}
-            </label>
+        <div class="date-input-wrap" @click="openPicker">
+            <div class="form-floating date-floating">
+                <input
+                    type="text"
+                    class="form-control date-input"
+                    :id="inputId"
+                    :value="displayValue"
+                    :placeholder="placeholder"
+                    readonly
+                    :class="{ 'is-invalid': invalid }"
+                    :aria-invalid="invalid ? 'true' : 'false'"
+                >
+                <label :for="inputId">{{ label }}</label>
+            </div>
+            <span class="date-input-icon" aria-hidden="true">
+                <i class="fa-solid fa-calendar-days"></i>
+            </span>
         </div>
 
-        <!-- Модальное окно с календарём -->
-        <div
-            class="modal fade"
-            :id="modalId"
-            tabindex="-1"
-            ref="modalRef"
-        >
+        <div class="modal fade datepicker-modal" :id="modalId" tabindex="-1" ref="modalRef">
             <div class="modal-dialog modal-dialog-centered modal-sm">
-                <div class="modal-content">
-                    <div class="modal-header py-2">
-                        <div class="d-flex align-items-center w-100 justify-content-between">
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-light"
-                                @click="prevMonth"
-                            >
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-
-                            <div class="d-flex align-items-center gap-2">
-                                <select
-                                    class="form-select form-select-sm"
-                                    v-model="viewMonth"
-                                    style="width: auto;"
-                                >
-                                    <option v-for="(m, i) in months" :key="i" :value="i">
-                                        {{ m }}
-                                    </option>
-                                </select>
-
-                                <input
-                                    type="number"
-                                    class="form-control form-control-sm"
-                                    v-model.number="viewYear"
-                                    style="width: 80px;"
-                                    min="1900"
-                                    max="2100"
-                                >
-                            </div>
-
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-light"
-                                @click="nextMonth"
-                            >
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
+                <div class="modal-content datepicker-content">
+                    <div class="calendar-heading">
+                        <div class="calendar-heading-copy">
+                            <span class="calendar-eyebrow">ВЫБОР ДАТЫ</span>
+                            <h5 class="modal-title">Календарь</h5>
                         </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                     </div>
 
-                    <div class="modal-body p-2">
-                        <!-- Дни недели -->
-                        <div class="weekdays d-grid mb-1" style="grid-template-columns: repeat(7, 1fr);">
-                            <div
-                                v-for="day in weekDays"
-                                :key="day"
-                                class="text-center small fw-bold text-muted py-1"
+                    <div class="calendar-navigation">
+                        <button type="button" class="month-arrow" @click="prevMonth" aria-label="Предыдущий месяц">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="month-year-selectors">
+                            <select class="form-select month-select" v-model="viewMonth" aria-label="Месяц">
+                                <option v-for="(m, i) in months" :key="i" :value="i">{{ m }}</option>
+                            </select>
+                            <input
+                                type="number"
+                                class="form-control year-input"
+                                v-model.number="viewYear"
+                                min="1900"
+                                max="2100"
+                                aria-label="Год"
                             >
-                                {{ day }}
-                            </div>
                         </div>
+                        <button type="button" class="month-arrow" @click="nextMonth" aria-label="Следующий месяц">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
 
-                        <!-- Сетка дней -->
-                        <div class="days d-grid" style="grid-template-columns: repeat(7, 1fr); gap: 2px;">
-                            <div
+                    <div class="modal-body calendar-body">
+                        <div class="weekdays">
+                            <div v-for="day in weekDays" :key="day" class="weekday">{{ day }}</div>
+                        </div>
+                        <div class="days-grid">
+                            <button
                                 v-for="(day, idx) in calendarDays"
                                 :key="idx"
-                                class="day-cell text-center py-2 rounded"
+                                type="button"
+                                class="day-cell"
                                 :class="{
                                     'other-month': !day.currentMonth,
                                     'today': day.isToday,
@@ -95,36 +69,25 @@
                                     'disabled': day.isDisabled,
                                     'weekend': day.isWeekend && day.currentMonth
                                 }"
+                                :disabled="day.isDisabled"
+                                :aria-pressed="day.isSelected ? 'true' : 'false'"
                                 @click="selectDay(day)"
-                            >
-                                {{ day.date }}
-                            </div>
+                            >{{ day.date }}</button>
                         </div>
                     </div>
 
-                    <div class="modal-footer py-2">
+                    <div class="calendar-footer">
                         <button
-                            type="button"
-                            class="btn btn-sm btn-outline-secondary"
-                            @click="clearDate"
                             v-if="required === false"
-                        >
-                            Очистить
-                        </button>
-                        <button
                             type="button"
-                            class="btn btn-sm btn-outline-primary"
-                            @click="selectToday"
-                        >
-                            Сегодня
+                            class="btn calendar-clear"
+                            @click="clearDate"
+                        >Очистить</button>
+                        <div class="footer-spacer"></div>
+                        <button type="button" class="btn calendar-today" @click="selectToday">
+                            <i class="fa-regular fa-calendar-check me-1"></i> Сегодня
                         </button>
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-primary"
-                            @click="closePicker"
-                        >
-                            Готово
-                        </button>
+                        <button type="button" class="btn calendar-done" @click="closePicker">Готово</button>
                     </div>
                 </div>
             </div>
@@ -365,51 +328,315 @@ export default {
 </script>
 
 <style scoped>
-.day-cell {
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-size: 0.9rem;
-    user-select: none;
+.custom-datepicker {
+    --calendar-blue: #2457d6;
+    --calendar-blue-dark: #173b99;
+    --calendar-red: #e34b5f;
+    --calendar-ink: #18243b;
+    --calendar-muted: #7d899e;
+    width: 100%;
 }
 
-.day-cell:hover:not(.disabled):not(.selected) {
-    background-color: #e9ecef;
+.date-input-wrap {
+    position: relative;
+    cursor: pointer;
+}
+
+.date-floating .date-input {
+    min-height: 58px;
+    padding-right: 3.25rem;
+    border: 1px solid #dce4f0;
+    border-radius: 14px;
+    background: #fff;
+    color: var(--calendar-ink);
+    font-weight: 600;
+    box-shadow: 0 3px 12px rgba(24, 48, 91, 0.035);
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.date-floating .date-input:focus {
+    border-color: var(--calendar-blue);
+    box-shadow: 0 0 0 4px rgba(36, 87, 214, .1);
+}
+
+.date-floating label {
+    color: var(--calendar-muted);
+}
+
+.date-input-icon {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: #edf3ff;
+    color: var(--calendar-blue);
+    pointer-events: none;
+}
+
+.datepicker-modal .modal-dialog {
+    max-width: 370px;
+    width: calc(100% - 1.5rem);
+}
+
+.datepicker-content {
+    overflow: hidden;
+    border: 1px solid rgba(214, 224, 240, .9);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 24px 70px rgba(19, 37, 75, .22);
+}
+
+.calendar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.15rem 1.25rem .9rem;
+    background: linear-gradient(135deg, #f2f6ff, #fff 75%);
+    border-bottom: 1px solid #edf1f8;
+}
+
+.calendar-eyebrow {
+    display: block;
+    margin-bottom: .25rem;
+    color: var(--calendar-blue);
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.calendar-heading .modal-title {
+    color: var(--calendar-ink);
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.calendar-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .55rem;
+    padding: 1rem 1rem .5rem;
+}
+
+.month-arrow {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e1e8f4;
+    border-radius: 11px;
+    background: #fff;
+    color: var(--calendar-blue);
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.month-arrow:hover {
+    border-color: var(--calendar-blue);
+    background: var(--calendar-blue);
+    color: #fff;
+}
+
+.month-year-selectors {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: .45rem;
+    min-width: 0;
+}
+
+.month-select,
+.year-input {
+    min-height: 36px;
+    border-color: #e1e8f4;
+    border-radius: 10px;
+    color: var(--calendar-ink);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.month-select {
+    width: 100%;
+    max-width: 150px;
+}
+
+.year-input {
+    width: 78px;
+    padding-inline: .4rem;
+    text-align: center;
+}
+
+.calendar-body {
+    padding: .5rem 1rem 1rem;
+}
+
+.weekdays,
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.weekdays {
+    padding-bottom: .55rem;
+    margin-bottom: .45rem;
+    border-bottom: 1px solid #edf1f7;
+}
+
+.weekday {
+    text-align: center;
+    color: var(--calendar-muted);
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.weekday:nth-child(6),
+.weekday:nth-child(7) {
+    color: var(--calendar-red);
+}
+
+.day-cell {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--calendar-ink);
+    font-size: .84rem;
+    font-weight: 600;
+    transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+
+.day-cell:hover:not(:disabled):not(.selected) {
+    background: #edf3ff;
+    color: var(--calendar-blue);
+    transform: translateY(-1px);
 }
 
 .day-cell.other-month {
-    color: #adb5bd;
+    color: #b6c0d0;
+    font-weight: 500;
 }
 
-.day-cell.today {
-    font-weight: bold;
-    color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.08);
+.day-cell.weekend:not(.selected) {
+    color: var(--calendar-red);
+}
+
+.day-cell.today:not(.selected) {
+    border-color: var(--calendar-blue);
+    color: var(--calendar-blue);
+    font-weight: 800;
 }
 
 .day-cell.selected {
-    background-color: #0d6efd !important;
-    color: #fff !important;
-    font-weight: bold;
+    background: var(--calendar-blue);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(36, 87, 214, .24);
+    font-weight: 800;
 }
 
-.day-cell.weekend {
-    color: #dc3545;
-}
-
+.day-cell:disabled,
 .day-cell.disabled {
-    color: #dee2e6;
+    color: #d5dce7;
     cursor: not-allowed;
     pointer-events: none;
 }
 
-.weekdays {
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 4px;
+.calendar-footer {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .85rem 1rem 1rem;
+    border-top: 1px solid #edf1f8;
+    background: #fbfcff;
 }
 
-/* Чтобы select и input в шапке были компактные */
-.modal-header select,
-.modal-header input[type="number"] {
-    font-size: 0.875rem;
+.footer-spacer {
+    flex: 1;
+}
+
+.calendar-footer .btn {
+    min-height: 36px;
+    padding: .45rem .7rem;
+    border-radius: 10px;
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.calendar-clear {
+    border: 1px solid #f2cbd1;
+    background: #fff;
+    color: var(--calendar-red);
+}
+
+.calendar-clear:hover {
+    background: #fff0f2;
+    color: #bd3045;
+}
+
+.calendar-today {
+    border: 1px solid #dce6fa;
+    background: #fff;
+    color: var(--calendar-blue);
+}
+
+.calendar-today:hover {
+    background: #edf3ff;
+}
+
+.calendar-done {
+    border: 1px solid var(--calendar-blue);
+    background: var(--calendar-blue);
+    color: #fff;
+}
+
+.calendar-done:hover {
+    border-color: var(--calendar-blue-dark);
+    background: var(--calendar-blue-dark);
+    color: #fff;
+}
+
+@media (max-width: 380px) {
+    .calendar-heading {
+        padding-inline: 1rem;
+    }
+
+    .calendar-navigation {
+        padding-inline: .7rem;
+    }
+
+    .calendar-body {
+        padding-inline: .7rem;
+    }
+
+    .calendar-footer {
+        gap: .3rem;
+        padding-inline: .7rem;
+    }
+
+    .calendar-footer .btn {
+        padding-inline: .5rem;
+        font-size: .73rem;
+    }
+
+    .weekdays,
+    .days-grid {
+        gap: 2px;
+    }
+
+    .day-cell {
+        border-radius: 8px;
+    }
 }
 </style>

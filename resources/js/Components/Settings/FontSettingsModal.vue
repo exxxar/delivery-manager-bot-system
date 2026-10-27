@@ -3,7 +3,7 @@
 <template>
     <div class="modal fade" id="fontSettingsModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content font-settings-modal">
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <i class="fa-solid fa-text-height text-primary me-2"></i>
@@ -249,27 +249,169 @@ export default {
 </script>
 
 <style scoped>
-.font-option {
+.font-settings-modal {
+    overflow: hidden;
+    border: 1px solid #e5eaf2;
+    border-radius: 22px;
+    color: #17243b;
+    box-shadow: 0 24px 70px rgba(18, 35, 66, .2);
+}
+.font-settings-modal .modal-header {
+    padding: 22px 24px;
+    background: linear-gradient(135deg, #f8faff, #fff);
+    border-bottom: 1px solid #e9eef6;
+}
+.font-settings-modal .modal-title {
+    display: flex;
+    align-items: center;
+    color: #17243b;
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+.font-settings-modal .modal-title i {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 12px;
+    color: #2457d6 !important;
+    background: #eaf0ff;
+    font-size: 1rem;
+}
+.font-settings-modal .modal-body { padding: 24px; }
+.font-settings-modal .form-label {
+    color: #24334d;
+    font-size: .9rem;
+}
+.font-settings-modal .form-label > i { color: #2457d6 !important; }
+.font-settings-modal .badge.bg-primary {
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: #eaf0ff !important;
+    color: #2457d6 !important;
+    font-size: .78rem;
+    font-weight: 800;
+}
+.font-settings-modal .form-range { cursor: pointer; accent-color: #2457d6; }
+.font-settings-modal .form-range::-webkit-slider-thumb {
+    background: #2457d6;
+    box-shadow: 0 0 0 4px rgba(36, 87, 214, .12);
+}
+.font-settings-modal .form-range::-moz-range-thumb {
+    background: #2457d6;
+    box-shadow: 0 0 0 4px rgba(36, 87, 214, .12);
+}
+.font-settings-modal .font-option {
+    min-height: 82px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    background: white;
+    border: 1px solid #e2e8f2 !important;
+    border-radius: 13px !important;
+    background: #fff;
+    color: #24334d;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
 }
-
-.font-option:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.font-settings-modal .font-option:hover {
+    transform: translateY(-2px);
+    border-color: #a9befa !important;
+    box-shadow: 0 7px 18px rgba(30, 64, 175, .08);
 }
-
-.font-sample {
+.font-settings-modal .font-option.border-primary {
+    border-color: #2457d6 !important;
+    background: #f1f5ff !important;
+    box-shadow: 0 0 0 2px rgba(36, 87, 214, .08);
+}
+.font-settings-modal .font-option .small { font-weight: 750; }
+.font-settings-modal .font-sample {
+    margin-top: 7px;
+    color: #53627a;
     font-size: 18px;
-    color: #495057;
 }
-
-.preview-box {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+.font-settings-modal .form-check.form-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0 !important;
+    padding: 14px 16px 14px 3.1rem;
+    border: 1px solid #e2e8f2;
+    border-radius: 13px;
+    background: #fbfcff;
 }
-
-.preview-text {
-    transition: all 0.3s ease;
+.font-settings-modal .form-check-input {
+    cursor: pointer;
+    box-shadow: none;
+}
+.font-settings-modal .form-check-input:checked {
+    border-color: #2457d6;
+    background-color: #2457d6;
+}
+.font-settings-modal .form-check-label {
+    color: #24334d;
+    font-weight: 700;
+}
+.font-settings-modal .preview-box {
+    padding: 17px !important;
+    border: 1px solid #dfe7f4 !important;
+    border-radius: 15px !important;
+    background: linear-gradient(135deg, #f7f9ff, #f1f5fb) !important;
+}
+.font-settings-modal .preview-box > .small {
+    margin-bottom: 10px !important;
+    color: #2457d6 !important;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+.font-settings-modal .preview-text {
+    color: #26354d;
+    overflow-wrap: anywhere;
+    transition: all .2s ease;
+}
+.font-settings-modal .modal-footer {
+    gap: 10px;
+    padding: 16px 24px;
+    background: #fbfcff;
+    border-top: 1px solid #e9eef6;
+}
+.font-settings-modal .modal-footer .btn {
+    min-height: 42px;
+    padding: 9px 14px;
+    border-radius: 11px;
+    font-size: .86rem;
+    font-weight: 750;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.font-settings-modal .modal-footer .btn:hover { transform: translateY(-1px); }
+.font-settings-modal .btn-primary {
+    border-color: #2457d6;
+    background: linear-gradient(135deg, #3269ed, #204fc7);
+    box-shadow: 0 5px 13px rgba(36, 87, 214, .18);
+}
+.font-settings-modal .btn-primary:hover {
+    border-color: #173b91;
+    background: linear-gradient(135deg, #2457d6, #173b91);
+}
+.font-settings-modal .btn-outline-secondary {
+    color: #59677c;
+    border-color: #dce3ed;
+    background: #fff;
+}
+.font-settings-modal .btn-light {
+    color: #53627a;
+    border: 1px solid #e0e6ef;
+    background: #fff;
+}
+@media (max-width: 575.98px) {
+    .font-settings-modal { border-radius: 18px; }
+    .font-settings-modal .modal-header { padding: 17px 18px; }
+    .font-settings-modal .modal-body { padding: 18px; }
+    .font-settings-modal .modal-footer {
+        align-items: stretch;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+    }
+    .font-settings-modal .modal-footer > .btn { flex: 1 1 100%; }
+    .font-settings-modal .modal-footer > .d-flex { width: 100%; }
+    .font-settings-modal .modal-footer > .d-flex .btn { flex: 1; }
 }
 </style>

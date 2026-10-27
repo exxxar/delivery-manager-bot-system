@@ -7,884 +7,899 @@ import DealForm from "@/Components/Sales/Forms/DealForm.vue";
 import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
 </script>
 <template>
+    <div class="sales-page-content">
 
+        <div class="sales-page">
+            <header class="sales-page-header">
+                <div class="sales-heading-icon">
+                    <i class="fa-solid fa-handshake"></i>
+                </div>
+                <div class="sales-heading-copy">
+                    <div class="sales-eyebrow">МОЙПРОЦЕНТ · УПРАВЛЕНИЕ</div>
+                    <h1>Сделки и заявки</h1>
+                    <p>Контроль продаж, доставки и незавершённых операций</p>
+                </div>
+                <div v-if="salesStore.pagination" class="sales-total-chip">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>{{ salesStore.pagination.total }} записей</span>
+                </div>
+            </header>
 
-    <!-- 🔹 Красивые табы -->
-    <div class="custom-tabs mb-3">
-        <button
-            type="button"
-            class="custom-tab"
-            :class="{ active: currentTab === 'list' }"
-            @click="switchTab('list')"
-        >
-            <i class="fa-solid fa-list"></i>
-            <span>Все сделки</span>
-        </button>
+            <!-- 🔹 Красивые табы -->
+            <div class="custom-tabs mb-3">
+                <button
+                    type="button"
+                    class="custom-tab"
+                    :class="{ active: currentTab === 'list' }"
+                    @click="switchTab('list')"
+                >
+                    <i class="fa-solid fa-list"></i>
+                    <span>Все сделки</span>
+                </button>
 
+                <button
+                    type="button"
+                    class="custom-tab"
+                    :class="{ active: currentTab === 'timeline' }"
+                    @click="switchTab('timeline')"
+                >
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>По месяцам</span>
+                </button>
 
-        <button
-            type="button"
-            class="custom-tab"
-            :class="{ active: currentTab === 'timeline' }"
-            @click="switchTab('timeline')"
-        >
-            <i class="fa-solid fa-calendar-days"></i>
-            <span>По месяцам</span>
-        </button>
-
-        <button
-            type="button"
-            class="custom-tab"
-            :class="{ active: currentTab === 'incomplete' }"
-            @click="switchTab('incomplete')"
-        >
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Незавершённые</span>
-            <span v-if="salesStore.incompletePagination?.total > 0" class="tab-badge">
+                <button
+                    type="button"
+                    class="custom-tab"
+                    :class="{ active: currentTab === 'incomplete' }"
+                    @click="switchTab('incomplete')"
+                >
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Незавершённые</span>
+                    <span v-if="salesStore.incompletePagination?.total > 0" class="tab-badge">
             {{ salesStore.incompletePagination.total }}
         </span>
-        </button>
-    </div>
+                </button>
+            </div>
 
-
-    <div class="d-flex justify-content-between my-2">
-        <div>
-            <a href="javascript:void(0)"
-               @click="selectAll"
-               style="font-size:12px;"
-               class="small fw-bold">Выделить все</a>
-            <template v-if="selection.length>0">
-                <a href="javascript:void(0)"
-                   @click="acceptAll"
-                   style="font-size:12px;"
-                   class="small text-danger mx-2 fw-bold">Подтвердить заявки ({{ selection.length }})</a>
-            </template>
-        </div>
-
-        <span
-            class="fw-bold small "
-            v-if="salesStore.pagination">Всего {{ salesStore.pagination.total }} ед.</span>
-    </div>
-
-
-    <template v-if="filteredBadSales.length>0">
-        <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i>
-            Заявки на проверку</h6>
-        <ul class="list-group">
-            <li
-
-                v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1, 'bg-danger-subtle':sale.status === 'completed'&&(!sale.sale_date||!sale.actual_delivery_date)}"
-
-                v-for="sale in filteredBadSales" :key="sale.id"
-                class="list-group-item d-flex justify-content-between align-items-start ">
-                <SaleCard
-                    :sale="sale"
-                    :field_visible="field_visible"
-                    :saleStatuses="saleStatuses"
-                    @toggle-selection="toggleSelection"
-                />
-
-                <!-- Dropdown -->
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-light text-primary" type="button"
-                            data-bs-toggle="dropdown">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <template v-if="forSelect">
-                            <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a>
-                            </li>
-                        </template>
-                        <template v-if="!forSelect">
-                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">Просмотреть</a>
-                            </li>
-                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">Редактировать</a>
-                            </li>
-                            <li v-if="sale.status!=='completed'"><a class="dropdown-item text-success"
-                                                                    href="javascript:void(0)"
-                                                                    @click.prevent="openConfirmDeal(sale)">Подтвердить
-                                оплату и доставка</a></li>
-                            <!--                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
-                                                                                                         href="javascript:void(0)"
-
-                                                                                                         @click.prevent="openConfirmPayment(sale)">Подтвердить
-                                                        оплату</a></li>-->
-
-                            <template v-if="sale.payment_document_name">
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item text-success"
-                                       href="javascript:void(0)"
-                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a>
-                                </li>
-                            </template>
-
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
-                                   @click.prevent="confirmDelete(sale)">Удалить</a></li>
-                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
-                                   @click.prevent="confirmCancelDeal(sale)">Отменить
-                                сделку</a></li>
-                        </template>
-                    </ul>
+            <div class="d-flex justify-content-between my-2">
+                <div>
+                    <a href="javascript:void(0)"
+                       @click="selectAll"
+                       style="font-size:12px;"
+                       class="small fw-bold">Выделить все</a>
+                    <template v-if="selection.length>0">
+                        <a href="javascript:void(0)"
+                           @click="acceptAll"
+                           style="font-size:12px;"
+                           class="small text-danger mx-2 fw-bold">Подтвердить заявки ({{ selection.length }})</a>
+                    </template>
                 </div>
-            </li>
-        </ul>
-        <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Все заявки</h6>
-    </template>
 
+                <span
+                    class="fw-bold small "
+                    v-if="salesStore.pagination">Всего {{ salesStore.pagination.total }} ед.</span>
+            </div>
 
-    <!-- 🔹 РЕЖИМ: СПИСОК (старый) -->
-    <template v-if="currentTab === 'list'">
-        <!-- Быстрый поиск -->
-        <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
+            <template v-if="filteredBadSales.length>0">
+                <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                    Заявки на проверку</h6>
+                <ul class="list-group">
+                    <li
 
-        <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
+                        v-bind:class="{'border-primary': selection.indexOf(sale.id)!==-1, 'bg-danger-subtle':sale.status === 'completed'&&(!sale.sale_date||!sale.actual_delivery_date)}"
 
-        <div class="container-fluid px-0">
-            <div class="row g-2">
+                        v-for="sale in filteredBadSales" :key="sale.id"
+                        class="list-group-item d-flex justify-content-between align-items-start ">
+                        <SaleCard
+                            :sale="sale"
+                            :field_visible="field_visible"
+                            :saleStatuses="saleStatuses"
+                            @toggle-selection="toggleSelection">
+                            <template #actions>
+                                <div class="dropdown sale-card__dropdown">
+                                    <button class="sale-card__menu-button" type="button"
+                                            data-bs-toggle="dropdown">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <template v-if="forSelect">
+                                            <li><a class="dropdown-item" href="#" @click.prevent="$emit('select', sale)">Выбрать</a>
+                                            </li>
+                                        </template>
+                                        <template v-if="!forSelect">
+                                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openView(sale)">Просмотреть</a>
+                                            </li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="openEdit(sale)">Редактировать</a>
+                                            </li>
+                                            <li v-if="sale.status!=='completed'"><a class="dropdown-item text-success"
+                                                                                    href="javascript:void(0)"
+                                                                                    @click.prevent="openConfirmDeal(sale)">Подтвердить
+                                                оплату и доставка</a></li>
+                                            <!--                        <li v-if="sale.payment_type===0&&!sale.sale_date"><a class="dropdown-item text-success"
+                                                                                                                         href="javascript:void(0)"
 
-                <div
-                    v-for="sale in filteredSales"
-                    :key="sale.id"
-                    class="col-12 col-md-6 col-xxl-4"
-                >
+                                                                                                                         @click.prevent="openConfirmPayment(sale)">Подтвердить
+                                                                        оплату</a></li>-->
 
-                    <div
-                        class="card shadow-sm h-100 sale-card position-relative"
+                                            <template v-if="sale.payment_document_name">
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item text-success"
+                                                       href="javascript:void(0)"
+                                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">Отправить документ в чат</a>
+                                                </li>
+                                            </template>
 
-                        :class="{
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                   @click.prevent="confirmDelete(sale)">Удалить</a></li>
+                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                   @click.prevent="confirmCancelDeal(sale)">Отменить
+                                                сделку</a></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                        </SaleCard>
+
+                    </li>
+                </ul>
+                <h6 class="fw-bold my-3"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Все заявки</h6>
+            </template>
+
+            <!-- 🔹 РЕЖИМ: СПИСОК (старый) -->
+            <template v-if="currentTab === 'list'">
+                <!-- Быстрый поиск -->
+                <input v-model="search" type="text" class="form-control mb-2" placeholder="Поиск по названию...">
+
+                <SaleFilterForm v-on:apply-filters="applyFilters"></SaleFilterForm>
+
+                <div class="container-fluid px-0">
+                    <div class="row g-2">
+
+                        <div
+                            v-for="sale in filteredSales"
+                            :key="sale.id"
+                            class="col-12 col-md-6 col-xxl-4"
+                        >
+
+                            <div
+                                class="card shadow-sm h-100 sale-card position-relative"
+
+                                :class="{
                     'border-primary border-3': selection.indexOf(sale.id)!==-1,
                     'bg-danger-subtle':
                         sale.status === 'completed' &&
                         (!sale.actual_delivery_date)
                 }"
-                    >
-
-                        <!-- Dropdown -->
-                        <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
-
-                            <button
-                                class="btn btn-sm btn-light border"
-                                type="button"
-                                data-bs-toggle="dropdown"
                             >
-                                <i class="fas fa-bars text-primary"></i>
-                            </button>
-
-                            <ul class="dropdown-menu dropdown-menu-end">
-
-                                <template v-if="forSelect">
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item"
-                                            href="#"
-                                            @click.prevent="$emit('select', sale)"
-                                        >
-                                            Выбрать
-                                        </a>
-                                    </li>
-
-                                </template>
-
-                                <template v-if="!forSelect">
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item"
-                                            href="javascript:void(0)"
-                                            @click.prevent="openView(sale)"
-                                        >
-                                            Просмотреть
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item"
-                                            href="javascript:void(0)"
-                                            @click.prevent="openEdit(sale)"
-                                        >
-                                            Редактировать
-                                        </a>
-                                    </li>
-
-                                    <li v-if="sale.status !== 'completed'">
-                                        <a
-                                            class="dropdown-item text-success"
-                                            href="javascript:void(0)"
-                                            @click.prevent="openConfirmDeal(sale)"
-                                        >
-                                            Подтвердить оплату и доставку
-                                        </a>
-                                    </li>
-
-                                    <template v-if="sale.payment_document_name">
-
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-
-                                        <li>
-                                            <a
-                                                class="dropdown-item text-success"
-                                                href="javascript:void(0)"
-                                                @click.prevent="sendPaymentDocumentToTg(sale.id)"
-                                            >
-                                                Отправить документ в чат
-                                            </a>
-                                        </li>
-
-                                    </template>
-
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item text-danger"
-                                            href="javascript:void(0)"
-                                            @click.prevent="confirmDelete(sale)"
-                                        >
-                                            Удалить
-                                        </a>
-                                    </li>
-
-                                    <li>
-                                        <a
-                                            class="dropdown-item text-danger"
-                                            href="javascript:void(0)"
-                                            @click.prevent="confirmCancelDeal(sale)"
-                                        >
-                                            Отменить сделку
-                                        </a>
-                                    </li>
-
-                                </template>
-
-                            </ul>
-                        </div>
-
-                        <!-- Контент карточки -->
-                        <div class="card-body">
-
-                            <SaleCard
-                                :sale="sale"
-                                :field_visible="field_visible"
-                                :saleStatuses="saleStatuses"
-                                @toggle-selection="toggleSelection"
-                            />
-
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <Pagination
-            v-if="salesStore.items.length > 0"
-            :pagination="salesStore.pagination"
-            @page-changed="fetchDataByUrl"
-        />
 
 
-        <!-- Сообщение если список пуст -->
-        <div v-if="salesStore.items.length === 0" class="alert alert-info mt-3">
-            На текущий момент у вас нет продаж.
-        </div>
-
-    </template>
-
-    <!-- 🔹 РЕЖИМ: ТАЙМЛАЙН (новый) -->
-    <template v-if="currentTab === 'timeline'">
-        <!-- Селектор месяца -->
-        <div class="row g-2 mb-3">
-            <div class="col-12 col-md-6">
-                <div class="form-floating">
-                    <select
-                        class="form-select"
-                        v-model="selectedMonth"
-                        @change="changeMonth"
-                        id="monthSelect"
-                    >
-                        <option v-for="m in getMonthList()" :key="m.key" :value="m.key">
-                            {{ m.label }}
-                        </option>
-                    </select>
-                    <label for="monthSelect">
-                        <i class="fa-solid fa-calendar-days me-1"></i>
-                        Месяц
-                    </label>
-                </div>
-            </div>
-            <div class="col-12 col-md-6">
-                <div class="form-floating">
-                    <select
-                        class="form-select"
-                        v-model="daysPerPage"
-                        @change="loadMonthData(1)"
-                        id="daysPerPageSelect"
-                    >
-                        <option :value="5">5 дней</option>
-                        <option :value="7">7 дней</option>
-                        <option :value="10">10 дней</option>
-                        <option :value="15">15 дней</option>
-                        <option :value="30">Весь месяц</option>
-                    </select>
-                    <label for="daysPerPageSelect">
-                        <i class="fa-solid fa-calendar-week me-1"></i>
-                        Дней на странице
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <!-- Статистика месяца -->
-        <div v-if="salesStore.groupedMonth" class="alert alert-info mb-3">
-            <div class="row text-center">
-                <div class="col-4">
-                    <div class="small text-muted">Всего сделок</div>
-                    <div class="fw-bold fs-5">{{ salesStore.groupedMonth.month_stats.total_sales }}</div>
-                </div>
-                <div class="col-4">
-                    <div class="small text-muted">Общая сумма</div>
-                    <div class="fw-bold fs-5 text-success">{{
-                            formatMoney(salesStore.groupedMonth.month_stats.total_sum)
-                        }}
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="small text-muted">Средний чек</div>
-                    <div class="fw-bold fs-5">{{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Загрузка -->
-        <div v-if="salesStore.loading" class="text-center my-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Загрузка...</span>
-            </div>
-        </div>
-
-        <!-- Дни -->
-        <div v-else-if="salesStore.groupedMonth && salesStore.groupedMonth.days.length > 0">
-            <div v-for="day in salesStore.groupedMonth.days" :key="day.date" class="day-group mb-4">
-
-                <!-- Заголовок дня -->
-                <div
-                    class="day-header d-flex justify-content-between align-items-center mb-2 px-3 py-2 bg-light rounded border-start border-primary border-3">
-                    <div>
-                        <i class="fa-regular fa-calendar me-2 text-primary"></i>
-                        <strong>{{ day.date }}</strong>
-                        <span class="text-muted small ms-2">
-            {{ day.count }} сделок
-        </span>
-                    </div>
-                    <div class="fw-bold text-success">
-                        {{ formatMoney(day.total) }}
-                    </div>
-                </div>
-
-                <!-- Карточки сделок -->
-                <div class="container-fluid px-0">
-                    <div class="row g-2">
-                        <div
-                            v-for="sale in day.items"
-                            :key="sale.id"
-                            class="col-12 col-md-6 col-xxl-4"
-                        >
-                            <div
-                                class="card shadow-sm h-100 sale-card position-relative"
-                                :class="{
-                                'border-primary border-3': selection.indexOf(sale.id) !== -1,
-                                'bg-danger-subtle': sale.status === 'completed' && !sale.actual_delivery_date
-                            }"
-                            >
-                                <!-- Dropdown -->
-                                <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
-                                    <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
-                                        <i class="fas fa-bars text-primary"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <template v-if="forSelect">
-                                            <li>
-                                                <a class="dropdown-item" href="#"
-                                                   @click.prevent="$emit('select', sale)">
-                                                    Выбрать
-                                                </a>
-                                            </li>
-                                        </template>
-                                        <template v-else>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)"
-                                                   @click.prevent="openView(sale)">
-                                                    Просмотреть
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)"
-                                                   @click.prevent="openEdit(sale)">
-                                                    Редактировать
-                                                </a>
-                                            </li>
-                                            <li v-if="sale.status !== 'completed'">
-                                                <a class="dropdown-item text-success" href="javascript:void(0)"
-                                                   @click.prevent="openConfirmDeal(sale)">
-                                                    Подтвердить оплату и доставку
-                                                </a>
-                                            </li>
-                                            <template v-if="sale.payment_document_name">
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item text-success" href="javascript:void(0)"
-                                                       @click.prevent="sendPaymentDocumentToTg(sale.id)">
-                                                        Отправить документ в чат
-                                                    </a>
-                                                </li>
-                                            </template>
-                                            <li>
-                                                <hr class="dropdown-divider">
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0)"
-                                                   @click.prevent="confirmDelete(sale)">
-                                                    Удалить
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0)"
-                                                   @click.prevent="confirmCancelDeal(sale)">
-                                                    Отменить сделку
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </div>
-
+                                <!-- Контент карточки -->
                                 <div class="card-body">
+
                                     <SaleCard
                                         :sale="sale"
                                         :field_visible="field_visible"
                                         :saleStatuses="saleStatuses"
-                                        @toggle-selection="toggleSelection"
-                                    />
+                                        @toggle-selection="toggleSelection">
+                                        <template #actions>
+                                            <div class="dropdown sale-card__dropdown">
+
+                                                <button
+                                                    class="sale-card__menu-button"
+                                                    type="button"
+                                                    data-bs-toggle="dropdown"
+                                                >
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+
+                                                <ul class="dropdown-menu dropdown-menu-end">
+
+                                                    <template v-if="forSelect">
+
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item"
+                                                                href="#"
+                                                                @click.prevent="$emit('select', sale)"
+                                                            >
+                                                                Выбрать
+                                                            </a>
+                                                        </li>
+
+                                                    </template>
+
+                                                    <template v-if="!forSelect">
+
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item"
+                                                                href="javascript:void(0)"
+                                                                @click.prevent="openView(sale)"
+                                                            >
+                                                                Просмотреть
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item"
+                                                                href="javascript:void(0)"
+                                                                @click.prevent="openEdit(sale)"
+                                                            >
+                                                                Редактировать
+                                                            </a>
+                                                        </li>
+
+                                                        <li v-if="sale.status !== 'completed'">
+                                                            <a
+                                                                class="dropdown-item text-success"
+                                                                href="javascript:void(0)"
+                                                                @click.prevent="openConfirmDeal(sale)"
+                                                            >
+                                                                Подтвердить оплату и доставку
+                                                            </a>
+                                                        </li>
+
+                                                        <template v-if="sale.payment_document_name">
+
+                                                            <li>
+                                                                <hr class="dropdown-divider">
+                                                            </li>
+
+                                                            <li>
+                                                                <a
+                                                                    class="dropdown-item text-success"
+                                                                    href="javascript:void(0)"
+                                                                    @click.prevent="sendPaymentDocumentToTg(sale.id)"
+                                                                >
+                                                                    Отправить документ в чат
+                                                                </a>
+                                                            </li>
+
+                                                        </template>
+
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item text-danger"
+                                                                href="javascript:void(0)"
+                                                                @click.prevent="confirmDelete(sale)"
+                                                            >
+                                                                Удалить
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item text-danger"
+                                                                href="javascript:void(0)"
+                                                                @click.prevent="confirmCancelDeal(sale)"
+                                                            >
+                                                                Отменить сделку
+                                                            </a>
+                                                        </li>
+
+                                                    </template>
+
+                                                </ul>
+                                            </div>
+                                        </template>
+                                    </SaleCard>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <Pagination
+                    v-if="salesStore.items.length > 0"
+                    :pagination="salesStore.pagination"
+                    @page-changed="fetchDataByUrl"
+                />
+
+                <!-- Сообщение если список пуст -->
+                <div v-if="salesStore.items.length === 0" class="alert alert-info mt-3">
+                    На текущий момент у вас нет продаж.
+                </div>
+
+            </template>
+
+            <!-- 🔹 РЕЖИМ: ТАЙМЛАЙН (новый) -->
+            <template v-if="currentTab === 'timeline'">
+                <!-- Селектор месяца -->
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-6">
+                        <div class="form-floating">
+                            <select
+                                class="form-select"
+                                v-model="selectedMonth"
+                                @change="changeMonth"
+                                id="monthSelect"
+                            >
+                                <option v-for="m in getMonthList()" :key="m.key" :value="m.key">
+                                    {{ m.label }}
+                                </option>
+                            </select>
+                            <label for="monthSelect">
+                                <i class="fa-solid fa-calendar-days me-1"></i>
+                                Месяц
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="form-floating">
+                            <select
+                                class="form-select"
+                                v-model="daysPerPage"
+                                @change="loadMonthData(1)"
+                                id="daysPerPageSelect"
+                            >
+                                <option :value="5">5 дней</option>
+                                <option :value="7">7 дней</option>
+                                <option :value="10">10 дней</option>
+                                <option :value="15">15 дней</option>
+                                <option :value="30">Весь месяц</option>
+                            </select>
+                            <label for="daysPerPageSelect">
+                                <i class="fa-solid fa-calendar-week me-1"></i>
+                                Дней на странице
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Статистика месяца -->
+                <div v-if="salesStore.groupedMonth" class="alert alert-info mb-3">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="small text-muted">Всего сделок</div>
+                            <div class="fw-bold fs-5">{{ salesStore.groupedMonth.month_stats.total_sales }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small text-muted">Общая сумма</div>
+                            <div class="fw-bold fs-5 text-success">{{
+                                    formatMoney(salesStore.groupedMonth.month_stats.total_sum)
+                                }}
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small text-muted">Средний чек</div>
+                            <div class="fw-bold fs-5">{{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Загрузка -->
+                <div v-if="salesStore.loading" class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+
+                <!-- Дни -->
+                <div v-else-if="salesStore.groupedMonth && salesStore.groupedMonth.days.length > 0">
+                    <div v-for="day in salesStore.groupedMonth.days" :key="day.date" class="day-group mb-4">
+
+                        <!-- Заголовок дня -->
+                        <div
+                            class="day-header d-flex justify-content-between align-items-center mb-2 px-3 py-2 bg-light rounded border-start border-primary border-3">
+                            <div>
+                                <i class="fa-regular fa-calendar me-2 text-primary"></i>
+                                <strong>{{ day.date }}</strong>
+                                <span class="text-muted small ms-2">
+            {{ day.count }} сделок
+        </span>
+                            </div>
+                            <div class="fw-bold text-success">
+                                {{ formatMoney(day.total) }}
+                            </div>
+                        </div>
+
+                        <!-- Карточки сделок -->
+                        <div class="container-fluid px-0">
+                            <div class="row g-2">
+                                <div
+                                    v-for="sale in day.items"
+                                    :key="sale.id"
+                                    class="col-12 col-md-6 col-xxl-4"
+                                >
+                                    <div
+                                        class="card shadow-sm h-100 sale-card position-relative"
+                                        :class="{
+                                'border-primary border-3': selection.indexOf(sale.id) !== -1,
+                                'bg-danger-subtle': sale.status === 'completed' && !sale.actual_delivery_date
+                            }"
+                                    >
+
+                                        <div class="card-body">
+                                            <SaleCard
+                                                :sale="sale"
+                                                :field_visible="field_visible"
+                                                :saleStatuses="saleStatuses"
+                                                @toggle-selection="toggleSelection">
+                                                <template #actions>
+                                                    <div class="dropdown sale-card__dropdown">
+                                                        <button class="sale-card__menu-button" type="button" data-bs-toggle="dropdown">
+                                                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <template v-if="forSelect">
+                                                                <li>
+                                                                    <a class="dropdown-item" href="#"
+                                                                       @click.prevent="$emit('select', sale)">
+                                                                        Выбрать
+                                                                    </a>
+                                                                </li>
+                                                            </template>
+                                                            <template v-else>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="javascript:void(0)"
+                                                                       @click.prevent="openView(sale)">
+                                                                        Просмотреть
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item" href="javascript:void(0)"
+                                                                       @click.prevent="openEdit(sale)">
+                                                                        Редактировать
+                                                                    </a>
+                                                                </li>
+                                                                <li v-if="sale.status !== 'completed'">
+                                                                    <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                                       @click.prevent="openConfirmDeal(sale)">
+                                                                        Подтвердить оплату и доставку
+                                                                    </a>
+                                                                </li>
+                                                                <template v-if="sale.payment_document_name">
+                                                                    <li>
+                                                                        <hr class="dropdown-divider">
+                                                                    </li>
+                                                                    <li>
+                                                                        <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                                           @click.prevent="sendPaymentDocumentToTg(sale.id)">
+                                                                            Отправить документ в чат
+                                                                        </a>
+                                                                    </li>
+                                                                </template>
+                                                                <li>
+                                                                    <hr class="dropdown-divider">
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                                       @click.prevent="confirmDelete(sale)">
+                                                                        Удалить
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                                       @click.prevent="confirmCancelDeal(sale)">
+                                                                        Отменить сделку
+                                                                    </a>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </div>
+                                                </template>
+                                            </SaleCard>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Пагинация по дням -->
-            <div v-if="salesStore.pagination.last_page > 1" class="mt-4">
-                <nav aria-label="Пагинация по дням">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item" :class="{ disabled: salesStore.pagination.current_page === 1 }">
-                            <a class="page-link" href="javascript:void(0)"
-                               @click="changePage(salesStore.pagination.current_page - 1)">
-                                &laquo;
-                            </a>
-                        </li>
-                        <li
-                            v-for="page in salesStore.pagination.last_page"
-                            :key="page"
-                            class="page-item"
-                            :class="{ active: page === salesStore.pagination.current_page }"
+                    <!-- Пагинация по дням -->
+                    <div v-if="salesStore.pagination.last_page > 1" class="mt-4">
+                        <nav aria-label="Пагинация по дням">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item" :class="{ disabled: salesStore.pagination.current_page === 1 }">
+                                    <a class="page-link" href="javascript:void(0)"
+                                       @click="changePage(salesStore.pagination.current_page - 1)">
+                                        &laquo;
+                                    </a>
+                                </li>
+                                <li
+                                    v-for="page in salesStore.pagination.last_page"
+                                    :key="page"
+                                    class="page-item"
+                                    :class="{ active: page === salesStore.pagination.current_page }"
+                                >
+                                    <a class="page-link" href="javascript:void(0)" @click="changePage(page)">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                                <li class="page-item"
+                                    :class="{ disabled: salesStore.pagination.current_page === salesStore.pagination.last_page }">
+                                    <a class="page-link" href="javascript:void(0)"
+                                       @click="changePage(salesStore.pagination.current_page + 1)">
+                                        &raquo;
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                        <div class="text-center text-muted small">
+                            Показаны дни {{ salesStore.pagination.from }}-{{ salesStore.pagination.to }} из
+                            {{ salesStore.pagination.total }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Пусто -->
+                <div v-else class="alert alert-info mt-3">
+                    За выбранный месяц сделок не найдено.
+                </div>
+            </template>
+
+            <!-- 🔹 РЕЖИМ: НЕЗАВЕРШЁННЫЕ СДЕЛКИ -->
+            <template v-if="currentTab === 'incomplete'">
+
+                <!-- 🔹 Панель фильтров -->
+
+                <!-- 🔹 Фильтр по датам -->
+                <div class="date-range-filters card mb-3 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fa-solid fa-calendar-days text-primary me-2"></i>
+                                Период создания сделок
+                                <small class="text-muted fw-normal ms-2">(по дате создания)</small>
+                            </h6>
+
+                            <button
+                                v-if="incompleteFilters.date_from || incompleteFilters.date_to"
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                @click="clearDateFilters"
+                            >
+                                <i class="fa-solid fa-xmark me-1"></i>
+                                Сбросить даты
+                            </button>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                    <input
+                                        type="date"
+                                        class="form-control"
+                                        id="incompleteDateFrom"
+                                        v-model="incompleteFilters.date_from"
+                                        @change="onIncompleteFilterChange"
+                                        :max="incompleteFilters.date_to || todayDate"
+                                    />
+                                    <label for="incompleteDateFrom">
+                                        <i class="fa-solid fa-calendar-day me-1"></i>
+                                        Созданы с
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                    <input
+                                        type="date"
+                                        class="form-control"
+                                        id="incompleteDateTo"
+                                        v-model="incompleteFilters.date_to"
+                                        @change="onIncompleteFilterChange"
+                                        :min="incompleteFilters.date_from"
+                                        :max="todayDate"
+                                    />
+                                    <label for="incompleteDateTo">
+                                        <i class="fa-solid fa-calendar-check me-1"></i>
+                                        Созданы по
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Индикатор активного периода -->
+                        <div
+                            v-if="incompleteFilters.date_from || incompleteFilters.date_to"
+                            class="mt-2 small text-primary"
                         >
-                            <a class="page-link" href="javascript:void(0)" @click="changePage(page)">
-                                {{ page }}
-                            </a>
-                        </li>
-                        <li class="page-item"
-                            :class="{ disabled: salesStore.pagination.current_page === salesStore.pagination.last_page }">
-                            <a class="page-link" href="javascript:void(0)"
-                               @click="changePage(salesStore.pagination.current_page + 1)">
-                                &raquo;
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-                <div class="text-center text-muted small">
-                    Показаны дни {{ salesStore.pagination.from }}-{{ salesStore.pagination.to }} из
-                    {{ salesStore.pagination.total }}
+                            <i class="fa-solid fa-filter me-1"></i>
+                            Показаны сделки за период:
+                            <strong>
+                                {{ incompleteFilters.date_from ? formatDateShort(incompleteFilters.date_from) : 'начала' }}
+                            </strong>
+                            —
+                            <strong>
+                                {{ incompleteFilters.date_to ? formatDateShort(incompleteFilters.date_to) : 'сейчас' }}
+                            </strong>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Пусто -->
-        <div v-else class="alert alert-info mt-3">
-            За выбранный месяц сделок не найдено.
-        </div>
-    </template>
+                <div class="incomplete-filters card mb-3 shadow-sm">
+                    <div class="card-body p-3">
+                        <h6 class="mb-3">
+                            <i class="fa-solid fa-filter text-primary me-2"></i>
+                            Критерии незавершённости
+                            <small class="text-muted fw-normal ms-2">(выберите, что считать проблемой)</small>
+                        </h6>
 
-    <!-- 🔹 РЕЖИМ: НЕЗАВЕРШЁННЫЕ СДЕЛКИ -->
-    <template v-if="currentTab === 'incomplete'">
+                        <div class="row g-2">
+                            <div class="col-12 col-md-4">
+                                <div
+                                    class="filter-toggle"
+                                    :class="{ active: incompleteFilters.include_missing_date }"
+                                    @click="toggleIncompleteFilter('include_missing_date')"
+                                >
+                                    <i class="fa-solid fa-calendar-xmark"></i>
+                                    <div class="filter-info">
+                                        <div class="filter-title">Нет даты доставки</div>
+                                        <div class="filter-desc">actual_delivery_date не заполнен</div>
+                                    </div>
+                                    <i class="fa-solid fa-check filter-check"></i>
+                                </div>
+                            </div>
 
-        <!-- 🔹 Панель фильтров -->
+                            <div class="col-12 col-md-4">
+                                <div
+                                    class="filter-toggle"
+                                    :class="{ active: incompleteFilters.include_status }"
+                                    @click="toggleIncompleteFilter('include_status')"
+                                >
+                                    <i class="fa-solid fa-truck-clock"></i>
+                                    <div class="filter-info">
+                                        <div class="filter-title">Статус не "доставлено"</div>
+                                        <div class="filter-desc">status ≠ delivered</div>
+                                    </div>
+                                    <i class="fa-solid fa-check filter-check"></i>
+                                </div>
+                            </div>
 
-        <!-- 🔹 Фильтр по датам -->
-        <div class="date-range-filters card mb-3 shadow-sm">
-            <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">
-                        <i class="fa-solid fa-calendar-days text-primary me-2"></i>
-                        Период создания сделок
-                        <small class="text-muted fw-normal ms-2">(по дате создания)</small>
-                    </h6>
+                            <div class="col-12 col-md-4">
+                                <div
+                                    class="filter-toggle"
+                                    :class="{ active: incompleteFilters.include_missing_price }"
+                                    @click="toggleIncompleteFilter('include_missing_price')"
+                                >
+                                    <i class="fa-solid fa-money-bill-circle"></i>
+                                    <div class="filter-info">
+                                        <div class="filter-title">Нет суммы сделки</div>
+                                        <div class="filter-desc">total_price = 0 или не указан</div>
+                                    </div>
+                                    <i class="fa-solid fa-check filter-check"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Предупреждение, если все фильтры выключены -->
+                        <div
+                            v-if="!incompleteFilters.include_missing_date && !incompleteFilters.include_status && !incompleteFilters.include_missing_price"
+                            class="alert alert-warning mt-3 mb-0 small"
+                        >
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                            Включите хотя бы один фильтр, чтобы увидеть список сделок
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🔹 Панель массовых действий (только для админов) -->
+                <div v-if="(user?.role || 0) >= 3" class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex gap-3 align-items-center">
+                        <a href="javascript:void(0)"
+                           @click="toggleSelectAllIncomplete"
+                           class="small fw-bold text-decoration-none">
+                            <i class="fa-solid fa-check-double me-1"></i>
+                            {{
+                                incompleteSelection.length === salesStore.incompleteItems.length && salesStore.incompleteItems.length > 0
+                                    ? 'Снять выделение'
+                                    : 'Выделить все'
+                            }}
+                        </a>
+
+                        <span v-if="incompleteSelection.length > 0" class="small text-muted">
+                Выбрано: <strong class="text-primary">{{ incompleteSelection.length }}</strong>
+            </span>
+                    </div>
 
                     <button
-                        v-if="incompleteFilters.date_from || incompleteFilters.date_to"
+                        v-if="incompleteSelection.length > 0"
                         type="button"
-                        class="btn btn-sm btn-outline-secondary"
-                        @click="clearDateFilters"
+                        class="btn btn-sm btn-danger"
+                        @click="confirmBulkDeleteIncomplete"
                     >
-                        <i class="fa-solid fa-xmark me-1"></i>
-                        Сбросить даты
+                        <i class="fa-solid fa-trash me-1"></i>
+                        Удалить выбранные ({{ incompleteSelection.length }})
                     </button>
                 </div>
 
-                <div class="row g-2">
-                    <div class="col-12 col-md-6">
-                        <div class="form-floating">
-                            <input
-                                type="date"
-                                class="form-control"
-                                id="incompleteDateFrom"
-                                v-model="incompleteFilters.date_from"
-                                @change="onIncompleteFilterChange"
-                                :max="incompleteFilters.date_to || todayDate"
-                            />
-                            <label for="incompleteDateFrom">
-                                <i class="fa-solid fa-calendar-day me-1"></i>
-                                Созданы с
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <div class="form-floating">
-                            <input
-                                type="date"
-                                class="form-control"
-                                id="incompleteDateTo"
-                                v-model="incompleteFilters.date_to"
-                                @change="onIncompleteFilterChange"
-                                :min="incompleteFilters.date_from"
-                                :max="todayDate"
-                            />
-                            <label for="incompleteDateTo">
-                                <i class="fa-solid fa-calendar-check me-1"></i>
-                                Созданы по
-                            </label>
-                        </div>
+                <!-- Загрузка -->
+                <div v-if="salesStore.incompleteLoading" class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
                     </div>
                 </div>
 
-                <!-- Индикатор активного периода -->
-                <div
-                    v-if="incompleteFilters.date_from || incompleteFilters.date_to"
-                    class="mt-2 small text-primary"
-                >
-                    <i class="fa-solid fa-filter me-1"></i>
-                    Показаны сделки за период:
-                    <strong>
-                        {{ incompleteFilters.date_from ? formatDateShort(incompleteFilters.date_from) : 'начала' }}
-                    </strong>
-                    —
-                    <strong>
-                        {{ incompleteFilters.date_to ? formatDateShort(incompleteFilters.date_to) : 'сейчас' }}
-                    </strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="incomplete-filters card mb-3 shadow-sm">
-            <div class="card-body p-3">
-                <h6 class="mb-3">
-                    <i class="fa-solid fa-filter text-primary me-2"></i>
-                    Критерии незавершённости
-                    <small class="text-muted fw-normal ms-2">(выберите, что считать проблемой)</small>
-                </h6>
-
-                <div class="row g-2">
-                    <div class="col-12 col-md-4">
-                        <div
-                            class="filter-toggle"
-                            :class="{ active: incompleteFilters.include_missing_date }"
-                            @click="toggleIncompleteFilter('include_missing_date')"
-                        >
-                            <i class="fa-solid fa-calendar-xmark"></i>
-                            <div class="filter-info">
-                                <div class="filter-title">Нет даты доставки</div>
-                                <div class="filter-desc">actual_delivery_date не заполнен</div>
+                <template v-else>
+                    <!-- Статистика -->
+                    <div v-if="salesStore.incompleteItems.length > 0" class="alert alert-warning mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-hourglass-half fs-4 me-3"></i>
+                            <div>
+                                <strong>{{ salesStore.incompletePagination?.total || 0 }}</strong>
+                                сделок ожидают завершения
                             </div>
-                            <i class="fa-solid fa-check filter-check"></i>
                         </div>
                     </div>
 
-                    <div class="col-12 col-md-4">
-                        <div
-                            class="filter-toggle"
-                            :class="{ active: incompleteFilters.include_status }"
-                            @click="toggleIncompleteFilter('include_status')"
-                        >
-                            <i class="fa-solid fa-truck-clock"></i>
-                            <div class="filter-info">
-                                <div class="filter-title">Статус не "доставлено"</div>
-                                <div class="filter-desc">status ≠ delivered</div>
-                            </div>
-                            <i class="fa-solid fa-check filter-check"></i>
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-4">
-                        <div
-                            class="filter-toggle"
-                            :class="{ active: incompleteFilters.include_missing_price }"
-                            @click="toggleIncompleteFilter('include_missing_price')"
-                        >
-                            <i class="fa-solid fa-money-bill-circle"></i>
-                            <div class="filter-info">
-                                <div class="filter-title">Нет суммы сделки</div>
-                                <div class="filter-desc">total_price = 0 или не указан</div>
-                            </div>
-                            <i class="fa-solid fa-check filter-check"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Предупреждение, если все фильтры выключены -->
-                <div
-                    v-if="!incompleteFilters.include_missing_date && !incompleteFilters.include_status && !incompleteFilters.include_missing_price"
-                    class="alert alert-warning mt-3 mb-0 small"
-                >
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                    Включите хотя бы один фильтр, чтобы увидеть список сделок
-                </div>
-            </div>
-        </div>
-
-        <!-- 🔹 Панель массовых действий (только для админов) -->
-        <div v-if="(user?.role || 0) >= 3" class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex gap-3 align-items-center">
-                <a href="javascript:void(0)"
-                   @click="toggleSelectAllIncomplete"
-                   class="small fw-bold text-decoration-none">
-                    <i class="fa-solid fa-check-double me-1"></i>
-                    {{
-                        incompleteSelection.length === salesStore.incompleteItems.length && salesStore.incompleteItems.length > 0
-                            ? 'Снять выделение'
-                            : 'Выделить все'
-                    }}
-                </a>
-
-                <span v-if="incompleteSelection.length > 0" class="small text-muted">
-                Выбрано: <strong class="text-primary">{{ incompleteSelection.length }}</strong>
-            </span>
-            </div>
-
-            <button
-                v-if="incompleteSelection.length > 0"
-                type="button"
-                class="btn btn-sm btn-danger"
-                @click="confirmBulkDeleteIncomplete"
-            >
-                <i class="fa-solid fa-trash me-1"></i>
-                Удалить выбранные ({{ incompleteSelection.length }})
-            </button>
-        </div>
-
-        <!-- Загрузка -->
-        <div v-if="salesStore.incompleteLoading" class="text-center my-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Загрузка...</span>
-            </div>
-        </div>
-
-        <template v-else>
-            <!-- Статистика -->
-            <div v-if="salesStore.incompleteItems.length > 0" class="alert alert-warning mb-3">
-                <div class="d-flex align-items-center">
-                    <i class="fa-solid fa-hourglass-half fs-4 me-3"></i>
-                    <div>
-                        <strong>{{ salesStore.incompletePagination?.total || 0 }}</strong>
-                        сделок ожидают завершения
-                    </div>
-                </div>
-            </div>
-
-            <!-- Список -->
-            <div class="container-fluid px-0">
-                <div class="row g-2">
-                    <div
-                        v-for="sale in salesStore.incompleteItems"
-                        :key="sale.id"
-                        class="col-12 col-md-6 col-xxl-4"
-                    >
-                        <div
-                            class="card shadow-sm h-100 sale-card position-relative"
-                            :class="{ 'border-danger border-3': incompleteSelection.includes(sale.id) }"
-                        >
-
-                            <!-- 🔹 Чекбокс (только для админов) -->
+                    <!-- Список -->
+                    <div class="container-fluid px-0">
+                        <div class="row g-2">
                             <div
-                                v-if="(user?.role || 0) >= 3"
-                                class="incomplete-checkbox position-absolute top-0 start-0 m-2 z-3"
-                                @click.stop="toggleIncompleteSelection(sale.id)"
+                                v-for="sale in salesStore.incompleteItems"
+                                :key="sale.id"
+                                class="col-12 col-md-6 col-xxl-4"
                             >
-                                <input
-                                    type="checkbox"
-                                    class="form-check-input"
-                                    :checked="incompleteSelection.includes(sale.id)"
-                                    @click.stop="toggleIncompleteSelection(sale.id)"
-                                />
-                            </div>
+                                <div
+                                    class="card shadow-sm h-100 sale-card position-relative"
+                                    :class="{ 'border-danger border-3': incompleteSelection.includes(sale.id) }"
+                                >
 
-                            <!-- Dropdown -->
-                            <div class="dropdown position-absolute top-0 end-0 m-2 z-3">
-                                <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-bars text-primary"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="javascript:void(0)"
-                                           @click.prevent="openView(sale)">
-                                            Просмотреть
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="javascript:void(0)"
-                                           @click.prevent="openEdit(sale)">
-                                            Редактировать
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-success" href="javascript:void(0)"
-                                           @click.prevent="openConfirmDeal(sale)">
-                                            Подтвердить оплату и доставку
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-danger" href="javascript:void(0)"
-                                           @click.prevent="confirmCancelDeal(sale)">
-                                            Отменить сделку
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
+                                    <!-- 🔹 Чекбокс (только для админов) -->
+                                    <div
+                                        v-if="(user?.role || 0) >= 3"
+                                        class="incomplete-checkbox position-absolute top-0 start-0 m-2 z-3"
+                                        @click.stop="toggleIncompleteSelection(sale.id)"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input"
+                                            :checked="incompleteSelection.includes(sale.id)"
+                                            @click.stop="toggleIncompleteSelection(sale.id)"
+                                        />
+                                    </div>
 
-                            <!-- Индикатор статуса -->
-                            <div class="card-status-indicator" :class="'status-' + sale.status"></div>
 
-                            <!-- 🔹 Бейджи причин "незавершённости" -->
-                            <div class="incomplete-reasons position-absolute z-3 d-flex flex-wrap gap-1"
-                                 :class="(user?.role || 0) >= 3 ? 'top-0 start-0 mt-5 ms-2' : 'top-0 start-0 m-2'">
+                                    <!-- Индикатор статуса -->
+                                    <div class="card-status-indicator" :class="'status-' + sale.status"></div>
+
+                                    <!-- 🔹 Бейджи причин "незавершённости" -->
+                                    <div class="incomplete-reasons position-absolute z-3 d-flex flex-wrap gap-1"
+                                         :class="(user?.role || 0) >= 3 ? 'top-0 start-0 mt-5 ms-2' : 'top-0 start-0 m-2'">
                             <span v-if="incompleteFilters.include_missing_date && !sale.actual_delivery_date"
                                   class="badge bg-warning text-dark"
                                   title="Отсутствует дата доставки">
                                 <i class="fa-solid fa-calendar-xmark"></i>
                             </span>
-                                <span v-if="incompleteFilters.include_status && sale.status !== 'delivered'"
-                                      class="badge bg-info text-dark"
-                                      :title="`Статус: ${saleStatuses[sale.status] || sale.status}`">
+                                        <span v-if="incompleteFilters.include_status && sale.status !== 'delivered'"
+                                              class="badge bg-info text-dark"
+                                              :title="`Статус: ${saleStatuses[sale.status] || sale.status}`">
                                 <i class="fa-solid fa-truck"></i>
                             </span>
-                                <span
-                                    v-if="incompleteFilters.include_missing_price && (!sale.total_price || sale.total_price == 0)"
-                                    class="badge bg-danger"
-                                    title="Не указана сумма сделки">
+                                        <span
+                                            v-if="incompleteFilters.include_missing_price && (!sale.total_price || sale.total_price == 0)"
+                                            class="badge bg-danger"
+                                            title="Не указана сумма сделки">
                                 <i class="fa-solid fa-money-bill"></i>
                             </span>
-                            </div>
+                                    </div>
 
-                            <div class="card-body">
-                                <SaleCard
-                                    :sale="sale"
-                                    :field_visible="field_visible"
-                                    :saleStatuses="saleStatuses"
-                                    @toggle-selection="toggleSelection"
-                                />
+                                    <div class="card-body">
+                                        <SaleCard
+                                            :sale="sale"
+                                            :field_visible="field_visible"
+                                            :saleStatuses="saleStatuses"
+                                            @toggle-selection="toggleSelection">
+                                            <template #actions>
+                                                <div class="dropdown sale-card__dropdown">
+                                                    <button class="sale-card__menu-button" type="button" data-bs-toggle="dropdown">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li>
+                                                            <a class="dropdown-item" href="javascript:void(0)"
+                                                               @click.prevent="openView(sale)">
+                                                                Просмотреть
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" href="javascript:void(0)"
+                                                               @click.prevent="openEdit(sale)">
+                                                                Редактировать
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item text-success" href="javascript:void(0)"
+                                                               @click.prevent="openConfirmDeal(sale)">
+                                                                Подтвердить оплату и доставку
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                               @click.prevent="confirmCancelDeal(sale)">
+                                                                Отменить сделку
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </template>
+                                        </SaleCard>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Пагинация -->
+                    <Pagination
+                        v-if="salesStore.incompleteItems.length > 0"
+                        :pagination="salesStore.incompletePagination"
+                        @page-changed="fetchIncompleteByUrl"
+                    />
+
+                    <!-- Пусто -->
+                    <div v-if="salesStore.incompleteItems.length === 0" class="alert alert-success mt-3 text-center">
+                        <i class="fa-solid fa-check-circle fs-3 mb-2 d-block"></i>
+                        По выбранным критериям незавершённых сделок не найдено
+                    </div>
+                </template>
+            </template>
+
+            <!-- Модалка редактирования -->
+            <div class="modal fade" id="editSaleModal" tabindex="-1">
+                <div class="modal-dialog modal-fullscreen">
+                    <div class="modal-content">
+                        <div class="modal-header"><h5 class="modal-title">Редактирование задания</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <SaleForm v-if="selectedSale" :initialData="selectedSale" @saved="fetchData"/>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Пагинация -->
-            <Pagination
-                v-if="salesStore.incompleteItems.length > 0"
-                :pagination="salesStore.incompletePagination"
-                @page-changed="fetchIncompleteByUrl"
-            />
-
-            <!-- Пусто -->
-            <div v-if="salesStore.incompleteItems.length === 0" class="alert alert-success mt-3 text-center">
-                <i class="fa-solid fa-check-circle fs-3 mb-2 d-block"></i>
-                По выбранным критериям незавершённых сделок не найдено
-            </div>
-        </template>
-    </template>
-
-
-    <!-- Модалка редактирования -->
-    <div class="modal fade" id="editSaleModal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Редактирование задания</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <SaleForm v-if="selectedSale" :initialData="selectedSale" @saved="fetchData"/>
+            <!-- Модалка просмотра -->
+            <div class="modal fade" id="viewSaleModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header"><h5 class="modal-title">Карточка задания</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <TaskCard
+                                v-if="selectedSale"
+                                :task="selectedSale"></TaskCard>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Модалка подтверждения сделки -->
+            <div class="modal fade" id="confirmDealModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header"><h5 class="modal-title">Подтверждение сделки</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <DealForm
+                                v-if="selectedSale"
+                                v-model="dealForm" @callback="confirmDeal"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-
-
-    <!-- Модалка просмотра -->
-    <div class="modal fade" id="viewSaleModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Карточка задания</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <TaskCard
-                        v-if="selectedSale"
-                        :task="selectedSale"></TaskCard>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка подтверждения сделки -->
-    <div class="modal fade" id="confirmDealModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Подтверждение сделки</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <DealForm
-                        v-if="selectedSale"
-                        v-model="dealForm" @callback="confirmDeal"/>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
 </template>
 
@@ -1075,12 +1090,10 @@ export default {
             this.salesStore.fetchIncomplete(1, 20, this.incompleteFilters);
         },
 
-
         async sendPaymentDocumentToTg(id) {
             await this.salesStore.sendPaymentDocumentToTg(id).then(() => {
                 this.alertStore.show("Чек отправлен вам в телеграм бот!");
             })
-
 
         },
 
@@ -1100,7 +1113,6 @@ export default {
             else
                 this.selection.splice(index, 1)
         },
-
 
         async fetchData(page = 1) {
             await this.salesStore.fetchAllByPage(page)
@@ -1179,7 +1191,6 @@ export default {
                 }
             )
 
-
         },
 
         clearDateFilters() {
@@ -1213,7 +1224,6 @@ export default {
                 this.dealForm.payment_document_name = sale.payment_document_name
                 new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
             })
-
 
         },
         /* async confirmPayment() {
@@ -1600,4 +1610,576 @@ p {
 .date-range-filters .form-floating label i {
     color: #0d6efd;
 }
+
+/* =========================================================
+   МОЙПРОЦЕНТ — обновлённая визуальная система SaleList
+   ========================================================= */
+.sales-page {
+    --sales-blue: #2457d6;
+    --sales-blue-dark: #173b91;
+    --sales-red: #df3548;
+    --sales-ink: #17233b;
+    --sales-muted: #778399;
+    --sales-border: #e5eaf2;
+    --sales-surface: #ffffff;
+    --sales-soft-blue: #edf3ff;
+    color: var(--sales-ink);
+    width: 100%;
+    min-width: 0;
+}
+
+.sales-page * {
+    box-sizing: border-box;
+}
+
+.sales-page-content {
+    min-width: 0;
+}
+
+.sales-page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 24px;
+    padding: 22px;
+    background: #fff;
+    border: 1px solid var(--sales-border);
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(23, 35, 59, .04);
+}
+
+.sales-heading-icon {
+    display: flex;
+    flex: 0 0 58px;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--sales-blue), var(--sales-blue-dark));
+    border-radius: 17px;
+    box-shadow: 0 7px 18px rgba(36, 87, 214, .18);
+    font-size: 25px;
+}
+
+.sales-heading-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.sales-eyebrow {
+    margin-bottom: 4px;
+    color: var(--sales-blue);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.sales-heading-copy h1 {
+    margin: 0 0 5px;
+    color: var(--sales-ink);
+    font-size: clamp(21px, 2.4vw, 28px);
+    font-weight: 800;
+    letter-spacing: -.6px;
+}
+
+.sales-heading-copy p {
+    margin: 0;
+    color: var(--sales-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sales-total-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 10px 13px;
+    color: var(--sales-blue);
+    background: var(--sales-soft-blue);
+    border: 1px solid #dce7ff;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+/* Табы */
+.sales-page .custom-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px !important;
+    padding: 6px;
+    background: #f3f6fb;
+    border: 1px solid var(--sales-border);
+    border-radius: 15px;
+    box-shadow: none;
+}
+
+.sales-page .custom-tab {
+    min-width: 0;
+    padding: 12px 16px;
+    color: var(--sales-muted);
+    border: 1px solid transparent;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.sales-page .custom-tab:hover {
+    color: var(--sales-blue);
+    background: rgba(36, 87, 214, .05);
+}
+
+.sales-page .custom-tab.active {
+    color: var(--sales-blue);
+    background: #fff;
+    border-color: #e4ebf8;
+    box-shadow: 0 3px 10px rgba(23, 35, 59, .07);
+}
+
+.sales-page .custom-tab.active i {
+    color: var(--sales-blue);
+}
+
+.sales-page .tab-badge {
+    min-width: 22px;
+    height: 22px;
+    color: #fff;
+    background: var(--sales-red);
+    border-radius: 7px;
+    box-shadow: none;
+    animation: none;
+}
+
+/* Панель массовых действий */
+.sales-page .sales-page-content > .d-flex.justify-content-between.my-2 {
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: #fff;
+    border: 1px solid var(--sales-border);
+    border-radius: 12px;
+}
+
+.sales-page a.small.fw-bold {
+    color: var(--sales-blue);
+    text-decoration: none;
+}
+
+.sales-page a.small.fw-bold:hover {
+    text-decoration: underline;
+}
+
+.sales-page .text-danger.mx-2.fw-bold {
+    color: var(--sales-red) !important;
+}
+
+.sales-page .fw-bold.small {
+    color: var(--sales-muted);
+}
+
+/* Карточки сделок */
+.sales-page .sale-card {
+    height: 100%;
+    overflow: visible;
+    background: var(--sales-surface);
+    border: 1px solid var(--sales-border);
+    border-radius: 16px;
+    box-shadow: 0 3px 12px rgba(23, 35, 59, .045);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.sales-page .sale-card:hover {
+    border-color: #d1dcf0;
+    box-shadow: 0 10px 25px rgba(23, 35, 59, .08);
+    transform: translateY(-3px);
+}
+
+.sales-page .sale-card .card-body {
+    padding: 19px;
+}
+
+.sales-page .sale-card.border-primary,
+.sales-page .sale-card.border-danger {
+    border-width: 2px !important;
+    border-color: var(--sales-blue) !important;
+    box-shadow: 0 0 0 3px rgba(36, 87, 214, .10) !important;
+}
+
+.sales-page .sale-card.bg-danger-subtle {
+    background: linear-gradient(180deg, #fff 0%, #fff7f7 100%) !important;
+    border-color: #f4cbd0 !important;
+}
+
+.sales-page .sale-card .dropdown > .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    color: var(--sales-blue);
+    background: #fff;
+    border: 1px solid var(--sales-border);
+    border-radius: 9px;
+}
+
+.sales-page .sale-card .dropdown > .btn:hover {
+    background: var(--sales-soft-blue);
+    border-color: #cbd9f7;
+}
+
+.sales-page .dropdown-menu {
+    min-width: 220px;
+    padding: 7px;
+    border: 1px solid var(--sales-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(23, 35, 59, .13);
+}
+
+.sales-page .dropdown-item {
+    padding: 10px 11px;
+    border-radius: 8px;
+    color: var(--sales-ink);
+    font-size: 13px;
+}
+
+.sales-page .dropdown-item:hover {
+    background: #f3f6fc;
+}
+
+.sales-page .dropdown-item.text-danger {
+    color: var(--sales-red) !important;
+}
+
+.sales-page .dropdown-item.text-success {
+    color: #16805d !important;
+}
+
+/* Поиск и фильтры */
+.sales-page .form-control,
+.sales-page .form-select {
+    min-height: 44px;
+    color: var(--sales-ink);
+    border-color: #dfe6f0;
+    border-radius: 11px;
+    box-shadow: none;
+}
+
+.sales-page .form-control:focus,
+.sales-page .form-select:focus {
+    border-color: #8eabef;
+    box-shadow: 0 0 0 3px rgba(36, 87, 214, .10);
+}
+
+.sales-page input.form-control[placeholder] {
+    padding: 12px 15px;
+}
+
+.sales-page .date-range-filters,
+.sales-page .incomplete-filters {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--sales-border);
+    border-radius: 16px;
+    box-shadow: 0 3px 12px rgba(23, 35, 59, .035) !important;
+}
+
+.sales-page .date-range-filters .card-body,
+.sales-page .incomplete-filters .card-body {
+    padding: 20px !important;
+}
+
+.sales-page .filter-toggle {
+    height: 100%;
+    padding: 14px;
+    background: #fff;
+    border: 1px solid var(--sales-border);
+    border-radius: 12px;
+}
+
+.sales-page .filter-toggle:hover {
+    background: #f8faff;
+    border-color: #b9cbf3;
+}
+
+.sales-page .filter-toggle.active {
+    background: #f0f5ff;
+    border-color: var(--sales-blue);
+    box-shadow: inset 0 0 0 1px rgba(36, 87, 214, .08);
+}
+
+.sales-page .filter-toggle.active > i:first-child,
+.sales-page .filter-toggle.active .filter-check {
+    color: var(--sales-blue);
+}
+
+.sales-page .filter-title {
+    color: var(--sales-ink);
+    font-size: 13px;
+}
+
+.sales-page .filter-desc {
+    color: var(--sales-muted);
+    font-size: 11px;
+}
+
+/* Заголовки дней и статистика */
+.sales-page .day-header {
+    gap: 12px;
+    padding: 13px 16px !important;
+    background: #fff !important;
+    border: 1px solid var(--sales-border) !important;
+    border-left: 4px solid var(--sales-blue) !important;
+    border-radius: 12px !important;
+}
+
+.sales-page .day-header:hover {
+    background: #f8faff !important;
+}
+
+.sales-page .alert {
+    border-radius: 13px;
+}
+
+.sales-page .alert-info {
+    color: #234a9b;
+    background: #f0f5ff;
+    border: 1px solid #dce7ff;
+}
+
+.sales-page .alert-warning {
+    color: #79550a;
+    background: #fff8e8;
+    border: 1px solid #f4e3b7;
+}
+
+.sales-page .alert-success {
+    color: #176b50;
+    background: #eefaf5;
+    border: 1px solid #ccefe0;
+}
+
+.sales-page .alert-danger {
+    border: 1px solid #f4cbd0;
+}
+
+/* Индикатор статуса */
+.sales-page .card-status-indicator {
+    width: 4px;
+    border-radius: 16px 0 0 16px;
+}
+
+.sales-page .card-status-indicator.status-pending {
+    background: #e5a323;
+}
+
+.sales-page .card-status-indicator.status-assigned {
+    background: var(--sales-blue);
+}
+
+.sales-page .card-status-indicator.status-delivered,
+.sales-page .card-status-indicator.status-completed {
+    background: #1b936b;
+}
+
+.sales-page .incomplete-reasons .badge {
+    border-radius: 7px;
+    box-shadow: none;
+}
+
+/* Пагинация */
+.sales-page .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 18px 0 8px;
+}
+
+.sales-page .pagination .page-item {
+    margin: 0;
+}
+
+.sales-page .pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 8px 12px;
+    color: var(--sales-blue);
+    background: #fff;
+    border: 1px solid var(--sales-border);
+    border-radius: 10px !important;
+    font-size: 13px;
+    font-weight: 650;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.sales-page .pagination .page-link:hover {
+    background: var(--sales-soft-blue);
+    border-color: #cbd9f7;
+}
+
+.sales-page .pagination .page-item.active .page-link {
+    color: #fff;
+    background: var(--sales-blue);
+    border-color: var(--sales-blue);
+}
+
+.sales-page .pagination .page-item.disabled .page-link {
+    color: #aab3c1;
+    background: #f7f8fa;
+}
+
+/* Модальные окна */
+.sales-page .modal-content {
+    overflow: hidden;
+    border: 1px solid var(--sales-border);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(23, 35, 59, .18);
+}
+
+.sales-page .modal-header {
+    gap: 12px;
+    padding: 18px 22px;
+    background: #fff;
+    border-bottom: 1px solid var(--sales-border);
+}
+
+.sales-page .modal-title {
+    color: var(--sales-ink);
+    font-size: 17px;
+    font-weight: 750;
+}
+
+.sales-page .modal-body {
+    padding: 22px;
+}
+
+.sales-page .btn-primary {
+    background: var(--sales-blue);
+    border-color: var(--sales-blue);
+}
+
+.sales-page .btn-primary:hover {
+    background: var(--sales-blue-dark);
+    border-color: var(--sales-blue-dark);
+}
+
+.sales-page .btn-danger {
+    background: var(--sales-red);
+    border-color: var(--sales-red);
+}
+
+/* Адаптивность */
+@media (max-width: 767.98px) {
+    .sales-page-header {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 17px;
+        margin-bottom: 17px;
+        border-radius: 15px;
+    }
+
+    .sales-heading-icon {
+        flex-basis: 48px;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        font-size: 21px;
+    }
+
+    .sales-heading-copy {
+        flex-basis: calc(100% - 64px);
+    }
+
+    .sales-heading-copy p {
+        font-size: 12px;
+    }
+
+    .sales-total-chip {
+        margin-left: 60px;
+        padding: 8px 10px;
+    }
+
+    .sales-page .custom-tabs {
+        gap: 4px;
+        padding: 4px;
+        border-radius: 12px;
+    }
+
+    .sales-page .custom-tab {
+        min-height: 46px;
+        padding: 9px 7px;
+        gap: 5px;
+        font-size: 11px;
+    }
+
+    .sales-page .custom-tab span:not(.tab-badge) {
+        display: inline;
+    }
+
+    .sales-page .sale-card .card-body {
+        padding: 15px;
+    }
+
+    .sales-page .date-range-filters .card-body,
+    .sales-page .incomplete-filters .card-body {
+        padding: 15px !important;
+    }
+
+    .sales-page .day-header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .sales-page .sales-page-content > .d-flex.justify-content-between.my-2 {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 420px) {
+    .sales-page .custom-tab {
+        flex-direction: column;
+        justify-content: center;
+        min-height: 58px;
+    }
+
+    .sales-page .custom-tab span:not(.tab-badge) {
+        display: inline;
+        font-size: 10px;
+    }
+
+    .sales-page .custom-tab i {
+        font-size: 17px;
+    }
+
+    .sales-page .tab-badge {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        font-size: 9px;
+    }
+
+    .sales-page .sales-total-chip {
+        margin-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sales-page .sale-card,
+    .sales-page .custom-tab,
+    .sales-page .filter-toggle {
+        transition: none;
+    }
+}
+
 </style>

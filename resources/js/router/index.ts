@@ -39,6 +39,12 @@ const routes = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/my-deliveries',
+        name: 'MyDeliveries',
+        component: () => import('@/Pages/MyDeliveries.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/blocked',
         name: 'BlockedPage',
         component: BlockedPage,

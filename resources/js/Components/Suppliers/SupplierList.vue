@@ -203,6 +203,11 @@
                                 <li>
                                     <a class="dropdown-item" href="#" @click.prevent="openEditModal(supplier)">Редактировать</a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" @click.prevent="openPercentages(supplier)">
+                                        <i class="fa-solid fa-percent me-2"></i>Проценты
+                                    </a>
+                                </li>
                                 <li v-if="(user?.role || 0) >= 3">
                                     <a class="dropdown-item text-danger" href="#" @click.prevent="openDeleteModal(supplier)">Удалить</a>
                                 </li>
@@ -309,6 +314,29 @@
             </div>
         </div>
     </div>
+
+    <!-- 🔹 Модалка управления процентами -->
+    <div class="modal fade" id="percentagesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-percent text-success me-2"></i>
+                        Управление процентами поставщика
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <PercentageManager
+                        v-if="selectedSupplier"
+                        owner-type="supplier"
+                        :owner-id="selectedSupplier.id"
+                        :owner-name="selectedSupplier.name"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -316,6 +344,7 @@ import Pagination from "@/Components/Pagination.vue";
 import SupplierFilter from "@/Components/Suppliers/SupplierFilter.vue";
 import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
+import PercentageManager from "@/Components/Percentage/PercentageManager.vue";
 import {useSuppliersStore} from "@/stores/suppliers";
 import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
 import {useUsersStore} from "@/stores/users";
@@ -327,7 +356,8 @@ export default {
         Pagination,
         SupplierFilter,
         SupplierForm,
-        SaleCard
+        SaleCard,
+        PercentageManager
     },
     props: ["forSelect"],
     data() {
@@ -460,6 +490,17 @@ export default {
             })
         },
 
+        openPercentages(supplier) {
+            this.selectedSupplier = null
+            this.$nextTick(() => {
+                this.selectedSupplier = {...supplier}
+                this.$nextTick(() => {
+                    const modal = new bootstrap.Modal(document.getElementById('percentagesModal'))
+                    modal.show()
+                })
+            })
+        },
+
         toggleSelection(supplier) {
             if (this.forSelect) {
                 this.selectSupplier(supplier)
@@ -562,22 +603,183 @@ export default {
 </script>
 
 <style scoped>
-.clickable-badge {
+/* Общая визуальная система */
+:deep(.form-check.form-switch) {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .9rem 1rem .9rem 3.1rem;
+    margin: 0 0 1rem;
+    border: 1px solid #dbe7f5;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f7faff, #fff);
+}
+:deep(.form-check-input) {
     cursor: pointer;
-    transition: all 0.2s ease;
+    width: 2.5rem;
+    height: 1.35rem;
+    margin-left: -2.1rem;
+    box-shadow: none;
+}
+:deep(.form-check-input:checked) {
+    background-color: #1769d2;
+    border-color: #1769d2;
+}
+:deep(.form-check-label) { color: #20334f; font-weight: 600; }
+
+:deep(.nav.nav-pills) {
+    display: flex;
+    gap: .5rem;
+    padding: .4rem;
+    border: 1px solid #e0e9f5;
+    border-radius: 16px;
+    background: #f4f7fc;
+}
+:deep(.nav.nav-pills .nav-link) {
+    border: 0;
+    border-radius: 11px;
+    color: #536781;
+    font-weight: 650;
+    padding: .75rem .85rem;
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+:deep(.nav.nav-pills .nav-link:hover) { background: #e8f0fc; color: #145fc1; }
+:deep(.nav.nav-pills .nav-link.active) {
+    color: #fff;
+    background: linear-gradient(135deg, #1769d2, #124da5);
+    box-shadow: 0 5px 14px rgba(23, 105, 210, .22);
+}
+:deep(.nav.nav-pills .nav-link .text-success),
+:deep(.nav.nav-pills .nav-link .text-secondary) { color: inherit !important; }
+
+:deep(.form-floating .form-select),
+:deep(.form-floating .form-control) {
+    min-height: 56px;
+    border: 1px solid #d8e3f1;
+    border-radius: 13px;
+    color: #20334f;
+    background-color: #fff;
+    box-shadow: none;
+}
+:deep(.form-floating .form-select:focus),
+:deep(.form-floating .form-control:focus) {
+    border-color: #4a91e8;
+    box-shadow: 0 0 0 3px rgba(23, 105, 210, .11);
+}
+:deep(.input-group) {
+    padding: .35rem;
+    border: 1px solid #dce6f2;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(24, 53, 91, .04);
+}
+:deep(.input-group .form-floating) { flex: 1; min-width: 0; }
+:deep(.input-group .form-control) { border: 0; border-radius: 10px; box-shadow: none; }
+:deep(.find-btn) {
+    align-self: stretch;
+    margin-left: .35rem !important;
+    padding: 0 1.2rem;
+    border: 0;
+    border-radius: 11px !important;
+    color: #fff !important;
+    background: #1769d2;
+    font-weight: 700;
+}
+:deep(.find-btn:hover) { background: #1255b0; }
+
+:deep(.alert-info) {
+    border: 1px solid #d4e7ff;
+    border-radius: 16px;
+    color: #234366;
+    background: linear-gradient(135deg, #f0f7ff, #fff);
+}
+:deep(.alert-info .text-muted) { color: #647994 !important; }
+:deep(.alert-info .fs-5) { color: #173e70; font-weight: 800; }
+
+:deep(.list-group) { display: grid; gap: .7rem; }
+:deep(.list-group-item) {
+    gap: .8rem;
+    padding: 1rem;
+    border: 1px solid #e0e8f2 !important;
+    border-radius: 16px !important;
+    background: #fff;
+    color: #20334f;
+    box-shadow: 0 3px 12px rgba(27, 52, 84, .035);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+:deep(.list-group-item:hover) {
+    border-color: #b8d3f5 !important;
+    box-shadow: 0 8px 22px rgba(27, 72, 128, .08);
+}
+:deep(.list-group-item.border-primary) {
+    border-color: #4a91e8 !important;
+    background: #f5f9ff;
+    box-shadow: 0 0 0 2px rgba(23, 105, 210, .08);
+}
+:deep(.list-group-item .fw-bold) { color: #172f4f; line-height: 1.45; }
+:deep(.list-group-item p) { color: #62748c; font-size: .92rem; overflow-wrap: anywhere; }
+:deep(.list-group-item .badge) {
+    display: inline-flex;
+    align-items: center;
+    gap: .15rem;
+    padding: .42rem .62rem;
+    border-radius: 8px;
+    font-size: .75rem;
+    font-weight: 700;
+}
+:deep(.list-group-item .bg-primary) { background: #e8f1ff !important; color: #1459ad !important; }
+:deep(.list-group-item .bg-success) { background: #e1f7ed !important; color: #16794b !important; }
+:deep(.list-group-item .bg-info) { background: #e4f5fb !important; color: #12627b !important; }
+:deep(.list-group-item .bg-secondary) { background: #edf1f5 !important; color: #586a80 !important; }
+:deep(.list-group-item .btn-sm) {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e3eaf3;
+    border-radius: 10px;
+    color: #526780;
+    background: #fff;
+}
+:deep(.list-group-item .btn-sm:hover) { border-color: #b7d1f2; background: #f2f7ff; }
+:deep(.list-group-item .dropdown-menu) {
+    padding: .4rem;
+    border: 1px solid #e1e9f3;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(22, 44, 75, .14);
+}
+:deep(.list-group-item .dropdown-item) { padding: .65rem .8rem; border-radius: 8px; }
+:deep(.list-group-item .dropdown-item:hover) { background: #edf4ff; color: #1459ad; }
+:deep(.small a), :deep(a.small) { font-weight: 600; text-decoration: none; }
+
+:deep(#itemsPerPage) { border-radius: 12px; }
+:deep(.pagination) { gap: .25rem; flex-wrap: wrap; }
+:deep(.modal-content) { overflow: hidden; border: 1px solid #dfe8f3; border-radius: 18px; box-shadow: 0 20px 60px rgba(18, 38, 66, .2); }
+:deep(.modal-header) { padding: 1.1rem 1.25rem; border-bottom: 1px solid #e6edf5; background: #f7faff; }
+:deep(.modal-title) { color: #173455; font-weight: 750; }
+:deep(.modal-body) { padding: 1.25rem; }
+:deep(.clickable-badge) {
+    cursor: pointer;
+    transition: all .2s ease;
     display: inline-flex;
     align-items: center;
     position: relative;
     overflow: hidden;
 }
-
-.clickable-badge:hover {
+:deep(.clickable-badge:hover) {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3);
-    filter: brightness(1.1);
+    box-shadow: 0 2px 8px rgba(25, 135, 84, .22);
+    filter: brightness(1.03);
 }
+:deep(.clickable-badge:active) { transform: translateY(0); }
 
-.clickable-badge:active {
-    transform: translateY(0);
+@media (max-width: 575.98px) {
+    :deep(.nav.nav-pills) { gap: .2rem; padding: .3rem; }
+    :deep(.nav.nav-pills .nav-link) { padding: .65rem .3rem; font-size: .84rem; }
+    :deep(.list-group-item) { padding: .8rem; gap: .35rem; }
+    :deep(.list-group-item .btn-sm) { width: 32px; height: 32px; }
+    :deep(.input-group) { align-items: stretch; }
+    :deep(.find-btn) { padding: 0 .8rem; font-size: .9rem; }
+    :deep(.modal-body) { padding: .9rem; }
 }
 </style>

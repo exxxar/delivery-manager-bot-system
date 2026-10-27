@@ -1,7 +1,7 @@
 <template>
     <Head>
-        <title>Автоматический учет доставки</title>
-        <meta name="description" content="CashMan - система твоего бизнеса внутри"/>
+        <title>Мойпроцент — управление доставками</title>
+        <meta name="description" content="Мойпроцент — система управления доставками, заявками и поставками"/>
     </Head>
 
     <!-- Индикатор отсутствия сети -->
@@ -12,42 +12,50 @@
         </div>
     </Transition>
 
-    <header class="fixed-top-menu" data-bs-theme="dark">
-        <div class="navbar shadow shadow-sm">
-            <div class="container flex-row-reverse p-2">
+    <header class="fixed-top-menu">
+        <div class="app-navbar">
+            <div class="app-navbar-inner">
+                <div class="brand-lockup" data-bs-toggle="modal" data-bs-target="#bot-info-modal">
+                    <div class="brand-mark"><i class="fa-solid fa-percent"></i></div>
+                    <div class="brand-copy">
+                        <span class="brand-name">Мойпроцент</span>
+                        <span class="brand-caption">Управление доставками</span>
+                    </div>
+                </div>
 
-                <!-- Версия приложения -->
-                <span
-                    v-if="serverVersion"
-                    class="badge bg-secondary me-2 align-middle version-badge"
-                    :title="`Версия приложения: ${serverVersion}`"
-                >
-                    v{{ serverVersion }}
-                </span>
+                <div class="navbar-actions">
+                    <!-- Версия приложения -->
+                    <span
+                        v-if="serverVersion"
+                        class="version-badge"
+                        :title="`Версия приложения: ${serverVersion}`"
+                    >v{{ serverVersion }}</span>
 
-                <!-- Счётчик офлайн-заявок -->
-                <span
-                    v-if="offlineQueueCount > 0"
-                    class="badge bg-warning text-dark me-2 align-middle queue-badge"
-                    data-bs-toggle="modal"
-                    data-bs-target="#offlineQueueModal"
-                    @click="refreshQueueList"
-                    title="Нажмите, чтобы просмотреть очередь"
-                >
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    {{ offlineQueueCount }}
-                </span>
+                    <!-- Счётчик офлайн-заявок -->
+                    <button
+                        v-if="offlineQueueCount > 0"
+                        type="button"
+                        class="queue-badge"
+                        data-bs-toggle="modal"
+                        data-bs-target="#offlineQueueModal"
+                        @click="refreshQueueList"
+                        title="Просмотреть очередь офлайн-заявок"
+                    >
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>{{ offlineQueueCount }}</span>
+                    </button>
 
-                <span data-bs-toggle="modal" data-bs-target="#bot-info-modal"
-                      class="text-primary fw-bold cursor-pointer">
-                    Система управления доставками
-                </span>
-
-                <button class="btn btn-link rounded-0 border-0 p-1" type="button"
-                        data-bs-toggle="offcanvas" data-bs-target="#sidebar-menu"
-                        aria-controls="sidebar-menu">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
+                    <button
+                        class="menu-toggle"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#sidebar-menu"
+                        aria-controls="sidebar-menu"
+                        aria-label="Открыть меню"
+                    >
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -55,33 +63,38 @@
     <GlobalAlert/>
     <GlobalConfirmModal/>
 
-    <div class="container-lg py-3">
+    <main class="app-main container-lg">
         <slot/>
-    </div>
+    </main>
 
 
 
-    <footer class="text-body-secondary" style="padding: 0 0 90px 0;">
-        <div class="container d-flex justify-content-center flex-column align-items-center">
-            <p class="d-flex justify-content-center my-3">
-                <a href="javascript:void(0)" @click="scrollTop">
-                    <i class="fa-solid fa-arrow-up mr-2"></i>Вернуться наверх
-                </a>
-            </p>
+    <footer class="app-footer">
+        <div class="container-lg app-footer-inner">
+            <span class="footer-brand"><i class="fa-solid fa-percent me-2"></i>Мойпроцент</span>
+            <button type="button" class="back-to-top" @click="scrollTop">
+                <i class="fa-solid fa-arrow-up"></i>
+                <span>Вернуться наверх</span>
+            </button>
         </div>
     </footer>
 
     <!-- Боковое меню -->
     <div
         class="offcanvas offcanvas-start custom-offcanvas"
-        style="width: 70%; border-radius: 0 10px 10px 0;"
         tabindex="-1"
         id="sidebar-menu"
         aria-labelledby="offcanvasExampleLabel"
     >
-        <div class="offcanvas-header">
-            <h6 class="offcanvas-title" id="offcanvasExampleLabel">Меню</h6>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div class="offcanvas-header sidebar-heading">
+            <div class="sidebar-brand">
+                <div class="brand-mark"><i class="fa-solid fa-percent"></i></div>
+                <div>
+                    <h6 class="offcanvas-title" id="offcanvasExampleLabel">Мойпроцент</h6>
+                    <span>Навигация по системе</span>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть меню"></button>
         </div>
 
         <div class="offcanvas-body">
@@ -96,12 +109,6 @@
                         Ваш логин
                         <span class="fw-bold text-primary">
                             <i class="fa-solid fa-copy me-1"></i>{{ self.email }}
-                        </span>
-                    </p>
-                    <p @click="copy(self.telegram_chat_id)" class="small mb-0">
-                        Ваш пароль
-                        <span class="fw-bold text-primary">
-                            <i class="fa-solid fa-copy me-1"></i>{{ self.telegram_chat_id }}
                         </span>
                     </p>
                 </div>
@@ -354,7 +361,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-               <AdminInviteLinkManager />
+                    <AdminInviteLinkManager />
                 </div>
             </div>
         </div>
@@ -522,6 +529,8 @@ export default {
         window.removeEventListener('online', this.handleOnline);
         window.removeEventListener('offline', this.handleOffline);
         window.removeEventListener('offline-queue-changed', this.onQueueChanged);
+        this.unsubscribeNetwork?.();
+        stopMonitoring();
         document.body.classList.remove('has-offline-banner');
     },
 
@@ -836,5 +845,189 @@ body.has-offline-banner .fixed-top-menu {
 .queue-item:hover {
     border-color: #0d6efd;
     box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
+}
+
+
+/* Единый визуальный стиль приложения «Мойпроцент» */
+.fixed-top-menu {
+    z-index: 1030;
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid #e5eaf2;
+    box-shadow: 0 4px 18px rgba(23, 35, 59, 0.055);
+    backdrop-filter: blur(14px);
+}
+
+.app-navbar { width: 100%; }
+.app-navbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: min(100% - 32px, 1320px);
+    min-height: 76px;
+    margin: 0 auto;
+}
+
+.brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.brand-mark {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: #fff;
+    background: linear-gradient(135deg, #2457d6, #173b91);
+    border-radius: 14px;
+    box-shadow: 0 6px 15px rgba(36, 87, 214, .2);
+    font-size: 20px;
+}
+
+.brand-copy, .sidebar-brand > div:last-child { display: flex; flex-direction: column; gap: 2px; }
+.brand-name { color: #17233b; font-size: 18px; font-weight: 800; line-height: 1.15; letter-spacing: -.35px; }
+.brand-caption { color: #778399; font-size: 12px; line-height: 1.3; }
+.navbar-actions { display: flex; align-items: center; gap: 10px; }
+
+.menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: #2457d6;
+    background: #edf3ff;
+    border: 1px solid #dce7ff;
+    border-radius: 13px;
+    font-size: 19px;
+    transition: color .2s ease, background .2s ease, transform .2s ease;
+}
+.menu-toggle:hover { color: #fff; background: #2457d6; transform: translateY(-1px); }
+
+.version-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    color: #63718a;
+    background: #f4f6fa;
+    border: 1px solid #e5eaf2;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.queue-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 42px;
+    min-height: 38px;
+    padding: 7px 11px;
+    color: #8b5b00;
+    background: #fff5d8;
+    border: 1px solid #ffe5a0;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+.queue-badge:hover { background: #ffebad; transform: translateY(-1px); }
+
+.app-main { min-height: calc(100vh - 150px); padding-top: 28px; padding-bottom: 34px; }
+.app-footer { padding: 18px 0 94px; color: #778399; background: #fff; border-top: 1px solid #e9edf4; }
+.app-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.footer-brand { color: #53627a; font-size: 13px; font-weight: 750; }
+.footer-brand i { color: #2457d6; }
+.back-to-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    color: #2457d6;
+    background: #edf3ff;
+    border: 1px solid #dce7ff;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: background .2s ease, color .2s ease;
+}
+.back-to-top:hover { color: #fff; background: #2457d6; }
+
+.custom-offcanvas {
+    width: min(390px, 88vw) !important;
+    color: #17233b;
+    background: #fff;
+    border: 0;
+    border-radius: 0 20px 20px 0;
+    box-shadow: 16px 0 50px rgba(23, 35, 59, .14);
+}
+.sidebar-heading { padding: 20px; border-bottom: 1px solid #e9edf4; }
+.sidebar-brand { display: flex; align-items: center; gap: 12px; }
+.sidebar-brand .brand-mark { width: 40px; height: 40px; border-radius: 12px; font-size: 17px; }
+.sidebar-brand .offcanvas-title { color: #17233b; font-size: 17px; font-weight: 800; }
+.sidebar-brand span { color: #778399; font-size: 11px; }
+.custom-offcanvas .offcanvas-body { padding: 18px; }
+.custom-offcanvas .list-group { gap: 6px; }
+.custom-offcanvas .list-group-item {
+    padding: 0 !important;
+    overflow: hidden;
+    background: transparent;
+    border: 0;
+    border-radius: 11px;
+}
+.custom-offcanvas .list-group-item a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 13px 14px;
+    color: #43516a;
+    font-size: 14px;
+    font-weight: 600 !important;
+    transition: color .2s ease, background .2s ease;
+}
+.custom-offcanvas .list-group-item a:hover,
+.custom-offcanvas .list-group-item a.fw-bold {
+    color: #2457d6;
+    background: #edf3ff;
+}
+.custom-offcanvas .list-group-item a i { width: 20px; text-align: center; font-size: 16px; }
+.custom-offcanvas .alert { border-radius: 13px; }
+
+/* Карточки и диалоги в общей палитре */
+.queue-item { overflow: hidden; border: 1px solid #e5eaf2; border-radius: 13px; transition: border-color .2s ease, box-shadow .2s ease; }
+.queue-item:hover { border-color: #b9ccfa; box-shadow: 0 5px 16px rgba(36, 87, 214, .08); }
+.modal-content { overflow: hidden; border: 1px solid #e5eaf2; border-radius: 18px; box-shadow: 0 20px 60px rgba(23, 35, 59, .16); }
+.modal-header { padding: 18px 22px; background: #f8faff; border-bottom: 1px solid #e5eaf2; }
+.modal-title { color: #17233b; font-weight: 750; }
+.modal-body { padding: 22px; }
+.modal-footer { padding: 16px 22px; border-top: 1px solid #e5eaf2; }
+.btn-primary { background-color: #2457d6; border-color: #2457d6; }
+.btn-primary:hover { background-color: #173b91; border-color: #173b91; }
+
+@media (max-width: 575.98px) {
+    .app-navbar-inner { width: calc(100% - 24px); min-height: 66px; gap: 8px; }
+    .brand-mark { width: 40px; height: 40px; border-radius: 12px; font-size: 18px; }
+    .brand-name { font-size: 16px; }
+    .brand-caption { font-size: 10px; }
+    .navbar-actions { gap: 6px; }
+    .version-badge { display: none; }
+    .menu-toggle { width: 40px; height: 40px; }
+    .app-main { padding-top: 20px; }
+    .app-footer-inner { align-items: flex-start; flex-direction: column; }
+    .modal-body { padding: 16px; }
+    .modal-header { padding: 15px 17px; }
+    .modal-footer { padding: 13px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu-toggle, .queue-badge, .back-to-top, .custom-offcanvas .list-group-item a, .queue-item { transition: none; }
 }
 </style>

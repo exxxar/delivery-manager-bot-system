@@ -2,13 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agent;
 use App\Models\Percentage;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PercentageController extends Controller
 {
-   public function list(Request $request) {
+
+    public function index(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:agent,supplier',
+            'id' => 'required|integer',
+        ]);
+
+        $modelClass = $request->type === 'agent' ? Agent::class : Supplier::class;
+        $owner = $modelClass::findOrFail($request->id);
+
+        return response()->json([
+            'owner_type' => $request->type,
+            'owner_id' => $owner->id,
+            'owner_name' => $owner->name,
+            'percentages' => $owner->percentages()->with('user')->get(),
+            'total_percent' => $owner->total_percent,
+        ]);
+    }
+
+
+    public function list(Request $request) {
         $request->validate([
             "agent_id"=>"required"
         ]);
@@ -20,7 +43,7 @@ class PercentageController extends Controller
             ->get();
    }
 
-    public function remove(Request $request) {
+    /*public function remove(Request $request) {
         $data = $request->validate([
             'id' => 'nullable|exists:percentages,id',
             'agent_id' => 'required|exists:agents,id',
@@ -37,26 +60,49 @@ class PercentageController extends Controller
         $percentage->delete();
 
         return response()->noContent();
-    }
+    }*/
 
-    public function store(Request $request){
-        $data = $request->validate([
-            'id' => 'nullable|exists:percentages,id',
-            'agent_id' => 'required|exists:agents,id',
-            'user_id' => 'required|exists:users,id',
-            'percentage' => 'required|numeric',
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:agent,supplier',
+            'owner_id' => 'required|integer',
+            'user_id' => 'required|integer|exists:users,id',
+            'percentage' => 'required|numeric|min:0|max:100',
             'is_active' => 'boolean',
         ]);
 
-        if (!empty($data['id'])) {
-            // обновление
-            $percentage = Percentage::find($data['id']);
-            $percentage->update($data);
-        } else {
-            // создание
-            $percentage = Percentage::create($data);
-        }
+        $modelClass = $validated['type'] === 'agent' ? Agent::class : Supplier::class;
+        $owner = $modelClass::findOrFail($validated['owner_id']);
 
-        return response()->json($percentage);
+        $percentage = $owner->percentages()->create([
+            'user_id' => $validated['user_id'],
+            'percentage' => $validated['percentage'],
+            'is_active' => $validated['is_active'] ?? true,
+        ]);
+
+        return response()->json($percentage->load('user'), 201);
     }
+
+    /**
+     * Обновить процент
+     */
+    public function update(Request $request, Percentage $percentage)
+    {
+        $validated = $request->validate([
+            'percentage' => 'numeric|min:0|max:100',
+            'is_active' => 'boolean',
+        ]);
+
+        $percentage->update($validated);
+
+        return response()->json($percentage->fresh()->load('user'));
+    }
+
+    public function destroy(Percentage $percentage)
+    {
+        $percentage->delete();
+        return response()->json(null, 204);
+    }
+
 }

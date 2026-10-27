@@ -21,6 +21,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierRegisterPageController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserSettingsController;
 use App\Models\Agent;
 use App\Models\Sale;
 use App\Models\User;
@@ -291,6 +292,12 @@ Route::prefix("bot-api")
                 Route::post('/client-job', [ClientJobController::class, 'store']);
             });
 
+
+        Route::get('/user/font-settings', [UserSettingsController::class, 'getFontSettings']);
+        Route::post('/user/font-settings', [UserSettingsController::class, 'updateFontSettings']);
+        Route::post('/user/font-settings/reset', [UserSettingsController::class, 'resetFontSettings']);
+
+
         Route::prefix("agents")
             ->middleware(["tg.role:admin"])
             ->group(function () {
@@ -301,6 +308,8 @@ Route::prefix("bot-api")
                 Route::post('/percentage', [PercentageController::class, 'list']);
                 Route::post('/remove-percentage', [PercentageController::class, 'remove']);
                 Route::post('/store-percentage', [PercentageController::class, 'store']);
+
+
 
                 // Получить конкретного агента по ID
                 Route::get('/{id}', [AgentController::class, 'show']);
