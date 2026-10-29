@@ -241,7 +241,7 @@ function isStaticAsset(pathname) {
     return (
         pathname.startsWith('/build/assets/') ||
         pathname.startsWith('/icons/') ||
-        pathname.startsWith('/public/icons/') ||
+        pathname.startsWith('/icons/') ||
         pathname.startsWith('/themes/') ||
         pathname.endsWith('.css') ||
         pathname.endsWith('.js') ||

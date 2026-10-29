@@ -218,14 +218,27 @@ export default {
         openMyIncome() {
             const role = Number(this.user?.role);
 
+            let routeName = null;
+
             if (role === 2) {
-                this.$router.push({ name: 'supplier-my-income' });
-                return;
+                routeName = 'supplier-my-income';
+            } else if (role >= 1) {
+                routeName = 'admin-my-income';
             }
 
-            if (role >= 1) {
-                this.$router.push({ name: 'admin-my-income' });
+            if (!routeName) return;
+
+            // Закрываем боковое меню, если карточка находится внутри него
+            const sidebar = document.getElementById('sidebar-menu');
+
+            if (sidebar && window.bootstrap?.Offcanvas) {
+                window.bootstrap.Offcanvas
+                    .getOrCreateInstance(sidebar)
+                    .hide();
             }
+
+            // Переходим на страницу доходов
+            this.$router.push({ name: routeName });
         },
         openPasswordModal() {
             this.passwordError = '';

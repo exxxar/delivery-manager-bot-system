@@ -69,6 +69,7 @@ class AgentController extends Controller
         };
 
         $query = Agent::query()
+            ->with(['user:id,percent'])
             ->withCount(['sales as month_sales_count' => $salesQuery])
             ->withSum(['sales as month_turnover' => $salesQuery], 'total_price')
             ->having('month_sales_count', '>', 0)
@@ -84,6 +85,25 @@ class AgentController extends Controller
 
         $perPage = (int) $request->get('per_page', $request->size ?? 20);
         $agents = $query->paginate($perPage);
+
+        // Рассчитываем зарплату каждого агента за выбранный месяц
+        $agents->getCollection()->transform(function ($agent) {
+            $turnover = (float) ($agent->month_turnover ?? 0);
+
+            // Сначала берём персональный процент агента,
+            // если он не задан или равен 0 — процент пользователя.
+            $percent = (float) ($agent->percent ?? 0);
+
+            if ($percent <= 0) {
+                $percent = (float) ($agent->user?->percent ?? 0);
+            }
+
+            $agent->month_salary = round($turnover * $percent / 100, 2);
+
+            return $agent;
+        });
+
+
 
         // 🔹 4. СУММАРНАЯ СТАТИСТИКА (БЕЗ учета пагинации, как во втором методе)
         // Считаем общий оборот по всем агентам, удовлетворяющим условиям

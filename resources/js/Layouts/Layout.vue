@@ -15,13 +15,13 @@
     <header class="fixed-top-menu">
         <div class="app-navbar">
             <div class="app-navbar-inner">
-                <div class="brand-lockup" data-bs-toggle="modal" data-bs-target="#bot-info-modal">
+                <a href="/pwa#/" class="brand-lockup" style="text-decoration:none;">
                     <div class="brand-mark"><i class="fa-solid fa-percent"></i></div>
                     <div class="brand-copy">
                         <span class="brand-name">Мойпроцент</span>
                         <span class="brand-caption">Управление доставками</span>
                     </div>
-                </div>
+                </a>
 
                 <div class="navbar-actions">
                     <!-- Версия приложения -->
@@ -72,6 +72,15 @@
     <footer class="app-footer">
         <div class="container-lg app-footer-inner">
             <span class="footer-brand"><i class="fa-solid fa-percent me-2"></i>Мойпроцент</span>
+            <button
+                v-if="canInstallPwa"
+                type="button"
+                class="install-pwa-btn"
+                @click="installPwa"
+            >
+                <i class="fa-solid fa-mobile-screen-button"></i>
+                <span>Установить приложение</span>
+            </button>
             <button type="button" class="back-to-top" @click="scrollTop">
                 <i class="fa-solid fa-arrow-up"></i>
                 <span>Вернуться наверх</span>
@@ -449,6 +458,8 @@ export default {
                 forceUpdate: false,
             },
 
+            canInstallPwa: false,
+            deferredInstallPrompt: null,
             // 🔹 Stores
             userStore: useUsersStore(),
             salesStore: useSalesStore(),
@@ -497,8 +508,11 @@ export default {
 
     mounted() {
 
+
         startMonitoring();
 
+        window.addEventListener('beforeinstallprompt', this.handleInstallPrompt);
+        window.addEventListener('appinstalled', this.handleAppInstalled);
         // 🔹 Слушатели сети
         window.addEventListener('online', this.handleOnline);
         window.addEventListener('offline', this.handleOffline);
@@ -525,6 +539,9 @@ export default {
     },
 
     beforeUnmount() {
+
+        window.removeEventListener('beforeinstallprompt', this.handleInstallPrompt);
+        window.removeEventListener('appinstalled', this.handleAppInstalled);
         // 🔹 Очистка слушателей
         window.removeEventListener('online', this.handleOnline);
         window.removeEventListener('offline', this.handleOffline);
@@ -535,6 +552,38 @@ export default {
     },
 
     methods: {
+        handleInstallPrompt(event) {
+            // Отключаем стандартную подсказку браузера
+            event.preventDefault();
+
+            this.deferredInstallPrompt = event;
+            this.canInstallPwa = true;
+        },
+
+        async installPwa() {
+            if (!this.deferredInstallPrompt) {
+                this.alertStore.show(
+                    'Если установка недоступна, откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».',
+                    'warning'
+                );
+                return;
+            }
+
+            this.deferredInstallPrompt.prompt();
+
+            const { outcome } = await this.deferredInstallPrompt.userChoice;
+
+            if (outcome === 'accepted') {
+                this.canInstallPwa = false;
+            }
+
+            this.deferredInstallPrompt = null;
+        },
+
+        handleAppInstalled() {
+            this.canInstallPwa = false;
+            this.deferredInstallPrompt = null;
+        },
         // 🔹 Проверка версии и показ модалки обновления
         checkAndShowUpdateModal(newVersion) {
             const localVersion = getLocalVersion();
@@ -1029,5 +1078,81 @@ body.has-offline-banner .fixed-top-menu {
 
 @media (prefers-reduced-motion: reduce) {
     .menu-toggle, .queue-badge, .back-to-top, .custom-offcanvas .list-group-item a, .queue-item { transition: none; }
+}
+.install-pwa-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    padding: 11px 18px;
+
+    color: #fff;
+    background: linear-gradient(135deg, #3478f6 0%, #1746bd 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 13px;
+
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.1px;
+
+    box-shadow:
+        0 5px 14px rgba(36, 87, 214, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease,
+        filter .2s ease;
+
+    animation: install-pwa-glow 2.5s ease-in-out infinite;
+}
+
+.install-pwa-btn i {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    color: #2457d6;
+    background: #fff;
+    border-radius: 9px;
+    font-size: 15px;
+}
+
+.install-pwa-btn:hover {
+    color: #fff;
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 9px 24px rgba(36, 87, 214, 0.35);
+}
+
+.install-pwa-btn:active {
+    transform: translateY(0) scale(.98);
+}
+
+@keyframes install-pwa-glow {
+    0%, 100% {
+        box-shadow: 0 5px 14px rgba(36, 87, 214, 0.22);
+    }
+    50% {
+        box-shadow: 0 6px 22px rgba(36, 87, 214, 0.4);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .install-pwa-btn {
+        width: 100%;
+        min-height: 48px;
+        font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .install-pwa-btn {
+        animation: none;
+        transition: none;
+    }
 }
 </style>

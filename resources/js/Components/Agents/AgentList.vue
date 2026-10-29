@@ -69,7 +69,8 @@
         <ul class="list-group agent-cards">
             <li
                 v-for="agent in filteredAgents" :key="agent.id"
-                v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1,'bg-danger': !agent.registration_at}"
+                v-bind:class="{'border-primary': selection.indexOf(agent.id)!==-1
+          }"
                 class="list-group-item d-flex justify-content-between align-items-center agent-card">
                 <div>
                     <div class="fw-bold">
@@ -83,19 +84,34 @@
 
                     <!-- 🔹 Статистика для активных/неактивных -->
                     <template v-if="viewMode === 'active' && agent.month_sales_count">
-                        <div class="d-flex gap-2 mt-2">
-                        <span
-                            class="badge bg-success clickable-badge"
-                            @click.stop="openAgentSales(agent)"
-                            :title="`Посмотреть сделки агента за ${selectedMonth}`"
-                        >
-                            <i class="fa-solid fa-receipt me-1"></i>
-                            {{ agent.month_sales_count }} сделок
-                            <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
-                        </span>
-                            <span class="badge bg-info text-dark">
-                            <i class="fa-solid fa-money-bill-trend-up me-1"></i> {{ formatMoney(agent.month_turnover) }}
-                        </span>
+                        <!-- Первый ряд: сделки и товарооборот -->
+                        <div class="agent-stats-row mt-2">
+                            <span
+                                class="badge bg-success clickable-badge"
+                                @click.stop="openAgentSales(agent)"
+                                :title="`Посмотреть сделки агента за ${selectedMonth}`"
+                            >
+                                <i class="fa-solid fa-receipt me-1"></i>
+                                {{ agent.month_sales_count }} сделок
+                                <i
+                                    class="fa-solid fa-arrow-up-right-from-square ms-1"
+                                    style="font-size: 10px;"
+                                ></i>
+                            </span>
+
+                                                <span class="badge bg-info text-dark">
+                                <i class="fa-solid fa-money-bill-trend-up me-1"></i>
+                                 {{ formatMoney(agent.month_turnover) }}
+                            </span>
+                        </div>
+
+                        <!-- Второй ряд: зарплата -->
+                        <div class="agent-salary-row">
+                            <span class="badge agent-salary-badge">
+                                <i class="fa-solid fa-wallet me-1"></i>
+                                ЗП: {{ formatMoney(agent.month_salary) }}
+                            </span>
+
                         </div>
                     </template>
 
@@ -178,7 +194,7 @@
                                     <i class="fa-solid fa-wallet"></i>
                                 </span>
 
-                                                            <span>
+                                <span>
                                     <strong>Зарплата за месяц</strong>
                                     <small>Начисления, проценты и список сделок</small>
                                 </span>
@@ -1169,5 +1185,32 @@ export default {
     .agent-list-redesign .modal-body {
         padding: 16px;
     }
+}
+
+.agent-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+}
+
+.agent-salary-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.agent-salary-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 10px;
+    color: #087443;
+    background: #eafaf1;
+    border: 1px solid #c8efd8;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
 }
 </style>
