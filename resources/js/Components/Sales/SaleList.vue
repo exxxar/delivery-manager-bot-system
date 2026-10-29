@@ -829,7 +829,11 @@ export default {
             return this.userStore.self || null
         },
         filteredSales() {
-            return this.salesStore.items.filter(s => s.title.toLowerCase().includes(this.search.toLowerCase()))
+            const query = this.search.trim().toLowerCase();
+
+            return this.salesStore.items.filter(s =>
+                String(s.title ?? '').toLowerCase().includes(query)
+            );
         },
         filteredBadSales() {
             return this.salesStore.bad_items ?? []

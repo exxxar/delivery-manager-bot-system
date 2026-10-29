@@ -1,18 +1,25 @@
+
 <template>
     <form class="payment-confirm-form" @submit.prevent="onSubmit">
         <div class="payment-form-header">
             <div class="payment-form-icon" aria-hidden="true">
                 <i class="fa-solid fa-receipt"></i>
             </div>
+
             <div class="payment-form-heading">
                 <p class="payment-form-eyebrow">Подтверждение сделки</p>
                 <h5 class="payment-form-title">Подтверждение оплаты</h5>
-                <p class="payment-form-subtitle">Укажите способ оплаты и приложите чек, если он доступен.</p>
+                <p class="payment-form-subtitle">
+                    Укажите способ оплаты и приложите чек, если он доступен.
+                </p>
             </div>
         </div>
 
         <div class="deal-number">
-            <span class="deal-number-label"><i class="fa-solid fa-hashtag"></i> Номер сделки</span>
+            <span class="deal-number-label">
+                <i class="fa-solid fa-hashtag"></i>
+                Номер сделки
+            </span>
             <strong>{{ localForm.id || 'Номер сделки не найден' }}</strong>
         </div>
 
@@ -21,24 +28,36 @@
                 <i class="fa-solid fa-wallet"></i>
                 Тип оплаты
             </label>
+
             <div class="select-wrap">
                 <select
                     id="payment-type"
                     v-model="localForm.payment_type"
                     class="form-select payment-select"
                     aria-label="Тип оплаты"
+                    @change="syncToParent"
                 >
-                    <option :value="'0'">Наличный расчёт</option>
-                    <option :value="'1'">Безналичный расчёт</option>
+                    <option value="0">Наличный расчёт</option>
+                    <option value="1">Безналичный расчёт</option>
                 </select>
-                <i class="fa-solid fa-chevron-down select-chevron" aria-hidden="true"></i>
+
+                <i
+                    class="fa-solid fa-chevron-down select-chevron"
+                    aria-hidden="true"
+                ></i>
             </div>
         </div>
 
-        <transition name="payment-fields">
-            <div v-if="localForm.payment_type === '1'" class="receipt-section">
+        <Transition name="payment-fields">
+            <div
+                v-if="localForm.payment_type === '1'"
+                class="receipt-section"
+            >
                 <div class="section-heading">
-                    <div class="section-heading-icon"><i class="fa-solid fa-file-invoice"></i></div>
+                    <div class="section-heading-icon">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+
                     <div>
                         <h6>Фотография чека</h6>
                         <p>Прикрепите изображение или PDF-файл</p>
@@ -48,44 +67,77 @@
                 <label class="file-upload" for="payment-receipt">
                     <input
                         id="payment-receipt"
+                        ref="receiptInput"
                         type="file"
                         class="file-input"
                         accept=".jpg,.jpeg,.png,.pdf"
                         :required="!localForm.receipt_is_lost"
                         @change="handleFile"
                     />
-                    <span class="file-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+
+                    <span class="file-upload-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </span>
+
                     <span class="file-upload-copy">
-            <strong>{{ selectedFileName || 'Выберите файл чека' }}</strong>
-            <small>JPG, PNG или PDF</small>
-          </span>
+                        <strong>
+                            {{ selectedFileName || 'Выберите файл чека' }}
+                        </strong>
+                        <small>JPG, PNG или PDF</small>
+                    </span>
+
                     <span class="file-upload-action">Обзор</span>
                 </label>
 
                 <label class="receipt-lost-option" for="receipt-is-lost">
-          <span class="receipt-lost-check">
-            <input
-                id="receipt-is-lost"
-                v-model="localForm.receipt_is_lost"
-                class="form-check-input"
-                type="checkbox"
-                role="switch"
-            />
-          </span>
+                    <span class="receipt-lost-check">
+                        <input
+                            id="receipt-is-lost"
+                            v-model="localForm.receipt_is_lost"
+                            class="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            @change="syncToParent"
+                        />
+                    </span>
+
                     <span class="receipt-lost-copy">
-            <strong>Чек был утрачен</strong>
-            <small>Если чек отсутствует, отметьте этот пункт</small>
-          </span>
+                        <strong>Чек был утрачен</strong>
+                        <small>
+                            Если чек отсутствует, отметьте этот пункт
+                        </small>
+                    </span>
                 </label>
             </div>
-        </transition>
+        </Transition>
 
-        <button type="submit" class="confirm-button">
-            <i class="fa-solid fa-check-circle" aria-hidden="true"></i>
-            <span>Подтвердить оплату</span>
-            <i class="fa-solid fa-arrow-right confirm-arrow" aria-hidden="true"></i>
+        <button
+            type="submit"
+            class="confirm-button"
+            :disabled="submitting"
+        >
+            <i
+                :class="submitting
+                    ? 'fa-solid fa-spinner fa-spin'
+                    : 'fa-solid fa-check-circle'"
+                aria-hidden="true"
+            ></i>
+
+            <span>
+                {{ submitting ? 'Обработка...' : 'Подтвердить оплату' }}
+            </span>
+
+            <i
+                v-if="!submitting"
+                class="fa-solid fa-arrow-right confirm-arrow"
+                aria-hidden="true"
+            ></i>
         </button>
-        <p class="form-footnote"><i class="fa-solid fa-lock" aria-hidden="true"></i> Проверьте данные перед подтверждением.</p>
+
+        <p class="form-footnote">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            Проверьте данные перед подтверждением.
+        </p>
     </form>
 </template>
 
@@ -97,41 +149,83 @@ export default {
         modelValue: {
             type: Object,
             required: true
+        },
+        submitting: {
+            type: Boolean,
+            default: false
         }
     },
 
+    emits: ["update:modelValue", "submit"],
+
     data() {
         return {
-            localForm: { ...this.modelValue },
-            selectedFileName: ""
+            localForm: this.normalizeForm(this.modelValue),
+            selectedFileName: this.modelValue.file?.name || ""
         };
     },
 
     watch: {
         modelValue: {
-            deep: true,
             handler(newVal) {
-                this.localForm = { ...newVal };
-                if (!newVal.file) this.selectedFileName = "";
-            }
-        },
-        localForm: {
-            deep: true,
-            handler(newVal) {
-                this.$emit("update:modelValue", newVal);
+                // Не перезаписываем форму, если родитель передал
+                // тот же объект с теми же значениями.
+                if (this.formsEqual(this.localForm, newVal)) {
+                    return;
+                }
+
+                this.localForm = this.normalizeForm(newVal);
+                this.selectedFileName = newVal.file?.name || "";
             }
         }
     },
 
     methods: {
+        normalizeForm(form = {}) {
+            return {
+                ...form,
+                payment_type: String(form.payment_type ?? "0"),
+                receipt_is_lost: Boolean(form.receipt_is_lost),
+                file: form.file ?? null
+            };
+        },
+
+        formsEqual(a, b) {
+            if (!a || !b) return false;
+
+            return (
+                a.id === b.id &&
+                String(a.payment_type ?? "0") ===
+                String(b.payment_type ?? "0") &&
+                Boolean(a.receipt_is_lost) ===
+                Boolean(b.receipt_is_lost) &&
+                a.file === (b.file ?? null)
+            );
+        },
+
+        syncToParent() {
+            this.$emit("update:modelValue", {
+                ...this.localForm
+            });
+        },
+
         handleFile(event) {
-            const file = event.target.files && event.target.files[0];
-            this.localForm.file = file || null;
-            this.selectedFileName = file ? file.name : "";
+            const file = event.target.files?.[0] || null;
+
+            this.localForm.file = file;
+            this.selectedFileName = file?.name || "";
+
+            this.syncToParent();
         },
 
         onSubmit() {
-            this.$emit("submit", this.localForm);
+            if (this.submitting) return;
+
+            this.syncToParent();
+
+            this.$emit("submit", {
+                ...this.localForm
+            });
         }
     }
 };
@@ -144,6 +238,7 @@ export default {
     --payment-ink: #17233d;
     --payment-muted: #77839a;
     --payment-border: #e1e7f0;
+
     width: 100%;
     padding: clamp(18px, 4vw, 28px);
     color: var(--payment-ink);
@@ -176,7 +271,10 @@ export default {
     font-size: 21px;
 }
 
-.payment-form-heading { min-width: 0; }
+.payment-form-heading {
+    min-width: 0;
+}
+
 .payment-form-eyebrow {
     margin: 0 0 4px;
     color: var(--payment-blue);
@@ -185,6 +283,7 @@ export default {
     letter-spacing: .09em;
     text-transform: uppercase;
 }
+
 .payment-form-title {
     margin: 0;
     color: var(--payment-ink);
@@ -192,6 +291,7 @@ export default {
     font-weight: 800;
     letter-spacing: -.025em;
 }
+
 .payment-form-subtitle {
     margin: 6px 0 0;
     color: var(--payment-muted);
@@ -210,6 +310,7 @@ export default {
     border: 1px solid #e9edf5;
     border-radius: 13px;
 }
+
 .deal-number-label {
     display: inline-flex;
     align-items: center;
@@ -218,7 +319,11 @@ export default {
     font-size: 13px;
     font-weight: 600;
 }
-.deal-number-label i { color: var(--payment-blue); }
+
+.deal-number-label i {
+    color: var(--payment-blue);
+}
+
 .deal-number strong {
     color: var(--payment-ink);
     font-size: 14px;
@@ -227,7 +332,10 @@ export default {
     overflow-wrap: anywhere;
 }
 
-.form-section { margin-bottom: 22px; }
+.form-section {
+    margin-bottom: 22px;
+}
+
 .field-label {
     display: flex;
     align-items: center;
@@ -237,8 +345,15 @@ export default {
     font-size: 13px;
     font-weight: 750;
 }
-.field-label i { color: var(--payment-blue); }
-.select-wrap { position: relative; }
+
+.field-label i {
+    color: var(--payment-blue);
+}
+
+.select-wrap {
+    position: relative;
+}
+
 .payment-select {
     min-height: 52px;
     padding: 12px 44px 12px 14px;
@@ -251,10 +366,12 @@ export default {
     font-weight: 600;
     appearance: none;
 }
+
 .payment-select:focus {
     border-color: #7ca1ff;
     box-shadow: 0 0 0 4px rgba(36, 87, 214, .1);
 }
+
 .select-chevron {
     position: absolute;
     top: 50%;
@@ -272,24 +389,28 @@ export default {
     border: 1px solid #e7edf7;
     border-radius: 16px;
 }
+
 .section-heading {
     display: flex;
     align-items: center;
     gap: 11px;
     margin-bottom: 15px;
 }
+
 .section-heading-icon {
     width: 40px;
     height: 40px;
     border-radius: 12px;
     font-size: 16px;
 }
+
 .section-heading h6 {
     margin: 0 0 3px;
     color: var(--payment-ink);
     font-size: 14px;
     font-weight: 800;
 }
+
 .section-heading p {
     margin: 0;
     color: var(--payment-muted);
@@ -309,10 +430,12 @@ export default {
     cursor: pointer;
     transition: border-color .2s ease, background-color .2s ease;
 }
+
 .file-upload:hover {
     background: #f6f9ff;
     border-color: var(--payment-blue);
 }
+
 .file-input {
     position: absolute;
     width: 1px;
@@ -322,7 +445,7 @@ export default {
     white-space: nowrap;
     clip-path: inset(50%);
 }
-.file-input:focus-visible + .file-upload-icon { outline: 3px solid rgba(36, 87, 214, .25); }
+
 .file-upload-icon {
     display: grid;
     flex: 0 0 auto;
@@ -334,6 +457,7 @@ export default {
     border-radius: 12px;
     font-size: 18px;
 }
+
 .file-upload-copy {
     display: flex;
     flex: 1 1 auto;
@@ -341,6 +465,7 @@ export default {
     gap: 4px;
     min-width: 0;
 }
+
 .file-upload-copy strong {
     overflow: hidden;
     color: #263550;
@@ -349,7 +474,12 @@ export default {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.file-upload-copy small { color: var(--payment-muted); font-size: 11px; }
+
+.file-upload-copy small {
+    color: var(--payment-muted);
+    font-size: 11px;
+}
+
 .file-upload-action {
     flex: 0 0 auto;
     padding: 7px 10px;
@@ -371,20 +501,41 @@ export default {
     border-radius: 12px;
     cursor: pointer;
 }
-.receipt-lost-check { display: flex; align-items: center; }
+
+.receipt-lost-check {
+    display: flex;
+    align-items: center;
+}
+
 .receipt-lost-check .form-check-input {
     width: 2.2em;
     height: 1.2em;
     margin: 0;
     cursor: pointer;
 }
+
 .receipt-lost-check .form-check-input:checked {
     background-color: var(--payment-blue);
     border-color: var(--payment-blue);
 }
-.receipt-lost-copy { display: flex; flex-direction: column; gap: 3px; }
-.receipt-lost-copy strong { color: #35425a; font-size: 13px; font-weight: 750; }
-.receipt-lost-copy small { color: var(--payment-muted); font-size: 11px; line-height: 1.4; }
+
+.receipt-lost-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.receipt-lost-copy strong {
+    color: #35425a;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.receipt-lost-copy small {
+    color: var(--payment-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
 
 .confirm-button {
     display: flex;
@@ -404,14 +555,32 @@ export default {
     cursor: pointer;
     transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
-.confirm-button:hover {
+
+.confirm-button:hover:not(:disabled) {
     filter: brightness(1.04);
     box-shadow: 0 11px 22px rgba(36, 87, 214, .28);
     transform: translateY(-1px);
 }
-.confirm-button:active { transform: translateY(0); }
-.confirm-button:focus-visible { outline: 3px solid rgba(36, 87, 214, .3); outline-offset: 3px; }
-.confirm-arrow { margin-left: auto; opacity: .85; }
+
+.confirm-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.confirm-button:focus-visible {
+    outline: 3px solid rgba(36, 87, 214, .3);
+    outline-offset: 3px;
+}
+
+.confirm-button:disabled {
+    cursor: wait;
+    opacity: .7;
+}
+
+.confirm-arrow {
+    margin-left: auto;
+    opacity: .85;
+}
+
 .form-footnote {
     display: flex;
     align-items: center;
@@ -422,28 +591,74 @@ export default {
     font-size: 11px;
     text-align: center;
 }
-.form-footnote i { color: #4e9b78; }
+
+.form-footnote i {
+    color: #4e9b78;
+}
 
 .payment-fields-enter-active,
-.payment-fields-leave-active { transition: opacity .18s ease, transform .18s ease; }
+.payment-fields-leave-active {
+    transition: opacity .18s ease, transform .18s ease;
+}
+
 .payment-fields-enter-from,
-.payment-fields-leave-to { opacity: 0; transform: translateY(-6px); }
+.payment-fields-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
+}
 
 @media (max-width: 480px) {
-    .payment-confirm-form { padding: 17px; border-radius: 18px; }
-    .payment-form-header { gap: 11px; }
-    .payment-form-icon { width: 44px; height: 44px; border-radius: 13px; font-size: 18px; }
-    .deal-number { align-items: flex-start; flex-direction: column; gap: 7px; }
-    .deal-number strong { text-align: left; }
-    .receipt-section { padding: 13px; }
-    .file-upload { gap: 9px; padding: 10px; }
-    .file-upload-icon { width: 36px; height: 36px; }
-    .file-upload-action { padding: 7px 8px; }
+    .payment-confirm-form {
+        padding: 17px;
+        border-radius: 18px;
+    }
+
+    .payment-form-header {
+        gap: 11px;
+    }
+
+    .payment-form-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        font-size: 18px;
+    }
+
+    .deal-number {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .deal-number strong {
+        text-align: left;
+    }
+
+    .receipt-section {
+        padding: 13px;
+    }
+
+    .file-upload {
+        gap: 9px;
+        padding: 10px;
+    }
+
+    .file-upload-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .file-upload-action {
+        padding: 7px 8px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .payment-confirm-form *,
     .payment-confirm-form *::before,
-    .payment-confirm-form *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    .payment-confirm-form *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
 }
 </style>

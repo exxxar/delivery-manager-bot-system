@@ -163,7 +163,7 @@ class ProductController extends Controller
         $user = $request->botUser ?? null;
 
         if (is_null($user))
-            throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, "Пользователь не авторизован");
+            throw new HttpException(403, "Пользователь не авторизован");
 
         $exportService = app(\App\Services\ExportService::class);
 
