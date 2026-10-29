@@ -8,9 +8,9 @@ use App\Models\Supplier;
 use App\Models\SupplierInviteToken;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class SupplierInviteController extends Controller
 {
@@ -21,7 +21,7 @@ class SupplierInviteController extends Controller
     {
         $botUser = $request->botUser;
 
-        if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+        if (!$botUser || $botUser->role < RoleEnum::SUPERADMIN->value) {
             return response()->json(['message' => 'Недостаточно прав'], 403);
         }
 
@@ -51,7 +51,7 @@ class SupplierInviteController extends Controller
     {
         $botUser = $request->botUser;
 
-        if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+        if (!$botUser || $botUser->role < RoleEnum::SUPERADMIN->value) {
             return response()->json(['message' => 'Недостаточно прав'], 403);
         }
 
@@ -79,7 +79,7 @@ class SupplierInviteController extends Controller
     {
         $botUser = $request->botUser;
 
-        if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+        if (!$botUser || $botUser->role < RoleEnum::SUPERADMIN->value) {
             return response()->json(['message' => 'Недостаточно прав'], 403);
         }
 
@@ -143,9 +143,8 @@ class SupplierInviteController extends Controller
         ]);
     }
 
-    /**
-     * ПУБЛИЧНЫЙ: Регистрация поставщика по токену
-     */
+
+
     public function register(Request $request, string $token)
     {
         $inviteToken = SupplierInviteToken::where('token', $token)->first();
@@ -163,30 +162,23 @@ class SupplierInviteController extends Controller
             'address' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'birthday' => 'nullable|date',
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'confirmed',
-
-            ],
-            'password_confirmation' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
         ], [
             'name.required' => 'Введите наименование поставщика',
             'phone.required' => 'Введите телефон',
             'phone.unique' => 'Поставщик с таким телефоном уже зарегистрирован',
             'email.email' => 'Введите корректный email',
+            'password.required' => 'Введите пароль',
             'password.min' => 'Пароль должен содержать минимум 8 символов',
-            'password.regex' => 'Пароль должен содержать заглавные, строчные буквы и цифры',
             'password.confirmed' => 'Пароли не совпадают',
             'birthday.date' => 'Некорректная дата рождения',
         ]);
 
-        return DB::transaction(function () use ($validated, $inviteToken) {
-            // 1. Создаём пользователя с ролью "Поставщик"
+        return DB::transaction(function () use ($validated, $inviteToken, $request) {
+            // 1. Создаём пользователя
             $user = User::create([
                 'name' => $validated['name'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'phone' => $validated['phone'],
                 'role' => RoleEnum::SUPPLIER->value,
                 'telegram_chat_id' => null,
@@ -203,11 +195,15 @@ class SupplierInviteController extends Controller
                 'address' => $validated['address'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'birthday' => $validated['birthday'] ?? null,
-                'percent' => 8, // значение по умолчанию из оригинального контроллера
+                'percent' => 8,
             ]);
 
             // 3. Помечаем токен как использованный
             $inviteToken->markAsUsed($user->id);
+
+            // 🔹 4. АВТОЛОГИН: авторизуем пользователя сразу после регистрации
+            Auth::login($user);
+            $request->session()->regenerate();
 
             UserLog::logSuper(
                 "#регистрация_поставщика\n" .
@@ -215,15 +211,16 @@ class SupplierInviteController extends Controller
                 "• <b>Наименование:</b> {$validated['name']}\n" .
                 "• <b>Телефон:</b> {$validated['phone']}\n" .
                 "• <b>Email:</b> " . ($validated['email'] ?? '-') . "\n" .
-                "• <b>Адрес:</b> " . ($validated['address'] ?? '-') . "\n" .
                 "• <b>User ID:</b> {$user->id}\n" .
-                "• <b>Supplier ID:</b> {$supplier->id}"
+                "• <b>Supplier ID:</b> {$supplier->id}\n" .
+                "• <b>Автовход выполнен</b>"
             );
 
             return response()->json([
-                'message' => 'Регистрация прошла успешно! Теперь вы можете войти в систему.',
+                'message' => 'Регистрация прошла успешно! Выполняется вход в систему...',
                 'user_id' => $user->id,
                 'supplier_id' => $supplier->id,
+                'auto_login' => true, // 🔹 флаг для фронта
             ]);
         });
     }

@@ -1,5 +1,5 @@
 <template>
-    <section class="percentage-manager">
+    <section v-if="isSupportedOwner" class="percentage-manager">
         <header class="manager-header">
             <div class="heading-content">
                 <div class="heading-icon"><i class="fa-solid fa-percent"></i></div>
@@ -29,7 +29,7 @@
                         <label class="field-label" for="percentage-user">Получатель процента</label>
                         <select id="percentage-user" v-model="newPercentage.user_id" class="form-select modern-control">
                             <option :value="null" disabled>Выберите пользователя</option>
-                            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
+                            <option v-for="u in adminUsers" :key="u.id" :value="u.id">{{ u.name }}</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-3">
@@ -171,6 +171,15 @@ export default {
         }
     },
     computed: {
+        // Доли распределяются только между администраторами.
+        // role: 1 — администратор, 3 — старший администратор, 4 — суперадмин.
+        adminUsers() {
+            return this.users.filter(user => [1, 3, 4].includes(Number(user.role)))
+        },
+        // Компонент предназначен для владельцев типа agent или supplier.
+        isSupportedOwner() {
+            return ['agent', 'supplier'].includes(this.ownerType)
+        },
         totalPercent() {
             return this.percentages
                 .filter(p => p.is_active)

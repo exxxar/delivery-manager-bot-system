@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\AgentSalaryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\CustomerController;
@@ -10,12 +11,14 @@ use App\Http\Controllers\Forms\AdminJobController;
 use App\Http\Controllers\Forms\AgentJobController;
 use App\Http\Controllers\Forms\ClientJobController;
 use App\Http\Controllers\Forms\SupplierJobController;
+use App\Http\Controllers\MyIncomeController;
 use App\Http\Controllers\PercentageController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierInviteController;
+use App\Http\Controllers\SupplierSalaryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserSettingsController;
 use Illuminate\Http\Request;
@@ -36,8 +39,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+
+
 Route::get('/version', [\App\Http\Controllers\VersionController::class, 'check']);
 
+Route::post('/auth/change-password',
+    [AuthController::class, 'changePassword']
+);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
@@ -63,6 +71,17 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
 Route::middleware(['auth:sanctum','bot.user'])->group(function(){
+
+    Route::get('/my-income', [MyIncomeController::class, 'index'])
+        ->name('my-income.index');
+
+    Route::get('/suppliers/{supplierId}/salary', [SupplierSalaryController::class, 'show'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.salary.show');
+
+    Route::get('/agents/{agentId}/salary', [AgentSalaryController::class, 'show'])
+        ->whereNumber('agentId')
+        ->name('agents.salary.show');
 
     Route::prefix('admin-invite')->group(function () {
         Route::get('/current', [AdminInviteController::class, 'getCurrent']);

@@ -10,7 +10,7 @@ import ProductCategoryForm from "@/Components/ProductCategory/ProductCategoryFor
 import BackBtn from "@/Components/BackBtn.vue";
 </script>
 <template>
-    <div class="container-fluid py-0 px-0">
+    <div class="container-fluid">
         <template v-if="tab==='menu'">
             <BackBtn/>
             <MenuProducts v-on:select="selectMenu"></MenuProducts>

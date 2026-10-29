@@ -159,14 +159,19 @@ export default {
     --sale-border: #e5eaf2;
     position: relative;
     width: 100%;
-    padding: 18px;
     overflow: visible;
     color: var(--sale-text);
-    background: #fff;
-    border: 1px solid var(--sale-border);
+
     border-radius: 18px;
-    box-shadow: 0 5px 18px rgba(25, 45, 82, .055);
+
     transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+
+
 }
 
 .sale-card:hover {

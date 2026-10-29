@@ -252,9 +252,10 @@ export default {
     min-height: 100vh;
     padding-bottom: 112px;
     color: var(--sales-ink);
-    background:
+   /* background:
         radial-gradient(ellipse at 85% 0%, rgba(37, 99, 235, .07), transparent 34rem),
-        var(--sales-bg);
+        var(--sales-bg);*/
+    background: transparent;
 }
 
 .sales-page *,

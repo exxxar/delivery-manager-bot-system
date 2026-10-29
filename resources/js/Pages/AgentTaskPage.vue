@@ -3,7 +3,7 @@ import SaleList from "@/Components/Sales/SaleList.vue";
 import AgentForm from "@/Components/Agents/AgentForm.vue";
 </script>
 <template>
-    <div class="container-fluid py-0 px-0">
+    <div class="container-fluid">
         <SaleList
             v-if="user"
             :agent-id="user.id"></SaleList>

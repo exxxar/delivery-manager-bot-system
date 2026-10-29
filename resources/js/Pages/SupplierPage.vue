@@ -5,7 +5,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 </script>
 
 <template>
-    <div class="suppliers-page container-fluid px-3 px-md-4 py-3 pb-5">
+    <div class="suppliers-page container-fluid ">
         <div class="suppliers-topbar">
             <BackBtn />
             <span class="page-kicker">СПРАВОЧНИК</span>

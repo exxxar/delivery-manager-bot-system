@@ -26,6 +26,43 @@ const routes = [
         name: 'AuthPage',
         component: AuthPage,
     },
+// Добавить объект в массив routes существующего Vue Router.
+    {
+        path: '/suppliers/:supplierId/salary',
+        name: 'supplier-salary',
+        component: () => import('../Pages/SupplierMonthlySalary.vue'),
+        props: route => ({ supplierId: Number(route.params.supplierId) }),
+        meta: {
+            requiresAuth: true,
+            title: 'Доход поставщика',
+        },
+    },
+    {
+        path: '/admin/my-income',
+        name: 'admin-my-income',
+        component: () => import('../Pages/AdminMyIncome.vue'),
+        meta: { requiresAuth: true, title: 'Мой доход' },
+    },
+    {
+        path: '/supplier/my-income',
+        name: 'supplier-my-income',
+        component: () => import('../Pages/SupplierMyIncome.vue'),
+        meta: { requiresAuth: true, title: 'Мой доход' },
+    },
+
+    {
+        path: '/agents/:agentId/salary',
+        name: 'agent-salary',
+        component: () => import('../Pages/AdminMonthlySalary.vue'),
+        props: route => ({
+            agentId: Number(route.params.agentId)
+        }),
+        meta: {
+            requiresAuth: true,
+            title: 'Зарплата администратора'
+        }
+    },
+
     {
         path: '/reports',
         name: 'ReportsPage',

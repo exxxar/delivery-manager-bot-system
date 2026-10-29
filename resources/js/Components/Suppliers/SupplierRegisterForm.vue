@@ -1,5 +1,3 @@
-<!-- @/Components/Suppliers/SupplierRegisterForm.vue -->
-
 <template>
     <div class="register-wrapper position-relative min-vh-100 py-5">
         <!-- Декоративные круги -->
@@ -96,7 +94,6 @@
                                         class="form-control"
                                         id="name"
                                         v-model="form.name"
-
                                         required
                                         :disabled="submitting"
                                     />
@@ -113,7 +110,6 @@
                                         class="form-control"
                                         id="phone"
                                         v-model="form.phone"
-
                                         required
                                         :disabled="submitting"
                                     />
@@ -130,7 +126,6 @@
                                         class="form-control"
                                         id="email"
                                         v-model="form.email"
-
                                         :disabled="submitting"
                                     />
                                     <label for="email">Email (необязательно)</label>
@@ -146,7 +141,6 @@
                                         class="form-control"
                                         id="address"
                                         v-model="form.address"
-
                                         :disabled="submitting"
                                     />
                                     <label for="address">Адрес (необязательно)</label>
@@ -177,7 +171,6 @@
                                         class="form-control textarea-custom"
                                         id="description"
                                         v-model="form.description"
-
                                         rows="3"
                                         :disabled="submitting"
                                     ></textarea>
@@ -194,12 +187,10 @@
                                         class="form-control pe-5"
                                         id="password"
                                         v-model="form.password"
-
                                         required
                                         :disabled="submitting"
-                                        @input="checkPasswordStrength"
                                     />
-                                    <label for="password">Пароль</label>
+                                    <label for="password">Пароль (минимум 8 символов)</label>
                                     <button
                                         type="button"
                                         class="password-toggle"
@@ -211,29 +202,11 @@
                                     </button>
                                 </div>
 
-                                <!-- Индикатор силы пароля -->
-                                <Transition name="fade">
-                                    <div v-if="form.password" class="password-strength mb-3">
-                                        <div class="strength-bars d-flex gap-1 mb-1">
-                                            <div
-                                                v-for="i in 4"
-                                                :key="i"
-                                                class="strength-bar flex-fill"
-                                                :class="{
-                                                    'active': passwordStrength >= i,
-                                                    'weak': passwordStrength === 1 && i <= 1,
-                                                    'fair': passwordStrength === 2 && i <= 2,
-                                                    'good': passwordStrength === 3 && i <= 3,
-                                                    'strong': passwordStrength === 4 && i <= 4,
-                                                }"
-                                            ></div>
-                                        </div>
-                                        <small class="strength-label" :class="strengthClass">
-                                            <i :class="strengthIcon" class="me-1"></i>
-                                            {{ strengthLabel }}
-                                        </small>
-                                    </div>
-                                </Transition>
+                                <!-- Подсказка по паролю -->
+                                <div v-if="form.password && form.password.length < 8" class="small text-warning mb-3">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                    Пароль должен содержать минимум 8 символов
+                                </div>
 
                                 <!-- Подтверждение пароля -->
                                 <div class="form-floating-custom mb-4">
@@ -245,7 +218,6 @@
                                         class="form-control pe-5"
                                         id="password_confirmation"
                                         v-model="form.password_confirmation"
-
                                         required
                                         :disabled="submitting"
                                     />
@@ -264,11 +236,19 @@
                                     </div>
                                 </div>
 
+                                <!-- Ошибки валидации с сервера -->
+                                <div v-if="serverErrors.length > 0" class="alert alert-danger small mb-3">
+                                    <div v-for="(error, idx) in serverErrors" :key="idx" class="mb-1">
+                                        <i class="fa-solid fa-circle-xmark me-1"></i>
+                                        {{ error }}
+                                    </div>
+                                </div>
+
                                 <!-- Кнопка -->
                                 <button
                                     type="submit"
                                     class="btn btn-success btn-lg w-100 rounded-3 submit-btn"
-                                    :disabled="submitting"
+                                    :disabled="submitting || !isFormValid"
                                 >
                                     <span v-if="submitting" class="d-flex align-items-center justify-content-center">
                                         <span class="spinner-border spinner-border-sm me-2"></span>
@@ -300,7 +280,6 @@
 <script>
 import { makeAxiosFactory } from '@/stores/utillites/makeAxiosFactory'
 import { useAlertStore } from '@/stores/utillites/useAlertStore'
-import axios from "axios";
 
 export default {
     name: 'SupplierRegisterForm',
@@ -319,7 +298,7 @@ export default {
             registered: false,
             showPassword: false,
             showConfirmPassword: false,
-            passwordStrength: 0,
+            serverErrors: [],
             form: {
                 name: '',
                 phone: '',
@@ -337,27 +316,19 @@ export default {
             if (!this.form.password || !this.form.password_confirmation) return false
             return this.form.password === this.form.password_confirmation
         },
-        strengthLabel() {
-            const labels = ['', 'Очень слабый', 'Слабый', 'Хороший', 'Надёжный']
-            return labels[this.passwordStrength] || ''
-        },
-        strengthClass() {
-            const classes = ['', 'text-danger', 'text-warning', 'text-info', 'text-success']
-            return classes[this.passwordStrength] || ''
-        },
-        strengthIcon() {
-            const icons = [
-                '',
-                'fa-solid fa-triangle-exclamation',
-                'fa-solid fa-triangle-exclamation',
-                'fa-solid fa-shield',
-                'fa-solid fa-shield-halved'
-            ]
-            return icons[this.passwordStrength] || ''
-        },
         todayDate() {
             const now = new Date()
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        },
+        // 🔹 Простая валидация формы
+        isFormValid() {
+            return (
+                this.form.name.trim().length > 0 &&
+                this.form.phone.trim().length > 0 &&
+                this.form.password.length >= 8 &&
+                this.passwordsMatch &&
+                (!this.form.email.trim() || /\S+@\S+\.\S+/.test(this.form.email))
+            )
         },
     },
     mounted() {
@@ -367,7 +338,11 @@ export default {
         async validateToken() {
             this.validationStatus = 'loading'
             try {
-                const { data } = await axios.get(`/api/supplier-invite/validate/${this.token}`)
+                // 🔹 ИСПРАВЛЕНО: используем makeAxiosFactory вместо axios напрямую
+                const { data } = await makeAxiosFactory(
+                    `/supplier-invite/validate/${this.token}`,
+                    'GET'
+                )
                 if (data.valid) {
                     this.validationStatus = 'valid'
                 } else {
@@ -380,24 +355,9 @@ export default {
             }
         },
 
-        checkPasswordStrength() {
-            const password = this.form.password
-            if (!password) {
-                this.passwordStrength = 0
-                return
-            }
-
-            let score = 0
-            if (password.length >= 8) score++
-            if (password.length >= 12) score++
-            if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++
-            if (/\d/.test(password)) score++
-            if (/[^A-Za-z0-9]/.test(password)) score++
-
-            this.passwordStrength = Math.min(4, score)
-        },
-
         async submitForm() {
+            this.serverErrors = []
+
             // Обязательные поля
             if (!this.form.name.trim()) {
                 this.alertStore.show('Введите наименование', 'warning')
@@ -414,17 +374,9 @@ export default {
                 return
             }
 
-            // Пароль
-            if (!this.form.password) {
-                this.alertStore.show('Введите пароль', 'warning')
-                return
-            }
+            // 🔹 УПРОЩЕНО: только минимальная длина 8 символов
             if (this.form.password.length < 8) {
                 this.alertStore.show('Пароль должен содержать минимум 8 символов', 'warning')
-                return
-            }
-            if (this.passwordStrength < 2) {
-                this.alertStore.show('Пароль слишком простой. Добавьте цифры и заглавные буквы.', 'warning')
                 return
             }
             if (!this.passwordsMatch) {
@@ -439,9 +391,34 @@ export default {
                     'POST',
                     this.form
                 )
+
+                // 🔹 АВТОВХОД: если сервер подтвердил автологин
+                if (data.auto_login) {
+                    this.alertStore.show('Вход выполнен! Перенаправляем...', 'success')
+
+                    // Небольшая задержка, чтобы пользователь увидел сообщение
+                    setTimeout(() => {
+                        // Перенаправляем на главную страницу
+                        window.location.href = '/'
+                    }, 1500)
+                    return
+                }
+
+                // Fallback: если автологина нет — показываем форму успеха
                 this.registered = true
                 this.alertStore.show(data.message, 'success')
             } catch (e) {
+                console.error('Ошибка регистрации:', e)
+
+                // Показываем ошибки валидации от сервера
+                const errors = e?.response?.data?.errors
+                if (errors && typeof errors === 'object') {
+                    this.serverErrors = Object.values(errors).flat()
+                } else if (e?.response?.data?.message) {
+                    this.serverErrors = [e.response.data.message]
+                }
+
+                // Если токен больше не валиден — перезагружаем валидацию
                 if (e?.response?.status === 422) {
                     await this.validateToken()
                 }
@@ -452,6 +429,8 @@ export default {
     },
 }
 </script>
+
+
 
 <style scoped>
 /* 🎨 Декоративные круги */

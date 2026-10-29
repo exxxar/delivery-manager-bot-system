@@ -5,80 +5,140 @@ namespace App\Http\Controllers;
 use App\Enums\RoleEnum;
 use App\Facades\UserLog;
 use App\Models\Agent;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
 
-    public function register(Request $request)
+    public function changePassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:20', 'unique:agents,phone'],
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
             'password' => [
                 'required',
                 'string',
                 'min:6',
                 'confirmed',
-                Password::defaults()
+                Password::defaults(),
             ],
         ], [
-            'name.required' => 'Имя обязательно для заполнения',
-            'email.required' => 'Email обязателен для заполнения',
-            'email.email' => 'Введите корректный email',
-            'email.unique' => 'Пользователь с таким email уже зарегистрирован',
-            'phone.required' => 'Телефон обязателен для заполнения',
-            'phone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
-            'password.required' => 'Пароль обязателен для заполнения',
+            'current_password.required' => 'Введите текущий пароль',
+            'password.required' => 'Введите новый пароль',
             'password.min' => 'Пароль должен содержать минимум 6 символов',
             'password.confirmed' => 'Пароли не совпадают',
         ]);
 
-        if ($validator->fails()) {
+        $user = Auth::user();
+
+        if (!$user) {
             return response()->json([
-                'message' => 'Ошибка валидации',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Необходима авторизация',
+            ], 401);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'fio_from_telegram' => $request->phone,
-            'password' => Hash::make($request->password),
-            'role' => 0, // USER по умолчанию
-        ]);
-
-        Agent::query()
-            ->updateOrCreate([
-                'user_id' => $user->id,
-
-            ], [
-                'name' => $request->name,
-                'phone' => $request->phone,
-                'email' => $request->email,
-                'region' => '',
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => [
+                    'Текущий пароль указан неверно',
+                ],
             ]);
+        }
 
-        // Логируем регистрацию
-        UserLog::log("Регистрация нового пользователя: {$user->name} ({$user->email})", $user->id);
+        $user->password = Hash::make($validated['password']);
+        $user->save();
 
-        // Логируем всем суперадминам
-        UserLog::logSuper("Зарегистрирован новый пользователь: {$user->name} ({$user->email})", $user->id);
+        UserLog::log(
+            'Пользователь изменил пароль',
+            $user->id
+        );
 
         return response()->json([
-            'message' => 'Регистрация прошла успешно',
-            'user' => $user
-        ], 201);
+            'success' => true,
+            'message' => 'Пароль успешно изменён',
+        ]);
     }
 
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone' => [
+                'required',
+                'string',
+                'max:30',
+                'unique:agents,phone',
+                'unique:suppliers,phone',
+            ],
+            'role' => [
+                'required',
+                Rule::in([
+                    RoleEnum::USER->value,
+                    RoleEnum::AGENT->value,
+                    RoleEnum::SUPPLIER->value,
+                ]),
+            ],
+            'password' => ['required', 'confirmed', 'min:6'],
+        ]);
+
+        $user = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'fio_from_telegram' => $validated['phone'],
+                'password' => Hash::make($validated['password']),
+                'role' => (int) $validated['role'],
+            ]);
+
+            if ((int) $validated['role'] === RoleEnum::AGENT->value) {
+                Agent::create([
+                    'user_id' => $user->id,
+                    'name' => $validated['name'],
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'region' => '',
+                ]);
+            }
+
+            if ((int) $validated['role'] === RoleEnum::SUPPLIER->value) {
+                Supplier::create([
+                    'user_id' => $user->id,
+                    'name' => $validated['name'],
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'percent' => 0,
+                ]);
+            }
+
+            return $user;
+        });
+
+        // Сразу авторизуем пользователя
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Регистрация прошла успешно',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ], 201);
+    }
 
     public function login(Request $request)
     {

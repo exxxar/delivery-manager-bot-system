@@ -20,7 +20,8 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::query()
+            ->with(["agent","supplier"]);
 
         // 🔹 Фильтрация
         if ($request->filled('name')) {

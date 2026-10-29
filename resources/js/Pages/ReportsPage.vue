@@ -1,5 +1,5 @@
 <template>
-    <div class="container-fluid py-0 px-0">
+    <div class="container-fluid">
         <BackBtn/>
 
         <h4 class="mb-3">Мои отчеты</h4>

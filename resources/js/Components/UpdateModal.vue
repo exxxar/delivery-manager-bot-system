@@ -26,7 +26,7 @@
 
                 <div class="modal-body pt-4">
                     <div class="update-modal__hero-icon" aria-hidden="true">
-                        <i class="fa-solid fa-arrow-down-to-line"></i>
+                        <i class="fa-solid fa-percent"></i>
                     </div>
 
                     <p id="updateModalDescription" class="update-modal__message">

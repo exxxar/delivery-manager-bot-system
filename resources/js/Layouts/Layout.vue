@@ -1020,7 +1020,7 @@ body.has-offline-banner .fixed-top-menu {
     .navbar-actions { gap: 6px; }
     .version-badge { display: none; }
     .menu-toggle { width: 40px; height: 40px; }
-    .app-main { padding-top: 20px; }
+    .app-main {  padding: 0; }
     .app-footer-inner { align-items: flex-start; flex-direction: column; }
     .modal-body { padding: 16px; }
     .modal-header { padding: 15px 17px; }

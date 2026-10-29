@@ -2,7 +2,7 @@
 import SaleList from "@/Components/Sales/SaleList.vue";
 </script>
 <template>
-    <div class="container-fluid py-0 px-0">
+    <div class="container-fluid">
         <SaleList
             v-if="user"
             :admin-id="user.id"></SaleList>

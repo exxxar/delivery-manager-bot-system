@@ -8,6 +8,7 @@ use App\Models\AdminInviteToken;
 use App\Models\Agent;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // 🔹 1. Добавляем фасад Auth
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -144,7 +145,7 @@ class AdminInviteController extends Controller
     }
 
     /**
-     * ПУБЛИЧНЫЙ: Регистрация администратора по токену
+     * ПУБЛИЧНЫЙ: Регистрация администратора по токену с АВТОВХОДОМ
      */
     public function register(Request $request, string $token)
     {
@@ -156,34 +157,34 @@ class AdminInviteController extends Controller
             ], 422);
         }
 
+        // 🔹 Упростили валидацию пароля (убрали regex)
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:50',
             'region' => 'required|string|max:255',
-
             'password' => [
                 'required',
                 'string',
                 'min:8',
                 'confirmed',
-
             ],
             'password_confirmation' => 'required|string',
         ], [
             'password.min' => 'Пароль должен содержать минимум 8 символов',
-            'password.regex' => 'Пароль должен содержать заглавные, строчные буквы и цифры',
             'password.confirmed' => 'Пароли не совпадают',
             'email.unique' => 'Этот email уже зарегистрирован',
         ]);
 
-        return DB::transaction(function () use ($validated, $inviteToken) {
-            // 1. Создаём пользователя с хэшированным паролем
+        // 🔹 Передаём $request в замыкание, чтобы перегенерировать сессию
+        return DB::transaction(function () use ($validated, $inviteToken, $request) {
+
+            // 1. Создаём пользователя
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
-                'role' => RoleEnum::AGENT->value,
+                'role' => RoleEnum::AGENT->value, // Администратор
                 'telegram_chat_id' => null,
                 'password' => Hash::make($validated['password']),
                 'registration_at' => now(),
@@ -203,6 +204,10 @@ class AdminInviteController extends Controller
             // 3. Помечаем токен как использованный
             $inviteToken->markAsUsed($user->id);
 
+            // 🔹 4. АВТОВХОД: авторизуем пользователя сразу после регистрации
+            Auth::login($user);
+            $request->session()->regenerate(); // Защита от фиксации сессии (Session Fixation)
+
             UserLog::logSuper(
                 "#регистрация_админа\n" .
                 "Зарегистрирован новый администратор:\n" .
@@ -211,12 +216,15 @@ class AdminInviteController extends Controller
                 "• <b>Телефон:</b> {$validated['phone']}\n" .
                 "• <b>Регион:</b> {$validated['region']}\n" .
                 "• <b>User ID:</b> {$user->id}\n" .
-                "• <b>Agent ID:</b> {$agent->id}"
+                "• <b>Agent ID:</b> {$agent->id}\n" .
+                "• <b>Автовход выполнен</b>"
             );
 
+            // 🔹 5. Возвращаем флаг auto_login для фронтенда
             return response()->json([
-                'message' => 'Регистрация прошла успешно! Теперь вы можете войти в систему.',
+                'message' => 'Регистрация прошла успешно! Выполняется вход в систему...',
                 'user_id' => $user->id,
+                'auto_login' => true,
             ]);
         });
     }

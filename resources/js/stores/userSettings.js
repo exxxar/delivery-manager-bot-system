@@ -55,7 +55,7 @@ export const useUserSettingsStore = defineStore('userSettings', {
         async fetchSettings() {
             this.loading = true
             try {
-                const { data } = await axios.get('/user/font-settings')
+                const { data } = await axios.get('/api/user/font-settings')
                 this.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) }
                 this.loaded = true
                 this.applySettings()
