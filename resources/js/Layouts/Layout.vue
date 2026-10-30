@@ -26,7 +26,7 @@
                 <div class="navbar-actions">
                     <!-- Версия приложения -->
                     <span
-                        v-if="serverVersion"
+                        v-if="displayVersion"
                         class="version-badge"
                         :title="`Версия приложения: ${serverVersion}`"
                     >v{{ serverVersion }}</span>
@@ -178,13 +178,14 @@
                 </li>
             </ul>
 
-            <p>
-                 <span
-                     v-if="serverVersion"
-                     class="version-badge"
-                     :title="`Версия приложения: ${serverVersion}`"
-                 >v{{ serverVersion }}</span>
-            </p>
+            <div class="sidebar-version" v-if="displayVersion">
+                <i class="fa-solid fa-code-branch"></i>
+                <span class="sidebar-version-label">Версия системы</span>
+                <span
+                    class="version-badge"
+                    :title="`Версия приложения: ${displayVersion}`"
+                >v{{ displayVersion }}</span>
+            </div>
         </div>
     </div>
 
@@ -491,7 +492,15 @@ export default {
 
         // 🔹 Версия из Inertia shared props
         serverVersion() {
-            return this.page.props.appVersion || null;
+            // Основной источник — Inertia shared props Laravel.
+            return this.page?.props?.appVersion
+                ?? this.page?.props?.app_version
+                ?? null;
+        },
+
+        // Если серверная версия ещё не передана, показываем версию клиентской сборки.
+        displayVersion() {
+            return this.serverVersion || getLocalVersion() || null;
         },
 
         // 🔹 Флаг принудительного обновления
@@ -1155,6 +1164,34 @@ body.has-offline-banner .fixed-top-menu {
     font-size: 16px;
 }
 
+.sidebar-version {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 11px 12px;
+    color: #778399;
+    background: #f7f9fc;
+    border: 1px solid #e5eaf2;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.sidebar-version > i {
+    color: #2457d6;
+}
+
+.sidebar-version-label {
+    flex: 1;
+    font-weight: 600;
+}
+
+.sidebar-version .version-badge {
+    color: #2457d6;
+    background: #edf3ff;
+    border-color: #dce7ff;
+}
+
 .custom-offcanvas .alert {
     border-radius: 13px;
 }
@@ -1347,3 +1384,4 @@ body.has-offline-banner .fixed-top-menu {
     }
 }
 </style>
+
