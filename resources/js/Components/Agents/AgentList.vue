@@ -396,11 +396,13 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
+
                         <PercentageManager
                             v-if="selectedAgent"
                             owner-type="agent"
                             :owner-id="selectedAgent.id"
                             :owner-name="selectedAgent.name"
+                            :owner-percent="selectedAgent.user?.percent||0"
                             @saved="fetchData"
                         />
                     </div>

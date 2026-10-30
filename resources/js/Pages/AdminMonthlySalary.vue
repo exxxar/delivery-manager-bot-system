@@ -44,6 +44,16 @@
                         <span class="period-note">· календарный месяц</span>
                     </p>
                 </div>
+                <div class="admin-actions">
+                    <button
+                        type="button"
+                        class="btn-percentages"
+                        @click="openPercentageManager"
+                    >
+                        <i class="fa-solid fa-percent"></i>
+                        <span>Настроить проценты</span>
+                    </button>
+                </div>
             </section>
 
             <section class="summary-grid">
@@ -141,16 +151,51 @@
             </section>
             <p class="calculation-note"><i class="fa-solid fa-circle-info"></i> В расчёт включены сделки со статусом «Завершено» (`completed`) и датой `actual_delivery_date` внутри выбранного календарного месяца. Суммы рассчитаны по текущим активным настройкам процентов.</p>
         </template>
+
+        <!-- Управление процентами администратора -->
+        <div class="modal fade" id="adminPercentagesModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fa-solid fa-percent me-2 text-primary"></i>
+                            Проценты администратора
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Закрыть"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <PercentageManager
+                            v-if="report"
+                            owner-type="agent"
+                            :owner-id="report.admin.id || agentId"
+                            :owner-name="report.admin.name || 'Администратор'"
+                            :owner-percent="report.admin.personal_percent"
+                            @saved="onPercentagesSaved"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 </template>
 
 <script>
 import { makeAxiosFactory } from '@/stores/utillites/makeAxiosFactory'
+import PercentageManager from '@/Components/Percentage/PercentageManager.vue'
 
 export default {
     name: 'AdminMonthlySalary',
     props: {
         agentId: { type: [Number, String], required: true },
+    },
+    components:{
+        PercentageManager
     },
     data() {
         return {
@@ -164,6 +209,15 @@ export default {
         this.loadReport()
     },
     methods: {
+        openPercentageManager() {
+            const modalElement = document.getElementById('adminPercentagesModal')
+            if (!modalElement) return
+
+            bootstrap.Modal.getOrCreateInstance(modalElement).show()
+        },
+        async onPercentagesSaved() {
+            await this.loadReport()
+        },
         async loadReport() {
             if (!this.agentId || !this.month) return
             this.loading = true
@@ -204,11 +258,11 @@ export default {
 .eyebrow{margin:0 0 4px;color:var(--blue);font-size:10px;font-weight:800;letter-spacing:.1em}.page-header h1{margin:0;font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.04em}.subtitle{margin:5px 0 0;color:var(--muted);font-size:13px}
 .month-picker{display:flex;flex-direction:column;gap:6px;min-width:190px}.month-picker label{font-size:11px;font-weight:750;color:#64718a}.month-picker input{min-height:43px;border:1px solid #dce3ef;border-radius:11px;background:#fff;box-shadow:none}
 .admin-card,.content-card,.metric-card,.state-card{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 5px 20px rgba(22,43,82,.045)}
-.admin-card{padding:20px;gap:16px;background:linear-gradient(120deg,#fff 45%,#f1f5ff)}.admin-avatar{flex:0 0 58px;width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:#eaf0ff;color:var(--blue);font-size:24px}.admin-main{min-width:0;flex:1}.admin-name-row{gap:10px;flex-wrap:wrap}.admin-name-row h2{margin:0;font-size:19px;font-weight:800}.role-badge,.count-badge{padding:5px 9px;border-radius:99px;background:#edf3ff;color:var(--blue);font-size:10px;font-weight:800}.admin-meta{gap:15px;flex-wrap:wrap;margin-top:9px;color:#64718a;font-size:12px}.admin-meta span{display:inline-flex;align-items:center;gap:6px}.period-line{margin:12px 0 0;color:#64718a;font-size:12px}.period-line i{margin-right:6px;color:var(--blue)}.period-line strong{color:var(--ink)}.period-note{color:#8a95a8}
+.admin-card{padding:20px;gap:16px;background:linear-gradient(120deg,#fff 45%,#f1f5ff)}.admin-actions{margin-left:auto;flex:0 0 auto}.btn-percentages{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:9px 14px;border:1px solid #d9e4fb;border-radius:11px;background:#edf3ff;color:#2457d6;font-size:12px;font-weight:750;white-space:nowrap;transition:all .2s ease}.btn-percentages:hover{background:#2457d6;border-color:#2457d6;color:#fff;box-shadow:0 5px 14px rgba(36,87,214,.18)}.admin-avatar{flex:0 0 58px;width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:#eaf0ff;color:var(--blue);font-size:24px}.admin-main{min-width:0;flex:1}.admin-name-row{gap:10px;flex-wrap:wrap}.admin-name-row h2{margin:0;font-size:19px;font-weight:800}.role-badge,.count-badge{padding:5px 9px;border-radius:99px;background:#edf3ff;color:var(--blue);font-size:10px;font-weight:800}.admin-meta{gap:15px;flex-wrap:wrap;margin-top:9px;color:#64718a;font-size:12px}.admin-meta span{display:inline-flex;align-items:center;gap:6px}.period-line{margin:12px 0 0;color:#64718a;font-size:12px}.period-line i{margin-right:6px;color:var(--blue)}.period-line strong{color:var(--ink)}.period-note{color:#8a95a8}
 .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.metric-card{padding:17px;min-width:0}.metric-primary{background:linear-gradient(135deg,#2457d6,#3978f6);border-color:#2457d6;color:#fff}.metric-top{justify-content:space-between;gap:8px;color:#77839a;font-size:11px;font-weight:700}.metric-primary .metric-top{color:#e4ebff}.metric-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#f0f4ff;color:var(--blue)}.metric-icon.green{background:#e5f8ed;color:var(--green)}.metric-icon.red{background:#fff0f1;color:var(--red)}.metric-value{display:block;margin-top:13px;font-size:clamp(18px,2vw,25px);font-weight:850;letter-spacing:-.04em;overflow-wrap:anywhere}.metric-card small{display:block;margin-top:7px;color:#8490a4;font-size:10px;line-height:1.5}.metric-primary small{color:#e1e9ff}
 .distribution-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.content-card{padding:19px;min-width:0}.section-heading{gap:11px;min-width:0}.section-icon{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:#edf3ff;color:var(--blue);font-size:16px}.section-icon.outgoing{background:#fff0f1;color:var(--red)}.section-icon.incoming{background:#e8f8ef;color:var(--green)}.section-icon.sales{background:#edf3ff;color:var(--blue)}.section-heading h3{margin:0;font-size:14px;font-weight:800}.section-heading p{margin:4px 0 0;color:var(--muted);font-size:11px}.distribution-list{display:flex;flex-direction:column;margin-top:16px}.distribution-row{gap:10px;padding:11px 0;border-bottom:1px solid #eef1f6}.distribution-row:last-child{border-bottom:0;padding-bottom:0}.person-avatar{flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#fff0f1;color:var(--red)}.person-avatar.green{background:#e8f8ef;color:var(--green)}.person-copy{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}.person-copy strong{font-size:12px;overflow-wrap:anywhere}.person-copy small{font-size:10px;color:var(--muted)}.distribution-amount{font-size:12px;white-space:nowrap}.positive{color:var(--green)!important}.empty-inline{padding:24px 0 8px;color:var(--muted);font-size:12px;text-align:center}
 .sales-card{padding:0;overflow:hidden}.sales-heading{justify-content:space-between;gap:12px;padding:19px;border-bottom:1px solid #edf0f5}.sales-list{padding:0 19px}.sale-row{gap:13px;padding:14px 0;border-bottom:1px solid #edf0f5}.sale-row:last-child{border-bottom:0}.sale-id{flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#f1f5fb;color:#64718a;font-size:11px;font-weight:800}.sale-main{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}.sale-main strong{font-size:12px;overflow-wrap:anywhere}.sale-main span{font-size:11px;color:#64718a;overflow-wrap:anywhere}.sale-main small,.sale-finance small{font-size:10px;color:#8a95a8}.sale-main small i{margin-right:4px}.sale-finance{display:flex;flex-direction:column;align-items:flex-end;gap:4px;white-space:nowrap}.sale-finance strong{font-size:13px}.empty-sales{display:flex;flex-direction:column;align-items:center;gap:8px;padding:35px 15px;color:var(--muted);font-size:12px}.empty-sales i{font-size:25px;color:#a5b2c6}.empty-sales strong{color:var(--ink);font-size:13px}.sales-footer{gap:9px;flex-wrap:wrap;padding:14px 19px;background:#f8faff;color:#748198;font-size:11px}.sales-footer strong{color:var(--ink);font-size:12px}.footer-spacer{flex:1}.calculation-note{margin:0;color:#7b879a;font-size:10px;line-height:1.6}.calculation-note i{margin-right:5px;color:var(--blue)}.state-card{display:flex;align-items:center;justify-content:center;gap:10px;padding:28px;color:var(--muted);font-size:13px}.state-error{color:var(--red);flex-wrap:wrap}.btn-retry{padding:7px 11px;border:0;border-radius:9px;background:#edf3ff;color:var(--blue);font-weight:700}
 @media(max-width:1050px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:720px){.salary-page{gap:14px;padding:12px}.page-header{align-items:stretch;flex-direction:column}.month-picker{width:100%}.admin-card{align-items:flex-start;padding:15px}.admin-meta{align-items:flex-start;flex-direction:column;gap:7px}.distribution-grid{grid-template-columns:1fr}.content-card{padding:15px}.sales-heading{align-items:flex-start}.sales-list{padding:0 13px}.sale-row{align-items:flex-start;gap:9px}.sale-id{flex-basis:34px;width:34px;height:34px}.sale-finance strong{font-size:12px}.sales-footer{align-items:flex-start}.footer-spacer{flex-basis:100%;height:0}}
+@media(max-width:720px){.salary-page{gap:14px;padding:12px}.page-header{align-items:stretch;flex-direction:column}.month-picker{width:100%}.admin-card{align-items:flex-start;padding:15px;flex-wrap:wrap}.admin-actions{width:100%;margin-left:60px}.btn-percentages{width:100%}.admin-meta{align-items:flex-start;flex-direction:column;gap:7px}.distribution-grid{grid-template-columns:1fr}.content-card{padding:15px}.sales-heading{align-items:flex-start}.sales-list{padding:0 13px}.sale-row{align-items:flex-start;gap:9px}.sale-id{flex-basis:34px;width:34px;height:34px}.sale-finance strong{font-size:12px}.sales-footer{align-items:flex-start}.footer-spacer{flex-basis:100%;height:0}}
 @media(max-width:420px){.summary-grid{grid-template-columns:1fr 1fr;gap:9px}.metric-card{padding:12px}.metric-top{align-items:flex-start;font-size:10px}.metric-icon{flex:0 0 29px;width:29px;height:29px}.metric-value{font-size:18px}.metric-card small{font-size:9px}.admin-avatar{flex-basis:44px;width:44px;height:44px}.admin-name-row h2{font-size:16px}.sale-row{flex-wrap:wrap}.sale-main{min-width:calc(100% - 55px)}.sale-finance{margin-left:43px;align-items:flex-start;flex-direction:row;flex-wrap:wrap;white-space:normal}}
 </style>
