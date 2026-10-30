@@ -1272,9 +1272,6 @@ body.has-offline-banner .fixed-top-menu {
         gap: 6px;
     }
 
-    .version-badge {
-        display: none;
-    }
 
     .menu-toggle {
         width: 40px;
