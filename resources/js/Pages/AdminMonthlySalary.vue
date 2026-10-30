@@ -59,8 +59,8 @@
             <section class="summary-grid">
                 <article class="metric-card metric-primary">
                     <div class="metric-top"><span>Итого к выплате</span><span class="metric-icon"><i class="fa-solid fa-wallet"></i></span></div>
-                    <strong class="metric-value">{{ money(report.summary.net_total) }}</strong>
-                    <small>Начисления + доход от других − доли другим</small>
+                    <strong class="metric-value">{{ money(totalToPay) }}</strong>
+                    <small>Собственные начисления + заработано на других</small>
                 </article>
                 <article class="metric-card">
                     <div class="metric-top"><span>Собственные начисления</span><span class="metric-icon blue"><i class="fa-solid fa-basket-shopping"></i></span></div>
@@ -204,6 +204,14 @@ export default {
             loading: false,
             error: '',
         }
+    },
+    computed: {
+        totalToPay() {
+            const own = Number(this.report?.summary?.own_commission) || 0
+            const incoming = Number(this.report?.summary?.incoming_commission) || 0
+
+            return own + incoming
+        },
     },
     mounted() {
         this.loadReport()
