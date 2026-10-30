@@ -370,7 +370,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <AdminInviteLinkManager />
+                    <AdminInviteLinkManager v-if="self && self.role >= 4"/>
                 </div>
             </div>
         </div>
@@ -388,7 +388,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <SupplierInviteLinkManager />
+                    <SupplierInviteLinkManager v-if="self && self.role >= 4" />
                 </div>
             </div>
         </div>
