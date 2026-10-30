@@ -1,4 +1,3 @@
-```
 <template>
     <section class="pm">
         <header class="pm__header">
@@ -25,9 +24,12 @@
             </div>
             <div class="pm__own-percent-editor">
                 <div class="input-group input-group-sm">
-                    <input v-model.number="ownPercentValue" class="form-control" type="number" min="0" max="100" step="0.01" aria-label="Собственный процент пользователя">
+                    <input v-model.number="ownPercentValue" class="form-control" type="number" min="0" max="100"
+                           step="0.01" aria-label="Собственный процент пользователя">
                     <span class="input-group-text">%</span>
-                    <button type="button" class="btn btn-primary" :disabled="savingOwnPercent || !isValidOwnPercent || Number(ownPercentValue) === Number(ownerPercent ?? 0)" @click="saveOwnPercent">
+                    <button type="button" class="btn btn-primary"
+                            :disabled="savingOwnPercent || !isValidOwnPercent || Number(ownPercentValue) === Number(ownerPercent ?? 0)"
+                            @click="saveOwnPercent">
                         <span v-if="savingOwnPercent" class="spinner-border spinner-border-sm"></span>
                         <i v-else class="fa-solid fa-floppy-disk"></i>
                     </button>
@@ -43,7 +45,8 @@
                 role="tab"
                 :aria-selected="direction === 'outgoing'"
                 @click="switchDirection('outgoing')"
-            >Кому начисляет</button>
+            >Кому начисляет
+            </button>
             <button
                 type="button"
                 class="pm__direction"
@@ -51,7 +54,8 @@
                 role="tab"
                 :aria-selected="direction === 'incoming'"
                 @click="switchDirection('incoming')"
-            >От кого получает</button>
+            >От кого получает
+            </button>
         </div>
 
         <div class="pm__toolbar">
@@ -60,9 +64,11 @@
                     {{ direction === 'incoming' && isUserOwner ? 'Входящие начисления' : 'Исходящие начисления' }}
                 </h6>
                 <p class="pm__hint mb-0">
-                    {{ direction === 'incoming' && isUserOwner
-                    ? 'Настройте, от каких пользователей администратору начисляется процент.'
-                    : 'Настройте, кому этот владелец начисляет процент.' }}
+                    {{
+                        direction === 'incoming' && isUserOwner
+                            ? 'Настройте, от каких пользователей администратору начисляется процент.'
+                            : 'Настройте, кому этот владелец начисляет процент.'
+                    }}
                 </p>
             </div>
             <button type="button" class="pm__add-button" @click="toggleForm">
@@ -76,73 +82,68 @@
                 <span class="pm__form-icon"><i class="fa-solid fa-sliders"></i></span>
                 <div>
                     <h6 class="mb-1">Новое правило</h6>
-                    <p class="pm__hint mb-0">{{ isIncomingUserDirection ? 'Выберите плательщика: процент будет начисляться администратору.' : 'Выберите получателя: процент будет начисляться ему от текущего владельца.' }}</p>
+                    <p class="pm__hint mb-0">{{
+                            isIncomingUserDirection ? 'Выберите плательщика: процент будет начисляться администратору.' : 'Выберите получателя: процент будет начисляться ему от текущего владельца.'
+                        }}</p>
                 </div>
             </div>
 
             <div class="pm__flow">
                 <div class="pm__person-card">
-                    <label class="pm__label">{{ isIncomingUserDirection ? 'От кого начисляется' : 'Плательщик — от кого' }}</label>
+                    <label class="pm__label">От кого начисляется</label>
                     <div class="pm__person">
-            <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isPayerFixed }">
-              <i :class="isPayerFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
-            </span>
+                        <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isPayerFixed }">
+                            <i :class="isPayerFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
+                        </span>
                         <div class="pm__person-info">
-                            <strong>{{ isPayerFixed ? (ownerName || `Администратор #${ownerId}`) : (selectedUser?.name || 'Выберите плательщика') }}</strong>
-                            <small>{{ isPayerFixed ? 'Текущий владелец' : 'Пользователь' }}</small>
+                            <strong>{{
+                                    isPayerFixed ? (ownerName || `${ownerTypeLabel} #${ownerId}`) : (selectedPayer?.name || 'Выберите плательщика')
+                                }}</strong>
+                            <small>{{ isPayerFixed ? 'Текущий владелец' : 'Пользователь-плательщик' }}</small>
                         </div>
                         <i v-if="isPayerFixed" class="fa-solid fa-lock pm__lock"></i>
                     </div>
                     <template v-if="!isPayerFixed">
-                        <input
-                            v-model.trim="userSearch"
-                            type="search"
-                            class="form-control pm__search"
-                            placeholder="Найти плательщика по имени или email"
-                            autocomplete="off"
-                        >
-                        <select v-model.number="newPercentage.user_id" class="form-select pm__select" required>
-                            <option :value="null" disabled>{{ isIncomingUserDirection ? 'Выберите плательщика' : 'Выберите владельца' }}</option>
+                        <input v-model.trim="userSearch" type="search" class="form-control pm__search"
+                               placeholder="Найти плательщика по имени или email" autocomplete="off">
+                        <select v-model.number="newPercentage.payer_user_id" class="form-select pm__select" required>
+                            <option :value="null" disabled>Выберите плательщика</option>
                             <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
                                 {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
                             </option>
                         </select>
-                        <small v-if="!filteredUsers.length" class="pm__field-note">Совпадений не найдено.</small>
                     </template>
                 </div>
 
-                <div class="pm__flow-arrow" :class="{ 'pm__flow-arrow--incoming': direction === 'incoming' && isUserOwner }">
+                <div class="pm__flow-arrow" :class="{ 'pm__flow-arrow--incoming': isIncomingUserDirection }">
                     <span>{{ formatPercent(newPercentage.percentage) }}%</span>
                     <i class="fa-solid fa-arrow-right"></i>
                 </div>
 
                 <div class="pm__person-card">
-                    <label class="pm__label">{{ isIncomingUserDirection ? 'Кому начисляется' : 'Получатель — кому' }}</label>
+                    <label class="pm__label">Кому начисляется</label>
                     <div class="pm__person">
-            <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isRecipientFixed }">
-              <i :class="isRecipientFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
-            </span>
+                        <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isRecipientFixed }">
+                            <i :class="isRecipientFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
+                        </span>
                         <div class="pm__person-info">
-                            <strong>{{ isRecipientFixed ? (ownerName || `Администратор #${ownerId}`) : (selectedUser?.name || 'Выберите получателя') }}</strong>
-                            <small>{{ isRecipientFixed ? 'Администратор получает процент' : 'Пользователь получит процент' }}</small>
+                            <strong>{{
+                                    isRecipientFixed ? (ownerName || `${ownerTypeLabel} #${ownerId}`) : (selectedRecipient?.name || 'Выберите получателя')
+                                }}</strong>
+                            <small>{{ isRecipientFixed ? 'Текущий получатель' : 'Пользователь-получатель' }}</small>
                         </div>
                         <i v-if="isRecipientFixed" class="fa-solid fa-lock pm__lock"></i>
                     </div>
                     <template v-if="!isRecipientFixed">
-                        <input
-                            v-model.trim="userSearch"
-                            type="search"
-                            class="form-control pm__search"
-                            placeholder="Найти получателя по имени или email"
-                            autocomplete="off"
-                        >
-                        <select v-model.number="newPercentage.user_id" class="form-select pm__select" required>
-                            <option :value="null" disabled>{{ isIncomingUserDirection ? 'Администратор — получатель' : 'Выберите получателя' }}</option>
+                        <input v-model.trim="userSearch" type="search" class="form-control pm__search"
+                               placeholder="Найти получателя по имени или email" autocomplete="off">
+                        <select v-model.number="newPercentage.recipient_user_id" class="form-select pm__select"
+                                required>
+                            <option :value="null" disabled>Выберите получателя</option>
                             <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
                                 {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
                             </option>
                         </select>
-                        <small v-if="!filteredUsers.length" class="pm__field-note">Совпадений не найдено.</small>
                     </template>
                 </div>
             </div>
@@ -151,17 +152,20 @@
                 <div class="pm__percent-field">
                     <label class="pm__label" for="percentage-value">Размер процента</label>
                     <div class="input-group">
-                        <input id="percentage-value" v-model.number="newPercentage.percentage" class="form-control" type="number" min="0.01" max="100" step="0.01" required>
+                        <input id="percentage-value" v-model.number="newPercentage.percentage" class="form-control"
+                               type="number" min="0.01" max="100" step="0.01" required>
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
                 <div class="pm__form-note">
                     <i class="fa-solid fa-circle-info"></i>
-                    <span>{{ isIncomingUserDirection
-                        ? 'Направление: выбранный пользователь → текущий администратор.'
-                        : 'Направление: текущий владелец → выбранный пользователь.' }}</span>
+                    <span>{{
+                            isIncomingUserDirection
+                                ? 'Направление: выбранный пользователь → текущий администратор.'
+                                : 'Направление: текущий владелец → выбранный пользователь.'
+                        }}</span>
                 </div>
-                <button class="pm__save-button" type="submit" :disabled="saving || !newPercentage.user_id">
+                <button class="pm__save-button" type="submit" :disabled="saving || !isFormSelectionValid">
                     <span v-if="saving" class="spinner-border spinner-border-sm"></span>
                     <i v-else class="fa-solid fa-check"></i>
                     {{ saving ? 'Сохраняем…' : 'Сохранить правило' }}
@@ -211,10 +215,12 @@
               </span>
                     </td>
                     <td class="text-end text-nowrap">
-                        <button class="pm__icon-button" type="button" :disabled="busyId === item.id" :title="item.is_active ? 'Отключить' : 'Включить'" @click="toggleActive(item)">
+                        <button class="pm__icon-button" type="button" :disabled="busyId === item.id"
+                                :title="item.is_active ? 'Отключить' : 'Включить'" @click="toggleActive(item)">
                             <i :class="item.is_active ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
                         </button>
-                        <button class="pm__icon-button pm__icon-button--danger" type="button" :disabled="busyId === item.id" title="Удалить" @click="removePercentage(item)">
+                        <button class="pm__icon-button pm__icon-button--danger" type="button"
+                                :disabled="busyId === item.id" title="Удалить" @click="removePercentage(item)">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
@@ -226,17 +232,17 @@
 </template>
 
 <script>
-import { makeAxiosFactory } from '@/stores/utillites/makeAxiosFactory'
-import { useUsersStore } from '@/stores/users'
-import { useAlertStore } from '@/stores/utillites/useAlertStore'
+import {makeAxiosFactory} from '@/stores/utillites/makeAxiosFactory'
+import {useUsersStore} from '@/stores/users'
+import {useAlertStore} from '@/stores/utillites/useAlertStore'
 
 export default {
     name: 'PercentageManager',
     props: {
-        ownerType: { type: String, required: true }, // agent, supplier, user
-        ownerId: { type: Number, required: true },
-        ownerName: { type: String, default: '' },
-        ownerPercent: { type: [Number, String], default: null },
+        ownerType: {type: String, required: true}, // agent, supplier, user
+        ownerId: {type: Number, required: true},
+        ownerName: {type: String, default: ''},
+        ownerPercent: {type: [Number, String], default: null},
     },
     data() {
         return {
@@ -250,7 +256,7 @@ export default {
             busyId: null,
             showAddForm: false,
             userSearch: '',
-            newPercentage: { user_id: null, percentage: 0, is_active: true },
+            newPercentage: {payer_user_id: null, recipient_user_id: null, percentage: 0, is_active: true},
             alertStore: useAlertStore(),
         }
     },
@@ -268,14 +274,25 @@ export default {
                 .filter(user => Number(user.id) !== Number(this.ownerId))
                 .filter(user => `${user.name || ''} ${user.email || ''} ${user.id || ''}`.toLocaleLowerCase().includes(query))
         },
-        selectedUser() {
-            return this.users.find(user => Number(user.id) === Number(this.newPercentage.user_id)) || null
+        selectedPayer() {
+            return this.users.find(user => Number(user.id) === Number(this.newPercentage.payer_user_id)) || null
+        },
+        selectedRecipient() {
+            return this.users.find(user => Number(user.id) === Number(this.newPercentage.recipient_user_id)) || null
+        },
+        ownerTypeLabel() {
+            return this.ownerType === 'supplier' ? 'Поставщик' : this.ownerType === 'agent' ? 'Администратор' : 'Пользователь'
+        },
+        isFormSelectionValid() {
+            if (!this.isPayerFixed && !this.newPercentage.payer_user_id) return false
+            if (!this.isRecipientFixed && !this.newPercentage.recipient_user_id) return false
+            return true
         },
         isPayerFixed() {
-            return !this.isUserOwner || this.direction === 'outgoing'
+            return this.direction === 'outgoing'
         },
         isRecipientFixed() {
-            return this.isIncomingUserDirection
+            return this.direction === 'incoming'
         },
         isIncomingUserDirection() {
             return this.isUserOwner && this.direction === 'incoming'
@@ -315,7 +332,7 @@ export default {
                         ? `/suppliers/${this.ownerId}`
                         : `/users/${this.ownerId}`
 
-                await makeAxiosFactory(endpoint, 'PUT', { percent: Number(this.ownPercentValue) })
+                await makeAxiosFactory(endpoint, 'PUT', {percent: Number(this.ownPercentValue)})
                 this.$emit('update:ownerPercent', Number(this.ownPercentValue))
                 this.notify('Собственный процент обновлён')
             } catch (error) {
@@ -336,27 +353,15 @@ export default {
         async loadPercentages() {
             this.loading = true
             try {
-                const direction = this.isUserOwner ? this.direction : 'outgoing'
-                const params = this.isUserOwner
-                    ? `type=user&id=${this.ownerId}&direction=${direction}&_=${Date.now()}`
-                    : `type=${this.ownerType}&id=${this.ownerId}&_=${Date.now()}`
-                const { data } = await makeAxiosFactory(`/percentages?${params}`, 'GET')
-                const rows = Array.isArray(data?.percentages) ? data.percentages : []
+                const params = new URLSearchParams({
+                    type: String(this.ownerType).toLowerCase(),
+                    id: String(this.ownerId),
+                    direction: this.direction,
+                    _: String(Date.now()),
+                })
 
-                // Защита от старого backend, который возвращает смешанный список.
-                if (this.isUserOwner && direction === 'incoming') {
-                    this.percentages = rows.filter(item =>
-                        Number(item.user_id) === Number(this.ownerId) &&
-                        String(item.percentable_type || '').toLowerCase().includes('user')
-                    )
-                } else if (this.isUserOwner) {
-                    this.percentages = rows.filter(item =>
-                        Number(item.percentable_id) === Number(this.ownerId) &&
-                        String(item.percentable_type || '').toLowerCase().includes('user')
-                    )
-                } else {
-                    this.percentages = rows
-                }
+                const {data} = await makeAxiosFactory(`/percentages?${params.toString()}`, 'GET')
+                this.percentages = Array.isArray(data?.percentages) ? data.percentages : []
             } catch (error) {
                 this.percentages = []
                 this.notify(error?.response?.data?.message || 'Не удалось загрузить проценты', 'error')
@@ -364,64 +369,76 @@ export default {
                 this.loading = false
             }
         },
+        createEmptyPercentageForm() {
+            return {
+                payer_user_id: null,
+                recipient_user_id: null,
+                percentage: 0,
+                is_active: true,
+            }
+        },
         async switchDirection(direction) {
             if (this.direction === direction) return
             this.direction = direction
             this.showAddForm = false
             this.userSearch = ''
-            this.newPercentage = { user_id: null, percentage: 0, is_active: true }
+            this.newPercentage = this.createEmptyPercentageForm()
             await this.loadPercentages()
         },
         toggleForm() {
             this.showAddForm = !this.showAddForm
             this.userSearch = ''
-            this.newPercentage = { user_id: null, percentage: 0, is_active: true }
+            this.newPercentage = this.createEmptyPercentageForm()
         },
         relatedUser(item) {
-            return this.isUserOwner && this.direction === 'incoming' ? item.percentable : item.user
+            return this.direction === 'incoming' ? item.percentable : item.user
         },
         relatedUserId(item) {
-            return this.isUserOwner && this.direction === 'incoming' ? item.percentable_id : item.user_id
+            return this.direction === 'incoming' ? item.percentable_id : item.user_id
         },
         formatPercent(value) {
-            return Number(value || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+            return Number(value || 0).toLocaleString('ru-RU', {maximumFractionDigits: 2})
         },
         async addPercentage() {
             const value = Number(this.newPercentage.percentage)
-            if (!this.newPercentage.user_id || !Number.isFinite(value) || value <= 0 || value > 100) {
-                this.notify('Выберите пользователя и укажите процент больше 0 и не больше 100', 'error')
+
+            if (!this.isFormSelectionValid || !Number.isFinite(value) || value <= 0 || value > 100) {
+                this.notify('Выберите плательщика и получателя, затем укажите процент больше 0 и не больше 100', 'error')
                 return
             }
+
             this.saving = true
             try {
-                const payload = this.isUserOwner
+                const payload = this.direction === 'incoming'
                     ? {
-                        type: 'user',
-                        owner_id: this.direction === 'incoming' ? this.newPercentage.user_id : this.ownerId,
-                        direction: this.direction,
-                        user_id: this.direction === 'outgoing' ? this.newPercentage.user_id : undefined,
-                        recipient_admin_id: this.direction === 'incoming' ? this.ownerId : undefined,
+                        type: this.ownerType,
+                        direction: 'incoming',
+                        owner_id: this.ownerId,
+                        payer_user_id: this.newPercentage.payer_user_id,
                         percentage: value,
                         is_active: true,
                     }
                     : {
                         type: this.ownerType,
+                        direction: 'outgoing',
                         owner_id: this.ownerId,
-                        user_id: this.newPercentage.user_id,
+                        user_id: this.newPercentage.recipient_user_id,
                         percentage: value,
                         is_active: true,
                     }
-                // Передаём направление и в query string, и в JSON body: некоторые
-                // существующие backend-обработчики читают только один из этих источников.
-                const endpoint = this.isUserOwner
-                    ? `/percentages?direction=${encodeURIComponent(this.direction)}`
-                    : '/percentages'
-                await makeAxiosFactory(endpoint, 'POST', payload)
+
+                await makeAxiosFactory('/percentages', 'POST', payload)
+
                 await this.loadPercentages()
+                this.$emit('saved')
+
+
                 this.showAddForm = false
                 this.userSearch = ''
-                this.newPercentage = { user_id: null, percentage: 0, is_active: true }
+                this.newPercentage = this.createEmptyPercentageForm()
                 this.notify('Процент сохранён')
+
+
             } catch (error) {
                 this.notify(error?.response?.data?.message || 'Не удалось сохранить процент', 'error')
             } finally {
@@ -431,7 +448,7 @@ export default {
         async toggleActive(item) {
             this.busyId = item.id
             try {
-                const { data } = await makeAxiosFactory(`/percentages/${item.id}`, 'PUT', { is_active: !item.is_active })
+                const {data} = await makeAxiosFactory(`/percentages/${item.id}`, 'PUT', {is_active: !item.is_active})
                 const index = this.percentages.findIndex(row => row.id === item.id)
                 if (index !== -1) this.percentages.splice(index, 1, data)
                 this.notify('Статус обновлён')
@@ -447,6 +464,8 @@ export default {
             try {
                 await makeAxiosFactory(`/percentages/${item.id}`, 'DELETE')
                 this.percentages = this.percentages.filter(row => row.id !== item.id)
+                await this.loadPercentages()
+                this.$emit('saved')
                 this.notify('Процент удалён')
             } catch (error) {
                 this.notify(error?.response?.data?.message || 'Не удалось удалить процент', 'error')
@@ -471,131 +490,585 @@ export default {
     padding: clamp(1rem, 2.5vw, 1.5rem);
     box-shadow: 0 8px 30px rgba(30, 41, 59, .045);
 }
+
 .pm__header, .pm__heading, .pm__toolbar, .pm__form-heading, .pm__person, .pm__table-person {
     display: flex;
     align-items: center;
 }
-.pm__header { justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
-.pm__heading { gap: .85rem; min-width: 0; }
+
+.pm__header {
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.4rem;
+}
+
+.pm__heading {
+    gap: .85rem;
+    min-width: 0;
+}
+
 .pm__icon {
-    width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center;
-    border-radius: 14px; color: var(--pm-primary); background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    color: var(--pm-primary);
+    background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
     font-size: 1.15rem;
 }
-.pm__title { margin: 0 0 .2rem; font-size: 1.08rem; font-weight: 750; letter-spacing: -.02em; }
-.pm__subtitle, .pm__hint { color: var(--pm-muted); font-size: .83rem; }
-.pm__counter { display: flex; flex-direction: column; align-items: flex-end; }
-.pm__counter-value { font-size: 1.35rem; font-weight: 750; line-height: 1.1; }
-.pm__counter-label { color: var(--pm-muted); font-size: .73rem; }
+
+.pm__title {
+    margin: 0 0 .2rem;
+    font-size: 1.08rem;
+    font-weight: 750;
+    letter-spacing: -.02em;
+}
+
+.pm__subtitle, .pm__hint {
+    color: var(--pm-muted);
+    font-size: .83rem;
+}
+
+.pm__counter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.pm__counter-value {
+    font-size: 1.35rem;
+    font-weight: 750;
+    line-height: 1.1;
+}
+
+.pm__counter-label {
+    color: var(--pm-muted);
+    font-size: .73rem;
+}
+
 .pm__own-percent {
-    display: flex; align-items: center; gap: .85rem; padding: .9rem 1rem;
-    margin: 0 0 1.25rem; border: 1px solid var(--pm-border); border-radius: .85rem;
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .9rem 1rem;
+    margin: 0 0 1.25rem;
+    border: 1px solid var(--pm-border);
+    border-radius: .85rem;
     background: var(--bs-tertiary-bg, #f8fafc);
 }
+
 .pm__own-percent-icon {
-    display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px;
-    border-radius: 12px; color: var(--pm-primary);
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 12px;
+    color: var(--pm-primary);
     background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
 }
-.pm__own-percent-copy { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
-.pm__own-percent-copy strong { font-size: .9rem; }
-.pm__own-percent-copy span { color: var(--pm-muted); font-size: .78rem; }
-.pm__own-percent-editor { margin-left: auto; width: min(220px, 42%); }
-.pm__own-percent-editor .input-group { flex-wrap: nowrap; }
-.pm__own-percent-editor input { min-width: 0; }
-.pm__own-percent-editor .btn { min-width: 38px; }
+
+.pm__own-percent-copy {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
+
+.pm__own-percent-copy strong {
+    font-size: .9rem;
+}
+
+.pm__own-percent-copy span {
+    color: var(--pm-muted);
+    font-size: .78rem;
+}
+
+.pm__own-percent-editor {
+    margin-left: auto;
+    width: min(220px, 42%);
+}
+
+.pm__own-percent-editor .input-group {
+    flex-wrap: nowrap;
+}
+
+.pm__own-percent-editor input {
+    min-width: 0;
+}
+
+.pm__own-percent-editor .btn {
+    min-width: 38px;
+}
+
 .pm__direction-switch {
-    display: inline-flex; gap: .25rem; padding: .25rem; margin-bottom: 1.25rem;
-    border: 1px solid var(--pm-border); border-radius: .7rem;
+    display: inline-flex;
+    gap: .25rem;
+    padding: .25rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--pm-border);
+    border-radius: .7rem;
     background: var(--bs-tertiary-bg, #f4f6f9);
 }
+
 .pm__direction {
-    border: 0; border-radius: .5rem; padding: .6rem 1rem;
-    background: transparent; color: var(--pm-muted); font-size: .86rem;
-    font-weight: 650; white-space: nowrap; transition: background .15s, color .15s, box-shadow .15s;
+    border: 0;
+    border-radius: .5rem;
+    padding: .6rem 1rem;
+    background: transparent;
+    color: var(--pm-muted);
+    font-size: .86rem;
+    font-weight: 650;
+    white-space: nowrap;
+    transition: background .15s, color .15s, box-shadow .15s;
 }
-.pm__direction:hover { color: var(--bs-body-color); }
+
+.pm__direction:hover {
+    color: var(--bs-body-color);
+}
+
 .pm__direction.is-active {
-    color: var(--pm-primary); background: var(--bs-body-bg);
+    color: var(--pm-primary);
+    background: var(--bs-body-bg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, .10);
 }
-.pm__toolbar { justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
-.pm__section-title { font-size: .95rem; font-weight: 750; margin: 0 0 .25rem; }
+
+.pm__toolbar {
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.pm__section-title {
+    font-size: .95rem;
+    font-weight: 750;
+    margin: 0 0 .25rem;
+}
+
 .pm__add-button, .pm__save-button, .pm__empty-button {
-    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-    border: 0; border-radius: .7rem; padding: .7rem 1rem; font-size: .84rem; font-weight: 650;
-    background: var(--pm-primary); color: #fff; transition: transform .15s, opacity .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    border: 0;
+    border-radius: .7rem;
+    padding: .7rem 1rem;
+    font-size: .84rem;
+    font-weight: 650;
+    background: var(--pm-primary);
+    color: #fff;
+    transition: transform .15s, opacity .15s;
 }
-.pm__add-button:hover, .pm__save-button:hover, .pm__empty-button:hover { transform: translateY(-1px); }
-.pm__form { border: 1px solid var(--pm-border); border-radius: .9rem; padding: clamp(.9rem, 2vw, 1.25rem); margin-bottom: 1.5rem; background: var(--bs-tertiary-bg, #f8fafc); }
-.pm__form-heading { gap: .7rem; margin-bottom: 1rem; }
-.pm__form-heading h6 { font-size: .95rem; font-weight: 750; }
-.pm__form-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--bs-body-bg); color: var(--pm-primary); border: 1px solid var(--pm-border); }
-.pm__flow { display: grid; grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr); gap: .65rem; align-items: center; }
-.pm__person-card { min-width: 0; border: 1px solid var(--pm-border); border-radius: .8rem; padding: .85rem; background: var(--bs-body-bg); }
-.pm__label { display: block; margin-bottom: .55rem; color: var(--pm-muted); font-size: .76rem; font-weight: 700; }
-.pm__person { gap: .65rem; min-width: 0; margin-bottom: .75rem; }
-.pm__avatar { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; color: var(--pm-muted); background: var(--bs-tertiary-bg, #f3f4f6); }
-.pm__avatar--fixed { color: var(--pm-primary); background: color-mix(in srgb, var(--pm-primary) 10%, transparent); }
-.pm__person-info { display: flex; flex-direction: column; min-width: 0; gap: .15rem; }
-.pm__person-info strong { overflow-wrap: anywhere; font-size: .82rem; }
-.pm__person-info small { color: var(--pm-muted); font-size: .72rem; }
-.pm__lock { margin-left: auto; color: var(--pm-muted); font-size: .75rem; }
-.pm__search, .pm__select { font-size: .82rem; }
-.pm__search { margin-bottom: .5rem; }
-.pm__field-note { display: block; margin-top: .4rem; color: var(--pm-muted); }
-.pm__flow-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .45rem; color: var(--pm-primary); }
-.pm__flow-arrow span { border-radius: 99px; padding: .25rem .55rem; background: color-mix(in srgb, var(--pm-primary) 10%, transparent); font-size: .8rem; font-weight: 800; white-space: nowrap; }
-.pm__flow-arrow i { font-size: 1.05rem; transition: transform .2s ease; }
-.pm__flow-arrow--incoming i { transform: rotate(180deg); }
-.pm__form-bottom { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto; align-items: end; gap: 1rem; margin-top: 1rem; }
-.pm__percent-field .input-group-text { background: var(--bs-body-bg); }
-.pm__form-note { display: flex; align-items: flex-start; gap: .5rem; color: var(--pm-muted); font-size: .77rem; line-height: 1.45; padding-bottom: .5rem; }
-.pm__form-note i { color: var(--pm-primary); margin-top: .1rem; }
-.pm__save-button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-.pm__loading { display: flex; justify-content: center; align-items: center; gap: .6rem; padding: 3rem 1rem; color: var(--pm-muted); font-size: .85rem; }
-.pm__empty { padding: 2.5rem 1rem; text-align: center; border: 1px dashed var(--pm-border); border-radius: .85rem; }
-.pm__empty-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto .85rem; border-radius: 16px; background: var(--bs-tertiary-bg, #f8fafc); color: var(--pm-muted); font-size: 1.25rem; }
-.pm__empty h6 { font-weight: 750; font-size: .95rem; }
-.pm__empty p { color: var(--pm-muted); font-size: .82rem; margin-bottom: 1rem; }
-.pm__empty-button { padding: .6rem .85rem; font-size: .8rem; }
-.pm__table-wrap { overflow: hidden; border: 1px solid var(--pm-border); border-radius: .8rem; }
-.pm__table thead th { padding: .8rem 1rem; color: var(--pm-muted); background: var(--bs-tertiary-bg, #f8fafc); border-bottom: 1px solid var(--pm-border); font-size: .73rem; font-weight: 750; text-transform: uppercase; letter-spacing: .035em; white-space: nowrap; }
-.pm__table tbody td { padding: .85rem 1rem; border-color: var(--pm-border); }
-.pm__table tbody tr:last-child td { border-bottom: 0; }
-.pm__table-person { gap: .65rem; min-width: 180px; }
-.pm__table-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px; background: var(--bs-tertiary-bg, #f8fafc); color: var(--pm-muted); }
-.pm__table-person > span:last-child { display: flex; flex-direction: column; min-width: 0; gap: .15rem; }
-.pm__table-person strong { font-size: .83rem; }
-.pm__table-person small { color: var(--pm-muted); font-size: .73rem; }
-.pm__percent-pill { display: inline-flex; padding: .35rem .6rem; border-radius: .55rem; background: rgba(21, 150, 106, .1); color: #13845f; font-size: .82rem; font-weight: 800; }
-.pm__status { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 650; white-space: nowrap; }
-.pm__status > span { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.pm__status--active { color: #13845f; }
-.pm__status--inactive { color: var(--pm-muted); }
-.pm__icon-button { display: inline-grid; place-items: center; width: 33px; height: 33px; border: 1px solid var(--pm-border); border-radius: .55rem; color: var(--pm-muted); background: var(--bs-body-bg); margin-left: .25rem; transition: .15s; }
-.pm__icon-button:hover:not(:disabled) { color: var(--pm-primary); border-color: var(--pm-primary); }
-.pm__icon-button--danger:hover:not(:disabled) { color: #dc3545; border-color: #dc3545; }
-.pm__icon-button:disabled { opacity: .5; cursor: wait; }
+
+.pm__add-button:hover, .pm__save-button:hover, .pm__empty-button:hover {
+    transform: translateY(-1px);
+}
+
+.pm__form {
+    border: 1px solid var(--pm-border);
+    border-radius: .9rem;
+    padding: clamp(.9rem, 2vw, 1.25rem);
+    margin-bottom: 1.5rem;
+    background: var(--bs-tertiary-bg, #f8fafc);
+}
+
+.pm__form-heading {
+    gap: .7rem;
+    margin-bottom: 1rem;
+}
+
+.pm__form-heading h6 {
+    font-size: .95rem;
+    font-weight: 750;
+}
+
+.pm__form-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--bs-body-bg);
+    color: var(--pm-primary);
+    border: 1px solid var(--pm-border);
+}
+
+.pm__flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr);
+    gap: .65rem;
+    align-items: center;
+}
+
+.pm__person-card {
+    min-width: 0;
+    border: 1px solid var(--pm-border);
+    border-radius: .8rem;
+    padding: .85rem;
+    background: var(--bs-body-bg);
+}
+
+.pm__label {
+    display: block;
+    margin-bottom: .55rem;
+    color: var(--pm-muted);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.pm__person {
+    gap: .65rem;
+    min-width: 0;
+    margin-bottom: .75rem;
+}
+
+.pm__avatar {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 50%;
+    color: var(--pm-muted);
+    background: var(--bs-tertiary-bg, #f3f4f6);
+}
+
+.pm__avatar--fixed {
+    color: var(--pm-primary);
+    background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
+}
+
+.pm__person-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: .15rem;
+}
+
+.pm__person-info strong {
+    overflow-wrap: anywhere;
+    font-size: .82rem;
+}
+
+.pm__person-info small {
+    color: var(--pm-muted);
+    font-size: .72rem;
+}
+
+.pm__lock {
+    margin-left: auto;
+    color: var(--pm-muted);
+    font-size: .75rem;
+}
+
+.pm__search, .pm__select {
+    font-size: .82rem;
+}
+
+.pm__search {
+    margin-bottom: .5rem;
+}
+
+.pm__field-note {
+    display: block;
+    margin-top: .4rem;
+    color: var(--pm-muted);
+}
+
+.pm__flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    color: var(--pm-primary);
+}
+
+.pm__flow-arrow span {
+    border-radius: 99px;
+    padding: .25rem .55rem;
+    background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
+    font-size: .8rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.pm__flow-arrow i {
+    font-size: 1.05rem;
+    transition: transform .2s ease;
+}
+
+.pm__flow-arrow--incoming i {
+    transform: rotate(180deg);
+}
+
+.pm__form-bottom {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.pm__percent-field .input-group-text {
+    background: var(--bs-body-bg);
+}
+
+.pm__form-note {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    color: var(--pm-muted);
+    font-size: .77rem;
+    line-height: 1.45;
+    padding-bottom: .5rem;
+}
+
+.pm__form-note i {
+    color: var(--pm-primary);
+    margin-top: .1rem;
+}
+
+.pm__save-button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pm__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .6rem;
+    padding: 3rem 1rem;
+    color: var(--pm-muted);
+    font-size: .85rem;
+}
+
+.pm__empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--pm-border);
+    border-radius: .85rem;
+}
+
+.pm__empty-icon {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto .85rem;
+    border-radius: 16px;
+    background: var(--bs-tertiary-bg, #f8fafc);
+    color: var(--pm-muted);
+    font-size: 1.25rem;
+}
+
+.pm__empty h6 {
+    font-weight: 750;
+    font-size: .95rem;
+}
+
+.pm__empty p {
+    color: var(--pm-muted);
+    font-size: .82rem;
+    margin-bottom: 1rem;
+}
+
+.pm__empty-button {
+    padding: .6rem .85rem;
+    font-size: .8rem;
+}
+
+.pm__table-wrap {
+    overflow: hidden;
+    border: 1px solid var(--pm-border);
+    border-radius: .8rem;
+}
+
+.pm__table thead th {
+    padding: .8rem 1rem;
+    color: var(--pm-muted);
+    background: var(--bs-tertiary-bg, #f8fafc);
+    border-bottom: 1px solid var(--pm-border);
+    font-size: .73rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+    white-space: nowrap;
+}
+
+.pm__table tbody td {
+    padding: .85rem 1rem;
+    border-color: var(--pm-border);
+}
+
+.pm__table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.pm__table-person {
+    gap: .65rem;
+    min-width: 180px;
+}
+
+.pm__table-avatar {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-radius: 11px;
+    background: var(--bs-tertiary-bg, #f8fafc);
+    color: var(--pm-muted);
+}
+
+.pm__table-person > span:last-child {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: .15rem;
+}
+
+.pm__table-person strong {
+    font-size: .83rem;
+}
+
+.pm__table-person small {
+    color: var(--pm-muted);
+    font-size: .73rem;
+}
+
+.pm__percent-pill {
+    display: inline-flex;
+    padding: .35rem .6rem;
+    border-radius: .55rem;
+    background: rgba(21, 150, 106, .1);
+    color: #13845f;
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.pm__status {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .78rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.pm__status > span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.pm__status--active {
+    color: #13845f;
+}
+
+.pm__status--inactive {
+    color: var(--pm-muted);
+}
+
+.pm__icon-button {
+    display: inline-grid;
+    place-items: center;
+    width: 33px;
+    height: 33px;
+    border: 1px solid var(--pm-border);
+    border-radius: .55rem;
+    color: var(--pm-muted);
+    background: var(--bs-body-bg);
+    margin-left: .25rem;
+    transition: .15s;
+}
+
+.pm__icon-button:hover:not(:disabled) {
+    color: var(--pm-primary);
+    border-color: var(--pm-primary);
+}
+
+.pm__icon-button--danger:hover:not(:disabled) {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.pm__icon-button:disabled {
+    opacity: .5;
+    cursor: wait;
+}
+
 @media (max-width: 900px) {
-    .pm__form-bottom { grid-template-columns: minmax(140px, 200px) minmax(0, 1fr); }
-    .pm__save-button { grid-column: 1 / -1; }
+    .pm__form-bottom {
+        grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
+    }
+
+    .pm__save-button {
+        grid-column: 1 / -1;
+    }
 }
+
 @media (max-width: 650px) {
-    .pm__direction-switch { display: flex; max-width: 100%; }
-    .pm__direction { padding: .55rem .7rem; font-size: .8rem; }
-    .pm__toolbar { align-items: flex-start; }
-    .pm__add-button { white-space: nowrap; }
-    .pm__flow { grid-template-columns: 1fr; }
-    .pm__flow-arrow { flex-direction: row; padding: .15rem 0; }
-    .pm__flow-arrow i { transform: rotate(90deg); }
-    .pm__flow-arrow--incoming i { transform: rotate(270deg); }
-    .pm__form-bottom { grid-template-columns: 1fr; }
-    .pm__save-button { grid-column: auto; width: 100%; }
-    .pm__header { align-items: flex-start; }
-    .pm__own-percent { flex-wrap: wrap; }
-    .pm__own-percent-editor { width: 100%; margin-left: 0; }
+    .pm__direction-switch {
+        display: flex;
+        max-width: 100%;
+    }
+
+    .pm__direction {
+        padding: .55rem .7rem;
+        font-size: .8rem;
+    }
+
+    .pm__toolbar {
+        align-items: flex-start;
+    }
+
+    .pm__add-button {
+        white-space: nowrap;
+    }
+
+    .pm__flow {
+        grid-template-columns: 1fr;
+    }
+
+    .pm__flow-arrow {
+        flex-direction: row;
+        padding: .15rem 0;
+    }
+
+    .pm__flow-arrow i {
+        transform: rotate(90deg);
+    }
+
+    .pm__flow-arrow--incoming i {
+        transform: rotate(270deg);
+    }
+
+    .pm__form-bottom {
+        grid-template-columns: 1fr;
+    }
+
+    .pm__save-button {
+        grid-column: auto;
+        width: 100%;
+    }
+
+    .pm__header {
+        align-items: flex-start;
+    }
+
+    .pm__own-percent {
+        flex-wrap: wrap;
+    }
+
+    .pm__own-percent-editor {
+        width: 100%;
+        margin-left: 0;
+    }
 }
 </style>
-
-```

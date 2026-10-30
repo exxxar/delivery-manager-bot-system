@@ -87,7 +87,9 @@
 
                 <article class="content-card">
                     <div class="section-heading">
-                        <div class="section-icon incoming"><i class="fa-solid fa-arrow-down-left"></i></div>
+                        <div class="section-icon incoming">
+                            <i class="fa-solid fa-arrow-turn-down"></i>
+                        </div>
                         <div><h3>На ком он зарабатывает</h3><p>Доход с продаж других администраторов и поставщиков</p></div>
                     </div>
                     <div v-if="report.distribution.incoming.length" class="distribution-list">

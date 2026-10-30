@@ -12,9 +12,6 @@ use Illuminate\Validation\ValidationException;
 
 class PercentageController extends Controller
 {
-    /**
-     * GET /percentages?type=agent|supplier|user&id=123&direction=outgoing|incoming
-     */
     public function index(Request $request)
     {
         $data = $request->validate([
@@ -27,100 +24,107 @@ class PercentageController extends Controller
         $ownerId = (int) $data['id'];
         $direction = $data['direction'] ?? 'outgoing';
 
-        $query = Percentage::query()->with(['user', 'percentable']);
+        return $direction === 'incoming'
+            ? $this->incomingIndex($type, $ownerId)
+            : $this->outgoingIndex($type, $ownerId);
+    }
 
-        if ($type === 'user') {
-            User::query()->findOrFail($ownerId);
+    /**
+     * Исходящие: выбранный владелец является плательщиком.
+     */
+    private function outgoingIndex(string $type, int $ownerId)
+    {
+        $owner = $this->resolveOwner($type, $ownerId);
 
-            if ($direction === 'incoming') {
-                // Получатель — выбранный администратор; плательщик хранится в percentable.
-                $query->where('user_id', $ownerId)
-                    ->where('percentable_type', (new User())->getMorphClass());
-            } else {
-                // Плательщик — выбранный пользователь; получатель хранится в user_id.
-                $query->where('percentable_type', (new User())->getMorphClass())
-                    ->where('percentable_id', $ownerId);
-            }
-        } else {
-            $owner = $this->resolveOwner($type, $ownerId);
-            $query->where('percentable_type', $owner->getMorphClass())
-                ->where('percentable_id', $owner->getKey());
-        }
+        $percentages = Percentage::query()
+            ->with(['user', 'percentable'])
+            ->where('percentable_type', $owner->getMorphClass())
+            ->where('percentable_id', $owner->getKey())
+            ->orderByDesc('id')
+            ->get();
 
         return response()->json([
-            'percentages' => $query->orderByDesc('id')->get(),
+            'direction' => 'outgoing',
+            'percentages' => $percentages,
         ]);
     }
 
     /**
-     * POST /percentages
-     *
-     * Outgoing user rule:
-     * { type:user, owner_id: payerUserId, direction:outgoing, user_id:recipientUserId, percentage }
-     *
-     * Incoming user rule:
-     * { type:user, owner_id: payerUserId, direction:incoming, percentage }
-     * The receiving admin is resolved from recipient_admin_id / owner_admin_id, or actor.
+     * Входящие: выбранный владелец является получателем.
+     * Для Agent/Supplier получатель определяется через связанный user_id.
      */
+    private function incomingIndex(string $type, int $ownerId)
+    {
+        $recipientUser = $this->resolveRecipientUser($type, $ownerId);
+
+        $percentages = Percentage::query()
+            ->with(['user', 'percentable'])
+            ->where('user_id', $recipientUser->id)
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json([
+            'direction' => 'incoming',
+            'recipient_user_id' => $recipientUser->id,
+            'percentages' => $percentages,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $actor = $request->botUser ?? $request->user();
+
         abort_unless($actor, 401, 'Необходимо авторизоваться.');
         abort_unless((int) ($actor->role ?? 0) >= 3, 403, 'Недостаточно прав для управления процентами.');
 
         $data = $request->validate([
             'type' => ['required', 'in:agent,supplier,user,admin'],
             'owner_id' => ['required', 'integer', 'min:1'],
-            'direction' => ['nullable', 'in:outgoing,incoming'],
+            'direction' => ['required', 'in:outgoing,incoming'],
             'user_id' => ['nullable', 'integer', 'min:1'],
-            'recipient_admin_id' => ['nullable', 'integer', 'min:1'],
-            'owner_admin_id' => ['nullable', 'integer', 'min:1'],
+            'payer_user_id' => ['nullable', 'integer', 'min:1'],
             'percentage' => ['required', 'numeric', 'gt:0', 'lte:100'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $type = $data['type'] === 'admin' ? 'user' : $data['type'];
-        $direction = $data['direction'] ?? 'outgoing';
         $isActive = $data['is_active'] ?? true;
 
-        return DB::transaction(function () use ($data, $type, $direction, $isActive, $actor) {
-            if ($type === 'user' && $direction === 'incoming') {
-                // Для обратного сценария owner_id — выбранный плательщик.
-                $payer = User::query()->findOrFail((int) $data['owner_id']);
-                $recipientId = (int) ($data['recipient_admin_id'] ?? $data['owner_admin_id'] ?? $actor->id);
-                $recipient = User::query()->findOrFail($recipientId);
+        return $data['direction'] === 'incoming'
+            ? $this->storeIncomingPercentage($data, $type, $isActive)
+            : $this->storeOutgoingPercentage($data, $type, $isActive);
+    }
 
-                // Не позволяем создавать входящие начисления на обычного пользователя.
-                abort_unless((int) ($recipient->role ?? 0) >= 3, 422, 'Получателем входящего процента должен быть администратор.');
+    /**
+     * Входящее правило: выбранный User-плательщик -> текущий владелец-получатель.
+     */
+    private function storeIncomingPercentage(array $data, string $type, bool $isActive)
+    {
+        return DB::transaction(function () use ($data, $type, $isActive) {
+            $recipient = $this->resolveRecipientUser($type, (int) $data['owner_id']);
+            $payer = User::query()->findOrFail((int) ($data['payer_user_id'] ?? 0));
 
-                $percentage = Percentage::query()->firstOrNew([
-                    'percentable_type' => $payer->getMorphClass(),
-                    'percentable_id' => $payer->getKey(),
-                    'user_id' => $recipient->getKey(),
+            abort_unless(
+                (int) ($recipient->role ?? 0) >= 1,
+                422,
+                'Получателем входящего процента должен быть администратор.'
+            );
+
+            if ($payer->is($recipient)) {
+                throw ValidationException::withMessages([
+                    'payer_user_id' => ['Плательщик и получатель не могут совпадать.'],
                 ]);
-                $percentage->percentage = $data['percentage'];
-                $percentage->is_active = $isActive;
-                $percentage->save();
-            } else {
-                $owner = $this->resolveOwner($type, (int) $data['owner_id']);
-                $recipientId = (int) ($data['user_id'] ?? 0);
-                $recipient = User::query()->findOrFail($recipientId);
-
-                if ($type === 'user' && $recipient->is($owner)) {
-                    throw ValidationException::withMessages([
-                        'user_id' => ['Плательщик и получатель не могут совпадать.'],
-                    ]);
-                }
-
-                $percentage = Percentage::query()->firstOrNew([
-                    'percentable_type' => $owner->getMorphClass(),
-                    'percentable_id' => $owner->getKey(),
-                    'user_id' => $recipient->getKey(),
-                ]);
-                $percentage->percentage = $data['percentage'];
-                $percentage->is_active = $isActive;
-                $percentage->save();
             }
+
+            $percentage = Percentage::query()->firstOrNew([
+                'percentable_type' => $payer->getMorphClass(),
+                'percentable_id' => $payer->getKey(),
+                'user_id' => $recipient->getKey(),
+            ]);
+
+            $percentage->percentage = $data['percentage'];
+            $percentage->is_active = $isActive;
+            $percentage->save();
 
             return response()->json(
                 $percentage->fresh()->load(['user', 'percentable']),
@@ -130,11 +134,41 @@ class PercentageController extends Controller
     }
 
     /**
-     * PUT /percentages/{id} — currently used by the frontend to toggle is_active.
+     * Исходящее правило: текущий morph-владелец -> выбранный User-получатель.
      */
+    private function storeOutgoingPercentage(array $data, string $type, bool $isActive)
+    {
+        return DB::transaction(function () use ($data, $type, $isActive) {
+            $owner = $this->resolveOwner($type, (int) $data['owner_id']);
+            $recipient = User::query()->findOrFail((int) ($data['user_id'] ?? 0));
+
+            if ($type === 'user' && $recipient->is($owner)) {
+                throw ValidationException::withMessages([
+                    'user_id' => ['Плательщик и получатель не могут совпадать.'],
+                ]);
+            }
+
+            $percentage = Percentage::query()->firstOrNew([
+                'percentable_type' => $owner->getMorphClass(),
+                'percentable_id' => $owner->getKey(),
+                'user_id' => $recipient->getKey(),
+            ]);
+
+            $percentage->percentage = $data['percentage'];
+            $percentage->is_active = $isActive;
+            $percentage->save();
+
+            return response()->json(
+                $percentage->fresh()->load(['user', 'percentable']),
+                $percentage->wasRecentlyCreated ? 201 : 200
+            );
+        });
+    }
+
     public function update(Request $request, int $id)
     {
         $actor = $request->botUser ?? $request->user();
+
         abort_unless($actor, 401, 'Необходимо авторизоваться.');
         abort_unless((int) ($actor->role ?? 0) >= 3, 403, 'Недостаточно прав для управления процентами.');
 
@@ -153,6 +187,7 @@ class PercentageController extends Controller
     public function destroy(Request $request, int $id)
     {
         $actor = $request->botUser ?? $request->user();
+
         abort_unless($actor, 401, 'Необходимо авторизоваться.');
         abort_unless((int) ($actor->role ?? 0) >= 3, 403, 'Недостаточно прав для управления процентами.');
 
@@ -169,5 +204,20 @@ class PercentageController extends Controller
             'user' => User::query()->findOrFail($id),
             default => abort(422, 'Неизвестный тип владельца.'),
         };
+    }
+
+    /**
+     * Получатель процента всегда User.
+     * У Agent и Supplier его User находится через user_id.
+     */
+    private function resolveRecipientUser(string $type, int $ownerId): User
+    {
+        if ($type === 'user') {
+            return User::query()->findOrFail($ownerId);
+        }
+
+        $owner = $this->resolveOwner($type, $ownerId);
+
+        return User::query()->findOrFail((int) $owner->user_id);
     }
 }
