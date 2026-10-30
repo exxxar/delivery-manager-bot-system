@@ -2059,18 +2059,43 @@ p {
 
 
 
-/* Нижняя модалка действий со сделкой */
-.sales-page .sale-card__dropdown { display:flex; justify-content:flex-end; }
+/* Фиксированная позиция меню внутри карточки */
+.sales-page .sale-card {
+    position: relative;
+}
+
+.sales-page .sale-card__dropdown {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 20;
+    display: block;
+    width: 40px;
+    height: 40px;
+}
+
 .sales-page .sale-card__menu-button {
-    display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px;
-    border:1px solid var(--sales-border); border-radius:12px; background:#fff; color:var(--sales-blue);
-    box-shadow:0 3px 10px rgba(23,35,59,.06); transition:background .2s,transform .2s,border-color .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--sales-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .95);
+    color: var(--sales-blue);
+    box-shadow: 0 3px 10px rgba(23, 35, 59, .08);
+    cursor: pointer;
+    transition: .2s ease;
 }
-.sales-page .sale-card__menu-button:hover { background:var(--sales-soft-blue); border-color:#cbd9f7; transform:translateY(-1px); }
-.sale-actions-backdrop {
-    position:fixed; inset:0; z-index:1090; display:flex; align-items:flex-end; justify-content:center;
-    padding:0; background:rgba(14,25,45,.48); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+
+.sales-page .sale-card__menu-button:hover {
+    background: var(--sales-soft-blue);
+    border-color: #cbd9f7;
+    transform: translateY(-1px);
 }
+
 .sale-actions-sheet {
     width:100%; max-width:640px; max-height:min(82vh,760px); overflow:auto; overscroll-behavior:contain;
     background:#fff !important; color:#17233b; border:1px solid rgba(255,255,255,.8); border-bottom:0;
@@ -2159,5 +2184,10 @@ p {
     .bad-sale-card-wrapper {
         border-radius: 12px;
     }
+}
+
+.sales-page .bad-sale-card-wrapper {
+    position: relative;
+    height: 100%;
 }
 </style>
