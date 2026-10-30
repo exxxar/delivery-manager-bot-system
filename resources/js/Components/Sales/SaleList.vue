@@ -247,23 +247,30 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 </div>
 
                 <!-- Статистика месяца -->
-                <div v-if="salesStore.groupedMonth" class="alert alert-info mb-3">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <div class="small text-muted">Всего сделок</div>
-                            <div class="fw-bold fs-5">{{ salesStore.groupedMonth.month_stats.total_sales }}</div>
-                        </div>
-                        <div class="col-4">
-                            <div class="small text-muted">Общая сумма</div>
-                            <div class="fw-bold fs-5 text-success">{{
-                                    formatMoney(salesStore.groupedMonth.month_stats.total_sum)
-                                }}
+                <div v-if="salesStore.groupedMonth" class="alert alert-info month-stats mb-3">
+                    <div class="month-stats__grid">
+
+                        <div class="month-stats__item">
+                            <div class="month-stats__label">Всего сделок</div>
+                            <div class="month-stats__value">
+                                {{ salesStore.groupedMonth.month_stats.total_sales }}
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="small text-muted">Средний чек</div>
-                            <div class="fw-bold fs-5">{{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}</div>
+
+                        <div class="month-stats__item">
+                            <div class="month-stats__label">Общая сумма</div>
+                            <div class="month-stats__value month-stats__value--success">
+                                {{ formatMoney(salesStore.groupedMonth.month_stats.total_sum) }}
+                            </div>
                         </div>
+
+                        <div class="month-stats__item">
+                            <div class="month-stats__label">Средний чек</div>
+                            <div class="month-stats__value">
+                                {{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -2173,6 +2180,98 @@ p {
 @media (max-width: 575.98px) {
     .bad-sale-card-wrapper {
         border-radius: 12px;
+    }
+}
+
+/* Статистика месяца */
+.sales-page .month-stats {
+    padding: 14px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.sales-page .month-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+}
+
+.sales-page .month-stats__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 8px 6px;
+    text-align: center;
+}
+
+.sales-page .month-stats__item + .month-stats__item {
+    border-left: 1px solid rgba(36, 87, 214, .15);
+}
+
+.sales-page .month-stats__label {
+    margin-bottom: 6px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.sales-page .month-stats__value {
+    color: #17233b;
+    font-size: clamp(16px, 2vw, 22px);
+    font-weight: 750;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow-wrap: normal;
+}
+
+.sales-page .month-stats__value--success {
+    color: #168252;
+}
+
+/* Планшет */
+@media (max-width: 768px) {
+    .sales-page .month-stats__value {
+        font-size: 16px;
+    }
+}
+
+/* Телефон */
+@media (max-width: 576px) {
+    .sales-page .month-stats {
+        padding: 8px 14px;
+    }
+
+    .sales-page .month-stats__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-page .month-stats__item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 4px;
+        text-align: left;
+    }
+
+    .sales-page .month-stats__item + .month-stats__item {
+        border-left: none;
+        border-top: 1px solid rgba(36, 87, 214, .15);
+    }
+
+    .sales-page .month-stats__label {
+        margin: 0;
+        font-size: 13px;
+        white-space: normal;
+    }
+
+    .sales-page .month-stats__value {
+        flex-shrink: 0;
+        font-size: 17px;
+        white-space: nowrap;
     }
 }
 </style>
