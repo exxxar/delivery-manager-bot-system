@@ -68,7 +68,6 @@
     </main>
 
 
-
     <footer class="app-footer">
         <div class="container-lg app-footer-inner">
             <span class="footer-brand"><i class="fa-solid fa-percent me-2"></i>Мойпроцент</span>
@@ -178,6 +177,14 @@
                     </a>
                 </li>
             </ul>
+
+            <p>
+                 <span
+                     v-if="serverVersion"
+                     class="version-badge"
+                     :title="`Версия приложения: ${serverVersion}`"
+                 >v{{ serverVersion }}</span>
+            </p>
         </div>
     </div>
 
@@ -388,7 +395,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <SupplierInviteLinkManager v-if="self && self.role >= 4" />
+                    <SupplierInviteLinkManager v-if="self && self.role >= 4"/>
                 </div>
             </div>
         </div>
@@ -396,7 +403,7 @@
 </template>
 
 <script>
-import { Head, usePage } from '@inertiajs/vue3'
+import {Head, usePage} from '@inertiajs/vue3'
 import GlobalAlert from "@/Components/GlobalAlert.vue";
 import GlobalConfirmModal from "@/Components/GlobalConfirmModal.vue";
 import UserProfileCard from "@/Components/Users/UserProfileCard.vue";
@@ -422,10 +429,10 @@ import {
     onStatusChange,
 } from "@/utilites/networkStatus.js";
 
-import { useUsersStore } from "@/stores/users";
-import { useSalesStore } from "@/stores/sales";
-import { useModalStore } from "@/stores/utillites/useConfitmModalStore";
-import { useAlertStore } from "@/stores/utillites/useAlertStore";
+import {useUsersStore} from "@/stores/users";
+import {useSalesStore} from "@/stores/sales";
+import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
+import {useAlertStore} from "@/stores/utillites/useAlertStore";
 
 export default {
     components: {
@@ -526,7 +533,6 @@ export default {
         });
 
 
-
         // 🔹 Инициализация очереди
         this.offlineQueueCount = getQueue().length;
         this.queueItems = getQueue();
@@ -571,7 +577,7 @@ export default {
 
             this.deferredInstallPrompt.prompt();
 
-            const { outcome } = await this.deferredInstallPrompt.userChoice;
+            const {outcome} = await this.deferredInstallPrompt.userChoice;
 
             if (outcome === 'accepted') {
                 this.canInstallPwa = false;
@@ -756,16 +762,16 @@ export default {
         },
 
         goTo(name) {
-            this.$router.push({ name });
+            this.$router.push({name});
         },
 
         scrollTop() {
-            window.scrollTo({ top: 80, behavior: 'smooth' });
+            window.scrollTo({top: 80, behavior: 'smooth'});
         },
 
         openLink(url) {
             if (this.canUseTG) {
-                this.tg.openLink(url, { try_instant_view: true });
+                this.tg.openLink(url, {try_instant_view: true});
             } else {
                 window.location.href = url;
             }
@@ -796,7 +802,7 @@ export default {
                 await this.userStore.logout();
 
                 if (navigator.serviceWorker?.controller) {
-                    navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+                    navigator.serviceWorker.controller.postMessage({type: 'CLEAR_CACHE'});
                 }
 
                 window.location.href = '/login';
@@ -906,7 +912,10 @@ body.has-offline-banner .fixed-top-menu {
     backdrop-filter: blur(14px);
 }
 
-.app-navbar { width: 100%; }
+.app-navbar {
+    width: 100%;
+}
+
 .app-navbar-inner {
     display: flex;
     align-items: center;
@@ -939,10 +948,31 @@ body.has-offline-banner .fixed-top-menu {
     font-size: 20px;
 }
 
-.brand-copy, .sidebar-brand > div:last-child { display: flex; flex-direction: column; gap: 2px; }
-.brand-name { color: #17233b; font-size: 18px; font-weight: 800; line-height: 1.15; letter-spacing: -.35px; }
-.brand-caption { color: #778399; font-size: 12px; line-height: 1.3; }
-.navbar-actions { display: flex; align-items: center; gap: 10px; }
+.brand-copy, .sidebar-brand > div:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.brand-name {
+    color: #17233b;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.35px;
+}
+
+.brand-caption {
+    color: #778399;
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
 .menu-toggle {
     display: flex;
@@ -957,7 +987,12 @@ body.has-offline-banner .fixed-top-menu {
     font-size: 19px;
     transition: color .2s ease, background .2s ease, transform .2s ease;
 }
-.menu-toggle:hover { color: #fff; background: #2457d6; transform: translateY(-1px); }
+
+.menu-toggle:hover {
+    color: #fff;
+    background: #2457d6;
+    transform: translateY(-1px);
+}
 
 .version-badge {
     display: inline-flex;
@@ -988,13 +1023,42 @@ body.has-offline-banner .fixed-top-menu {
     cursor: pointer;
     transition: background .2s ease, transform .2s ease;
 }
-.queue-badge:hover { background: #ffebad; transform: translateY(-1px); }
 
-.app-main { min-height: calc(100vh - 150px); padding-top: 28px; padding-bottom: 34px; }
-.app-footer { padding: 18px 0 94px; color: #778399; background: #fff; border-top: 1px solid #e9edf4; }
-.app-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.footer-brand { color: #53627a; font-size: 13px; font-weight: 750; }
-.footer-brand i { color: #2457d6; }
+.queue-badge:hover {
+    background: #ffebad;
+    transform: translateY(-1px);
+}
+
+.app-main {
+    min-height: calc(100vh - 150px);
+    padding-top: 28px;
+    padding-bottom: 34px;
+}
+
+.app-footer {
+    padding: 18px 0 94px;
+    color: #778399;
+    background: #fff;
+    border-top: 1px solid #e9edf4;
+}
+
+.app-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.footer-brand {
+    color: #53627a;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.footer-brand i {
+    color: #2457d6;
+}
+
 .back-to-top {
     display: inline-flex;
     align-items: center;
@@ -1008,7 +1072,11 @@ body.has-offline-banner .fixed-top-menu {
     font-weight: 700;
     transition: background .2s ease, color .2s ease;
 }
-.back-to-top:hover { color: #fff; background: #2457d6; }
+
+.back-to-top:hover {
+    color: #fff;
+    background: #2457d6;
+}
 
 .custom-offcanvas {
     width: min(390px, 88vw) !important;
@@ -1018,13 +1086,44 @@ body.has-offline-banner .fixed-top-menu {
     border-radius: 0 20px 20px 0;
     box-shadow: 16px 0 50px rgba(23, 35, 59, .14);
 }
-.sidebar-heading { padding: 20px; border-bottom: 1px solid #e9edf4; }
-.sidebar-brand { display: flex; align-items: center; gap: 12px; }
-.sidebar-brand .brand-mark { width: 40px; height: 40px; border-radius: 12px; font-size: 17px; }
-.sidebar-brand .offcanvas-title { color: #17233b; font-size: 17px; font-weight: 800; }
-.sidebar-brand span { color: #778399; font-size: 11px; }
-.custom-offcanvas .offcanvas-body { padding: 18px; }
-.custom-offcanvas .list-group { gap: 6px; }
+
+.sidebar-heading {
+    padding: 20px;
+    border-bottom: 1px solid #e9edf4;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-brand .brand-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 17px;
+}
+
+.sidebar-brand .offcanvas-title {
+    color: #17233b;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.sidebar-brand span {
+    color: #778399;
+    font-size: 11px;
+}
+
+.custom-offcanvas .offcanvas-body {
+    padding: 18px;
+}
+
+.custom-offcanvas .list-group {
+    gap: 6px;
+}
+
 .custom-offcanvas .list-group-item {
     padding: 0 !important;
     overflow: hidden;
@@ -1032,6 +1131,7 @@ body.has-offline-banner .fixed-top-menu {
     border: 0;
     border-radius: 11px;
 }
+
 .custom-offcanvas .list-group-item a {
     display: flex;
     align-items: center;
@@ -1042,43 +1142,136 @@ body.has-offline-banner .fixed-top-menu {
     font-weight: 600 !important;
     transition: color .2s ease, background .2s ease;
 }
+
 .custom-offcanvas .list-group-item a:hover,
 .custom-offcanvas .list-group-item a.fw-bold {
     color: #2457d6;
     background: #edf3ff;
 }
-.custom-offcanvas .list-group-item a i { width: 20px; text-align: center; font-size: 16px; }
-.custom-offcanvas .alert { border-radius: 13px; }
+
+.custom-offcanvas .list-group-item a i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.custom-offcanvas .alert {
+    border-radius: 13px;
+}
 
 /* Карточки и диалоги в общей палитре */
-.queue-item { overflow: hidden; border: 1px solid #e5eaf2; border-radius: 13px; transition: border-color .2s ease, box-shadow .2s ease; }
-.queue-item:hover { border-color: #b9ccfa; box-shadow: 0 5px 16px rgba(36, 87, 214, .08); }
-.modal-content { overflow: hidden; border: 1px solid #e5eaf2; border-radius: 18px; box-shadow: 0 20px 60px rgba(23, 35, 59, .16); }
-.modal-header { padding: 18px 22px; background: #f8faff; border-bottom: 1px solid #e5eaf2; }
-.modal-title { color: #17233b; font-weight: 750; }
-.modal-body { padding: 22px; }
-.modal-footer { padding: 16px 22px; border-top: 1px solid #e5eaf2; }
-.btn-primary { background-color: #2457d6; border-color: #2457d6; }
-.btn-primary:hover { background-color: #173b91; border-color: #173b91; }
+.queue-item {
+    overflow: hidden;
+    border: 1px solid #e5eaf2;
+    border-radius: 13px;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.queue-item:hover {
+    border-color: #b9ccfa;
+    box-shadow: 0 5px 16px rgba(36, 87, 214, .08);
+}
+
+.modal-content {
+    overflow: hidden;
+    border: 1px solid #e5eaf2;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(23, 35, 59, .16);
+}
+
+.modal-header {
+    padding: 18px 22px;
+    background: #f8faff;
+    border-bottom: 1px solid #e5eaf2;
+}
+
+.modal-title {
+    color: #17233b;
+    font-weight: 750;
+}
+
+.modal-body {
+    padding: 22px;
+}
+
+.modal-footer {
+    padding: 16px 22px;
+    border-top: 1px solid #e5eaf2;
+}
+
+.btn-primary {
+    background-color: #2457d6;
+    border-color: #2457d6;
+}
+
+.btn-primary:hover {
+    background-color: #173b91;
+    border-color: #173b91;
+}
 
 @media (max-width: 575.98px) {
-    .app-navbar-inner { width: calc(100% - 24px); min-height: 66px; gap: 8px; }
-    .brand-mark { width: 40px; height: 40px; border-radius: 12px; font-size: 18px; }
-    .brand-name { font-size: 16px; }
-    .brand-caption { font-size: 10px; }
-    .navbar-actions { gap: 6px; }
-    .version-badge { display: none; }
-    .menu-toggle { width: 40px; height: 40px; }
-    .app-main {  padding: 0; }
-    .app-footer-inner { align-items: flex-start; flex-direction: column; }
-    .modal-body { padding: 16px; }
-    .modal-header { padding: 15px 17px; }
-    .modal-footer { padding: 13px 16px; }
+    .app-navbar-inner {
+        width: calc(100% - 24px);
+        min-height: 66px;
+        gap: 8px;
+    }
+
+    .brand-mark {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        font-size: 18px;
+    }
+
+    .brand-name {
+        font-size: 16px;
+    }
+
+    .brand-caption {
+        font-size: 10px;
+    }
+
+    .navbar-actions {
+        gap: 6px;
+    }
+
+    .version-badge {
+        display: none;
+    }
+
+    .menu-toggle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .app-main {
+        padding: 0;
+    }
+
+    .app-footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-header {
+        padding: 15px 17px;
+    }
+
+    .modal-footer {
+        padding: 13px 16px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .menu-toggle, .queue-badge, .back-to-top, .custom-offcanvas .list-group-item a, .queue-item { transition: none; }
+    .menu-toggle, .queue-badge, .back-to-top, .custom-offcanvas .list-group-item a, .queue-item {
+        transition: none;
+    }
 }
+
 .install-pwa-btn {
     position: relative;
     display: inline-flex;
@@ -1096,16 +1289,14 @@ body.has-offline-banner .fixed-top-menu {
     font-weight: 800;
     letter-spacing: 0.1px;
 
-    box-shadow:
-        0 5px 14px rgba(36, 87, 214, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 5px 14px rgba(36, 87, 214, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
     cursor: pointer;
     overflow: hidden;
-    transition:
-        transform .2s ease,
-        box-shadow .2s ease,
-        filter .2s ease;
+    transition: transform .2s ease,
+    box-shadow .2s ease,
+    filter .2s ease;
 
     animation: install-pwa-glow 2.5s ease-in-out infinite;
 }
