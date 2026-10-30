@@ -8,9 +8,19 @@
                     <p class="text-muted mb-0">Кто начисляет вам процент с продаж</p>
                 </div>
             </div>
-            <button class="btn btn-outline-primary refresh-btn" type="button" :disabled="loading" @click="loadIncome">
-                <i class="fa-solid fa-rotate-right me-2" :class="{ 'fa-spin': loading }"></i>Обновить
-            </button>
+            <div class="heading-actions d-flex flex-wrap align-items-center gap-2">
+                <button
+                    class="btn btn-primary report-btn"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#incomeReportModal"
+                >
+                    <i class="fa-solid fa-file-circle-plus me-2"></i>Сформировать отчёт
+                </button>
+                <button class="btn btn-outline-primary refresh-btn" type="button" :disabled="loading" @click="loadIncome">
+                    <i class="fa-solid fa-rotate-right me-2" :class="{ 'fa-spin': loading }"></i>Обновить
+                </button>
+            </div>
         </header>
 
         <section class="period-card mb-4">
@@ -120,11 +130,50 @@
             <i class="fa-solid fa-circle-info me-1"></i>
             В расчёт входят только активные проценты и завершённые сделки со статусом <code>completed</code>, у которых фактическая дата доставки попадает в выбранный период. Используются текущие настройки процентов.
         </p>
+
+        <!-- Модальное окно индивидуального генератора отчётов -->
+        <div
+            id="incomeReportModal"
+            class="modal fade"
+            tabindex="-1"
+            aria-labelledby="incomeReportModalTitle"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content report-modal">
+                    <div class="modal-header">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="report-modal-icon">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </div>
+                            <div>
+                                <h2 id="incomeReportModalTitle" class="modal-title h5 mb-1">Генератор отчётов</h2>
+                                <p class="text-muted small mb-0">Формирование персональной отчётности</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ReportIndividualGenerator
+                            v-if="agentId != null"
+                            :agent-id="agentId"
+                            @generate-report="handleReport"
+                        />
+                        <div v-else class="alert alert-warning d-flex align-items-start gap-2 mb-0">
+                            <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                            <span>Профиль агента не найден. Проверьте привязку агента к вашему аккаунту.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 </template>
 
 <script>
 import axios from 'axios'
+import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGenerator.vue"
+import { useUsersStore } from "@/stores/users"
 
 const dateString = date => {
     const year = date.getFullYear()
@@ -138,6 +187,7 @@ export default {
     data() {
         const now = new Date()
         return {
+            userStore: useUsersStore(),
             from: dateString(new Date(now.getFullYear(), now.getMonth(), 1)),
             to: dateString(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
             sources: [],
@@ -146,10 +196,25 @@ export default {
             error: '',
         }
     },
+    components: {
+        ReportIndividualGenerator,
+    },
+    computed: {
+        agentId() {
+            return this.userStore.self?.agent?.id ?? null
+        },
+    },
     mounted() {
         this.loadIncome()
     },
     methods: {
+        handleReport() {
+            const element = document.getElementById('incomeReportModal')
+            const modal = element && window.bootstrap?.Modal
+                ? window.bootstrap.Modal.getInstance(element)
+                : null
+            modal?.hide()
+        },
         async loadIncome() {
             if (!this.from || !this.to || this.from > this.to) return
             this.loading = true
@@ -209,7 +274,11 @@ export default {
 .heading-icon { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1769e0, #4289f5); box-shadow: 0 8px 20px #1769e02b; font-size: 21px; }
 .page-heading h1 { font-weight: 800; letter-spacing: -.035em; }
 .page-heading p { font-size: 14px; }
-.refresh-btn { border-radius: 11px; font-weight: 650; padding: 10px 14px; }
+.refresh-btn, .report-btn { border-radius: 11px; font-weight: 650; padding: 10px 14px; }
+.report-modal { overflow: hidden; border: 1px solid #e8edf5; border-radius: 18px; box-shadow: 0 20px 60px rgba(23, 35, 59, .16); }
+.report-modal .modal-header { padding: 18px 22px; background: #f8faff; border-bottom: 1px solid #e8edf5; }
+.report-modal .modal-body { padding: 22px; background: #fff; }
+.report-modal-icon { width: 44px; height: 44px; display: grid; place-items: center; flex: 0 0 44px; border-radius: 13px; color: #2457d6; background: #eaf1ff; font-size: 18px; }
 .period-card, .income-card { background: #fff; border: 1px solid #e8edf5; border-radius: 18px; padding: 22px; box-shadow: 0 5px 22px #192b4808; }
 .period-title { font-size: 14px; font-weight: 750; margin-bottom: 17px; }
 .period-card .form-label { font-size: 12px; font-weight: 700; color: #61718a; }
@@ -252,6 +321,10 @@ export default {
     .summary-card strong { font-size: 23px; }
     .page-heading { align-items: flex-start !important; }
     .heading-icon { width: 46px; height: 46px; border-radius: 13px; }
-    .refresh-btn { padding: 8px 11px; font-size: 12px; }
+    .heading-actions { width: 100%; }
+    .heading-actions .btn { flex: 1 1 auto; padding: 9px 10px; font-size: 12px; }
+    .report-modal .modal-body { padding: 16px; }
+    .report-modal .modal-header { padding: 15px 17px; }
 }
 </style>
+

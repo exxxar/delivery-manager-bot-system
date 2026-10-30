@@ -99,9 +99,9 @@
                     <div class="fw-bold">
                         <p class="small mb-2">
                             <span style="margin-right:5px;"
-                                class="badge btn text-primary btn-outline-primary">#. {{agent.id || 0}}</span>
+                                  class="badge btn text-primary btn-outline-primary">#. {{agent.id || 0}}</span>
                             <span class="badge agent-badge-primary">Общ. {{agent.total_percent || 0}}%</span>
-                            <span class="badge agent-badge-soft mx-1">Перс. {{agent.percent}}%</span>
+                            <span class="badge agent-badge-soft mx-1">Перс. {{agent.percent ?? agent.user?.percent ?? 0}}%</span>
                         </p>
                         <span @click="toggleSelection(agent.id)">{{ agent.name }}</span>
                     </div>
@@ -120,7 +120,10 @@
                             <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
                         </span>
                             <span class="badge bg-info text-dark">
-                            <i class="fa-solid fa-money-bill-trend-up me-1"></i> {{ formatMoney(agent.month_turnover) }}
+                            <i class="fa-solid fa-money-bill-trend-up me-1"></i> Оборот: {{ formatMoney(agent.month_turnover) }}
+                        </span>
+                            <span class="badge agent-salary-badge">
+                            <i class="fa-solid fa-wallet me-1"></i> ЗП: {{ formatMoney(agent.month_salary) }}
                         </span>
                         </div>
                     </template>
@@ -201,6 +204,11 @@
                             <button type="button" class="agent-action" @click="runAgentAction('edit')">
                                 <span class="agent-action-icon is-indigo"><i class="fa-solid fa-pen-to-square"></i></span>
                                 <span><strong>Редактировать</strong><small>Изменить данные администратора</small></span>
+                                <i class="fa-solid fa-chevron-right agent-action-chevron"></i>
+                            </button>
+                            <button type="button" class="agent-action" @click="runAgentAction('salary')">
+                                <span class="agent-action-icon is-green"><i class="fa-solid fa-wallet"></i></span>
+                                <span><strong>Доход администратора</strong><small>Посмотреть зарплату и начисления за период</small></span>
                                 <i class="fa-solid fa-chevron-right agent-action-chevron"></i>
                             </button>
                             <button type="button" class="agent-action" @click="runAgentAction('statistics')">
@@ -432,12 +440,12 @@ export default {
             selection: [],
             selectedAgent: null,
             report: {
-            startDate: '',
+                startDate: '',
                 endDate: '',
-        },
-        viewMode: 'all',
+            },
+            viewMode: 'all',
             selectedMonth: this.getCurrentMonth(),
-    }
+        }
     },
     watch: {
         size: function () {
@@ -515,12 +523,22 @@ export default {
                     case 'select': this.selectAgent(agent); break
                     case 'view': this.openAgentInfo(agent); break
                     case 'edit': this.openEditAgent(agent); break
+                    case 'salary': this.openAgentSalary(agent); break
                     case 'statistics': this.getPersonalStatistic(agent); break
                     case 'percentages': this.openPercentages(agent); break
                     case 'delete': this.confirmDelete(agent); break
                     case 'resetPassword': this.resetAgentPassword(agent); break
                 }
             })
+        },
+
+        openAgentSalary(agent) {
+            if (!agent?.id) return;
+
+            this.$router.push({
+                name: 'agent-salary',
+                params: { agentId: Number(agent.id) }
+            });
         },
 
         async openAgentSales(agent) {
@@ -735,6 +753,7 @@ export default {
 .agent-badge-primary,.agent-badge-soft { display:inline-block; border-radius:8px; padding:6px 9px; font-size:11px; }
 .agent-badge-primary { background:#e8f0ff; color:#2457a7; }
 .agent-badge-soft { background:#fff0f2; color:#c73d56; }
+.agent-salary-badge { background:#e5f7ef !important; color:#16734d !important; }
 .agent-card .badge.bg-success { background:#e5f7ef !important; color:#16845c; }
 .agent-card .badge.bg-info { background:#e9f2ff !important; color:#2457a7 !important; }
 .agent-card .badge.bg-secondary { background:#eef0f5 !important; color:#66738b; }

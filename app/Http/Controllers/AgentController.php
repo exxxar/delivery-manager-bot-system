@@ -10,6 +10,7 @@ use App\Http\Requests\AgentUpdateRequest;
 use App\Models\Agent;
 use App\Models\Sale;
 use App\Models\User;
+use App\Models\Percentage;
 use Carbon\Carbon;
 
 use Illuminate\Http\RedirectResponse;
@@ -86,19 +87,64 @@ class AgentController extends Controller
         $perPage = (int) $request->get('per_page', $request->size ?? 20);
         $agents = $query->paginate($perPage);
 
-        // Рассчитываем зарплату каждого агента за выбранный месяц
-        $agents->getCollection()->transform(function ($agent) {
+        // Обороты плательщиков сгруппированы по user_id.
+        // Входящий процент администратора рассчитывается от оборота того,
+        // кто назначен плательщиком (percentable_id), а не от его собственного оборота.
+        $recipientUserIds = $agents->getCollection()
+            ->pluck('user_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $incomingPercentages = Percentage::query()
+            ->active()
+            ->whereIn('user_id', $recipientUserIds)
+            ->where('percentable_type', User::class)
+            ->get(['user_id', 'percentable_id', 'percentage']);
+
+        $payerTurnovers = Sale::query()
+            ->join('agents', 'agents.id', '=', 'sales.agent_id')
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.actual_delivery_date', [$startDate, $endDate])
+            ->whereIn('agents.user_id', $incomingPercentages->pluck('percentable_id')->filter()->unique())
+            ->selectRaw('agents.user_id as payer_user_id, SUM(sales.total_price) as turnover')
+            ->groupBy('agents.user_id')
+            ->pluck('turnover', 'payer_user_id');
+
+        $incomingByRecipient = [];
+        foreach ($incomingPercentages as $percentageRow) {
+            $recipientId = (int) $percentageRow->user_id;
+            $payerId = (int) $percentageRow->percentable_id;
+            $rate = (float) $percentageRow->percentage;
+            $payerTurnover = (float) ($payerTurnovers[$payerId] ?? 0);
+
+            $incomingByRecipient[$recipientId]['percent'] =
+                ($incomingByRecipient[$recipientId]['percent'] ?? 0) + $rate;
+            $incomingByRecipient[$recipientId]['income'] =
+                ($incomingByRecipient[$recipientId]['income'] ?? 0) + ($payerTurnover * $rate / 100);
+        }
+
+        // Рассчитываем собственный доход и входящие начисления каждого администратора.
+        $agents->getCollection()->transform(function ($agent) use ($incomingByRecipient) {
             $turnover = (float) ($agent->month_turnover ?? 0);
 
-            // Сначала берём персональный процент агента,
-            // если он не задан или равен 0 — процент пользователя.
+            // Собственный процент агента; если не задан — процент его пользователя.
             $percent = (float) ($agent->percent ?? 0);
-
             if ($percent <= 0) {
                 $percent = (float) ($agent->user?->percent ?? 0);
             }
 
-            $agent->month_salary = round($turnover * $percent / 100, 2);
+            $ownIncome = $turnover * $percent / 100;
+            $incoming = $incomingByRecipient[(int) $agent->user_id] ?? [
+                'percent' => 0,
+                'income' => 0,
+            ];
+
+            $agent->own_percent = $percent;
+            $agent->own_income = round($ownIncome, 2);
+            $agent->incoming_percent = round((float) $incoming['percent'], 2);
+            $agent->incoming_income = round((float) $incoming['income'], 2);
+            $agent->month_salary = round($ownIncome + (float) $incoming['income'], 2);
 
             return $agent;
         });
@@ -165,7 +211,7 @@ class AgentController extends Controller
     public function index(Request $request)
     {
         $query = Agent::query()
-            ->with(["mentor"]);
+            ->with(["mentor", "user:id,percent"]);
 
         // 🔹 Фильтры по связям
         if ($request->filled('user_id')) {
@@ -207,6 +253,31 @@ class AgentController extends Controller
         // 🔹 Пагинация
         $perPage = $request->get('per_page', $request->size ?? 10);
         $agents = $query->paginate($perPage);
+
+        // Входящий процент: процентные записи, где текущий пользователь — получатель,
+        // а плательщик указан через percentable_type=User и percentable_id.
+        $recipientUserIds = $agents->getCollection()
+            ->pluck('user_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $incomingPercentages = Percentage::query()
+            ->active()
+            ->whereIn('user_id', $recipientUserIds)
+            ->where('percentable_type', User::class)
+            ->selectRaw('user_id, SUM(percentage) as incoming_percent')
+            ->groupBy('user_id')
+            ->pluck('incoming_percent', 'user_id');
+
+        $agents->getCollection()->transform(function ($agent) use ($incomingPercentages) {
+            $agent->incoming_percent = round(
+                (float) ($incomingPercentages[$agent->user_id] ?? 0),
+                2
+            );
+
+            return $agent;
+        });
 
         return response()->json($agents);
     }

@@ -1,1 +1,0 @@
-import{M as e}from"./MyIncome-DS5lrj1M.js";import{_ as n}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{f as c,o as r,g as t}from"./app-FdhtRIcT.js";const p={name:"SupplierMyIncome",components:{MyIncome:e}};function s(m,a,_,f,i,l){const o=c("MyIncome");return r(),t(o)}const I=n(p,[["render",s]]);export{I as default};
