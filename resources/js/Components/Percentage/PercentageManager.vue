@@ -1,438 +1,601 @@
+```
 <template>
-    <section v-if="isSupportedOwner" class="percentage-manager">
-        <header class="manager-header">
-            <div class="heading-content">
-                <div class="heading-icon"><i class="fa-solid fa-percent"></i></div>
-                <div class="heading-copy">
-                    <h6>Распределение процентов</h6>
-                    <p v-if="ownerName" class="owner-name">Получатель: <strong>{{ ownerName }}</strong></p>
-                    <p v-else class="owner-name">Настройка долей распределения</p>
+    <section class="pm">
+        <header class="pm__header">
+            <div class="pm__heading">
+                <div class="pm__icon"><i class="fa-solid fa-percent"></i></div>
+                <div>
+                    <h5 class="pm__title">Распределение процентов</h5>
+                    <p class="pm__subtitle mb-0">
+                        {{ ownerName || 'Настройка процентных начислений' }}
+                    </p>
                 </div>
             </div>
-            <button class="btn-add" type="button" @click="showAddForm = !showAddForm">
-                <i :class="showAddForm ? 'fa-solid fa-xmark' : 'fa-solid fa-plus'"></i>
-                <span>{{ showAddForm ? 'Закрыть' : 'Добавить процент' }}</span>
-            </button>
+            <div class="pm__counter">
+                <span class="pm__counter-value">{{ percentages.length }}</span>
+                <span class="pm__counter-label">назначений</span>
+            </div>
         </header>
 
-        <Transition name="fade">
-            <div v-if="showAddForm" class="add-panel">
-                <div class="panel-heading">
-                    <div class="panel-icon"><i class="fa-solid fa-user-plus"></i></div>
-                    <div>
-                        <h6>Новый процент</h6>
-                        <p>Выберите пользователя и укажите его долю</p>
-                    </div>
-                </div>
-                <div class="row g-3 align-items-end">
-                    <div class="col-12 col-md-5">
-                        <label class="field-label" for="percentage-user">Получатель процента</label>
-                        <select id="percentage-user" v-model="newPercentage.user_id" class="form-select modern-control">
-                            <option :value="null" disabled>Выберите пользователя</option>
-                            <option v-for="u in adminUsers" :key="u.id" :value="u.id">{{ u.name }}</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <label class="field-label" for="percentage-value">Размер процента</label>
-                        <div class="percentage-input-wrap">
-                            <input
-                                id="percentage-value"
-                                v-model.number="newPercentage.percentage"
-                                type="number"
-                                class="form-control modern-control"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                placeholder="0,0"
-                            />
-                            <span class="input-suffix">%</span>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-4">
-                        <div class="form-actions">
-                            <button class="btn-save" type="button" @click="addPercentage">
-                                <i class="fa-solid fa-check"></i> Добавить
-                            </button>
-                            <button class="btn-cancel" type="button" @click="showAddForm = false">Отмена</button>
-                        </div>
-                    </div>
-                </div>
+        <div class="pm__own-percent">
+            <div class="pm__own-percent-icon"><i class="fa-solid fa-percent"></i></div>
+            <div class="pm__own-percent-copy">
+                <strong>Собственный процент</strong>
+                <span>Процент, который получает этот пользователь</span>
             </div>
-        </Transition>
-
-        <div v-if="loading" class="loading-state">
-            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            <span>Загружаем распределение…</span>
-        </div>
-
-        <div v-else-if="percentages.length" class="percentage-content">
-            <div class="summary-strip">
-                <div class="summary-copy">
-                    <span class="summary-label">Сумма активных процентов</span>
-                    <strong>{{ formatPercent(totalPercent) }}%</strong>
+            <div class="pm__own-percent-editor">
+                <div class="input-group input-group-sm">
+                    <input v-model.number="ownPercentValue" class="form-control" type="number" min="0" max="100" step="0.01" aria-label="Собственный процент пользователя">
+                    <span class="input-group-text">%</span>
+                    <button type="button" class="btn btn-primary" :disabled="savingOwnPercent || !isValidOwnPercent || Number(ownPercentValue) === Number(ownerPercent ?? 0)" @click="saveOwnPercent">
+                        <span v-if="savingOwnPercent" class="spinner-border spinner-border-sm"></span>
+                        <i v-else class="fa-solid fa-floppy-disk"></i>
+                    </button>
                 </div>
-                <div class="summary-progress" role="progressbar" :aria-valuenow="Math.min(totalPercent, 100)" aria-valuemin="0" aria-valuemax="100">
-                    <div class="summary-progress-fill" :class="{ 'is-overflow': totalPercent > 100 }" :style="{ width: `${Math.min(Math.max(totalPercent, 0), 100)}%` }"></div>
-                </div>
-                <span class="summary-caption" :class="totalPercent > 100 ? 'caption-warning' : 'caption-muted'">
-                    {{ totalPercent > 100 ? 'Сумма превышает 100%' : `Из 100% распределено ${formatPercent(totalPercent)}%` }}
-                </span>
-            </div>
-
-            <div class="table-responsive percentage-table-wrap">
-                <table class="table percentage-table align-middle mb-0">
-                    <thead>
-                    <tr>
-                        <th>Получатель</th>
-                        <th class="text-center">Процент</th>
-                        <th class="text-center">Статус</th>
-                        <th class="text-end">Действия</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr v-for="p in percentages" :key="p.id">
-                        <td>
-                            <div class="recipient-cell">
-                                <span class="recipient-avatar"><i class="fa-solid fa-user"></i></span>
-                                <span class="recipient-name">{{ p.user?.name || 'Неизвестно' }}</span>
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <span class="percentage-pill">{{ formatPercent(p.percentage) }}%</span>
-                        </td>
-                        <td class="text-center">
-                            <button
-                                type="button"
-                                class="status-toggle"
-                                :class="p.is_active ? 'status-active' : 'status-inactive'"
-                                @click="toggleActive(p)"
-                                :title="p.is_active ? 'Активен (кликните, чтобы деактивировать)' : 'Неактивен (кликните, чтобы активировать)'"
-                                :aria-label="p.is_active ? 'Деактивировать процент' : 'Активировать процент'"
-                            >
-                                <i :class="p.is_active ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'"></i>
-                                <span>{{ p.is_active ? 'Активен' : 'Неактивен' }}</span>
-                            </button>
-                        </td>
-                        <td class="text-end">
-                            <button type="button" class="btn-delete" @click="confirmDelete(p)" title="Удалить" aria-label="Удалить процент">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    </tbody>
-                    <tfoot>
-                    <tr>
-                        <td><strong>Итого по активным</strong></td>
-                        <td class="text-center"><span class="total-pill">{{ formatPercent(totalPercent) }}%</span></td>
-                        <td colspan="2"></td>
-                    </tr>
-                    </tfoot>
-                </table>
             </div>
         </div>
 
-        <div v-else class="empty-state">
-            <div class="empty-icon"><i class="fa-solid fa-percent"></i></div>
-            <h6>Проценты ещё не назначены</h6>
-            <p>Добавьте получателя, чтобы настроить распределение долей.</p>
-            <button class="btn-add empty-action" type="button" @click="showAddForm = true">
-                <i class="fa-solid fa-plus"></i> Добавить первый процент
+        <div class="pm__direction-switch" role="tablist" aria-label="Направление процента">
+            <button
+                type="button"
+                class="pm__direction"
+                :class="{ 'is-active': direction === 'outgoing' }"
+                role="tab"
+                :aria-selected="direction === 'outgoing'"
+                @click="switchDirection('outgoing')"
+            >Кому начисляет</button>
+            <button
+                type="button"
+                class="pm__direction"
+                :class="{ 'is-active': direction === 'incoming' }"
+                role="tab"
+                :aria-selected="direction === 'incoming'"
+                @click="switchDirection('incoming')"
+            >От кого получает</button>
+        </div>
+
+        <div class="pm__toolbar">
+            <div>
+                <h6 class="pm__section-title">
+                    {{ direction === 'incoming' && isUserOwner ? 'Входящие начисления' : 'Исходящие начисления' }}
+                </h6>
+                <p class="pm__hint mb-0">
+                    {{ direction === 'incoming' && isUserOwner
+                    ? 'Настройте, от каких пользователей администратору начисляется процент.'
+                    : 'Настройте, кому этот владелец начисляет процент.' }}
+                </p>
+            </div>
+            <button type="button" class="pm__add-button" @click="toggleForm">
+                <i :class="showAddForm ? 'fa-solid fa-xmark' : 'fa-solid fa-plus'"></i>
+                {{ showAddForm ? 'Закрыть' : 'Добавить правило' }}
             </button>
+        </div>
+
+        <form v-if="showAddForm" class="pm__form" @submit.prevent="addPercentage">
+            <div class="pm__form-heading">
+                <span class="pm__form-icon"><i class="fa-solid fa-sliders"></i></span>
+                <div>
+                    <h6 class="mb-1">Новое правило</h6>
+                    <p class="pm__hint mb-0">{{ isIncomingUserDirection ? 'Выберите плательщика: процент будет начисляться администратору.' : 'Выберите получателя: процент будет начисляться ему от текущего владельца.' }}</p>
+                </div>
+            </div>
+
+            <div class="pm__flow">
+                <div class="pm__person-card">
+                    <label class="pm__label">{{ isIncomingUserDirection ? 'От кого начисляется' : 'Плательщик — от кого' }}</label>
+                    <div class="pm__person">
+            <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isPayerFixed }">
+              <i :class="isPayerFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
+            </span>
+                        <div class="pm__person-info">
+                            <strong>{{ isPayerFixed ? (ownerName || `Администратор #${ownerId}`) : (selectedUser?.name || 'Выберите плательщика') }}</strong>
+                            <small>{{ isPayerFixed ? 'Текущий владелец' : 'Пользователь' }}</small>
+                        </div>
+                        <i v-if="isPayerFixed" class="fa-solid fa-lock pm__lock"></i>
+                    </div>
+                    <template v-if="!isPayerFixed">
+                        <input
+                            v-model.trim="userSearch"
+                            type="search"
+                            class="form-control pm__search"
+                            placeholder="Найти плательщика по имени или email"
+                            autocomplete="off"
+                        >
+                        <select v-model.number="newPercentage.user_id" class="form-select pm__select" required>
+                            <option :value="null" disabled>{{ isIncomingUserDirection ? 'Выберите плательщика' : 'Выберите владельца' }}</option>
+                            <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
+                                {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
+                            </option>
+                        </select>
+                        <small v-if="!filteredUsers.length" class="pm__field-note">Совпадений не найдено.</small>
+                    </template>
+                </div>
+
+                <div class="pm__flow-arrow" :class="{ 'pm__flow-arrow--incoming': direction === 'incoming' && isUserOwner }">
+                    <span>{{ formatPercent(newPercentage.percentage) }}%</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+
+                <div class="pm__person-card">
+                    <label class="pm__label">{{ isIncomingUserDirection ? 'Кому начисляется' : 'Получатель — кому' }}</label>
+                    <div class="pm__person">
+            <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isRecipientFixed }">
+              <i :class="isRecipientFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
+            </span>
+                        <div class="pm__person-info">
+                            <strong>{{ isRecipientFixed ? (ownerName || `Администратор #${ownerId}`) : (selectedUser?.name || 'Выберите получателя') }}</strong>
+                            <small>{{ isRecipientFixed ? 'Администратор получает процент' : 'Пользователь получит процент' }}</small>
+                        </div>
+                        <i v-if="isRecipientFixed" class="fa-solid fa-lock pm__lock"></i>
+                    </div>
+                    <template v-if="!isRecipientFixed">
+                        <input
+                            v-model.trim="userSearch"
+                            type="search"
+                            class="form-control pm__search"
+                            placeholder="Найти получателя по имени или email"
+                            autocomplete="off"
+                        >
+                        <select v-model.number="newPercentage.user_id" class="form-select pm__select" required>
+                            <option :value="null" disabled>{{ isIncomingUserDirection ? 'Администратор — получатель' : 'Выберите получателя' }}</option>
+                            <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
+                                {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
+                            </option>
+                        </select>
+                        <small v-if="!filteredUsers.length" class="pm__field-note">Совпадений не найдено.</small>
+                    </template>
+                </div>
+            </div>
+
+            <div class="pm__form-bottom">
+                <div class="pm__percent-field">
+                    <label class="pm__label" for="percentage-value">Размер процента</label>
+                    <div class="input-group">
+                        <input id="percentage-value" v-model.number="newPercentage.percentage" class="form-control" type="number" min="0.01" max="100" step="0.01" required>
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="pm__form-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>{{ isIncomingUserDirection
+                        ? 'Направление: выбранный пользователь → текущий администратор.'
+                        : 'Направление: текущий владелец → выбранный пользователь.' }}</span>
+                </div>
+                <button class="pm__save-button" type="submit" :disabled="saving || !newPercentage.user_id">
+                    <span v-if="saving" class="spinner-border spinner-border-sm"></span>
+                    <i v-else class="fa-solid fa-check"></i>
+                    {{ saving ? 'Сохраняем…' : 'Сохранить правило' }}
+                </button>
+            </div>
+        </form>
+
+        <div v-if="loading" class="pm__loading">
+            <span class="spinner-border spinner-border-sm"></span>
+            Загружаем начисления…
+        </div>
+
+        <div v-else-if="!percentages.length" class="pm__empty">
+            <div class="pm__empty-icon"><i class="fa-solid fa-arrows-left-right-to-line"></i></div>
+            <h6>Пока нет правил начисления</h6>
+            <p>Добавьте правило, чтобы настроить направление и размер процента.</p>
+            <button type="button" class="pm__empty-button" @click="toggleForm">
+                <i class="fa-solid fa-plus me-1"></i> Добавить первое правило
+            </button>
+        </div>
+
+        <div v-else class="pm__table-wrap">
+            <table class="table pm__table align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>{{ isUserOwner && direction === 'incoming' ? 'Плательщик' : 'Получатель' }}</th>
+                    <th>Размер</th>
+                    <th>Состояние</th>
+                    <th class="text-end">Управление</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="item in percentages" :key="item.id">
+                    <td>
+                        <div class="pm__table-person">
+                            <span class="pm__table-avatar"><i class="fa-solid fa-user"></i></span>
+                            <span>
+                  <strong>{{ relatedUser(item)?.name || ('Пользователь #' + relatedUserId(item)) }}</strong>
+                  <small v-if="relatedUser(item)?.email">{{ relatedUser(item).email }}</small>
+                </span>
+                        </div>
+                    </td>
+                    <td><span class="pm__percent-pill">{{ formatPercent(item.percentage) }}%</span></td>
+                    <td>
+              <span class="pm__status" :class="item.is_active ? 'pm__status--active' : 'pm__status--inactive'">
+                <span></span>{{ item.is_active ? 'Активен' : 'Отключён' }}
+              </span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <button class="pm__icon-button" type="button" :disabled="busyId === item.id" :title="item.is_active ? 'Отключить' : 'Включить'" @click="toggleActive(item)">
+                            <i :class="item.is_active ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
+                        </button>
+                        <button class="pm__icon-button pm__icon-button--danger" type="button" :disabled="busyId === item.id" title="Удалить" @click="removePercentage(item)">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </template>
 
 <script>
 import { makeAxiosFactory } from '@/stores/utillites/makeAxiosFactory'
-import { useAlertStore } from '@/stores/utillites/useAlertStore'
-import { useModalStore } from '@/stores/utillites/useConfitmModalStore'
 import { useUsersStore } from '@/stores/users'
+import { useAlertStore } from '@/stores/utillites/useAlertStore'
 
 export default {
     name: 'PercentageManager',
     props: {
-        ownerType: { type: String, required: true }, // 'agent' или 'supplier'
+        ownerType: { type: String, required: true }, // agent, supplier, user
         ownerId: { type: Number, required: true },
         ownerName: { type: String, default: '' },
+        ownerPercent: { type: [Number, String], default: null },
     },
     data() {
         return {
+            direction: 'outgoing',
+            ownPercentValue: this.ownerPercent === null || this.ownerPercent === '' ? 0 : Number(this.ownerPercent),
+            savingOwnPercent: false,
             percentages: [],
             users: [],
             loading: false,
+            saving: false,
+            busyId: null,
             showAddForm: false,
-            newPercentage: {
-                user_id: null,
-                percentage: 0,
-                is_active: true,
-            },
+            userSearch: '',
+            newPercentage: { user_id: null, percentage: 0, is_active: true },
             alertStore: useAlertStore(),
-            modalStore: useModalStore(),
         }
     },
     computed: {
-        // Доли распределяются только между администраторами.
-        // role: 1 — администратор, 3 — старший администратор, 4 — суперадмин.
-        adminUsers() {
-            return this.users.filter(user => [1, 3, 4].includes(Number(user.role)))
+        isValidOwnPercent() {
+            const value = Number(this.ownPercentValue)
+            return Number.isFinite(value) && value >= 0 && value <= 100
         },
-        // Компонент предназначен для владельцев типа agent или supplier.
-        isSupportedOwner() {
-            return ['agent', 'supplier'].includes(this.ownerType)
+        isUserOwner() {
+            return ['user', 'admin'].includes(String(this.ownerType || '').toLowerCase())
         },
-        totalPercent() {
-            return this.percentages
-                .filter(p => p.is_active)
-                .reduce((sum, p) => sum + Number(p.percentage), 0)
+        filteredUsers() {
+            const query = this.userSearch.toLocaleLowerCase()
+            return this.users
+                .filter(user => Number(user.id) !== Number(this.ownerId))
+                .filter(user => `${user.name || ''} ${user.email || ''} ${user.id || ''}`.toLocaleLowerCase().includes(query))
+        },
+        selectedUser() {
+            return this.users.find(user => Number(user.id) === Number(this.newPercentage.user_id)) || null
+        },
+        isPayerFixed() {
+            return !this.isUserOwner || this.direction === 'outgoing'
+        },
+        isRecipientFixed() {
+            return this.isIncomingUserDirection
+        },
+        isIncomingUserDirection() {
+            return this.isUserOwner && this.direction === 'incoming'
         },
     },
-    mounted() {
-        this.loadPercentages()
-        this.loadUsers()
+    watch: {
+        ownerPercent(value) {
+            this.ownPercentValue = value === null || value === '' ? 0 : Number(value)
+        },
+        ownerId: {
+            immediate: true,
+            handler() {
+                this.loadUsers()
+                this.loadPercentages()
+            },
+        },
+        ownerType() {
+            this.loadPercentages()
+        },
     },
     methods: {
-        formatPercent(value) {
-            const number = Number(value) || 0
-            return Number.isInteger(number) ? String(number) : number.toFixed(1).replace(/\.0$/, '')
+        notify(message, type = 'success') {
+            if (typeof this.alertStore?.show === 'function') this.alertStore.show(message, type)
+            else if (type === 'error') console.error(message)
+        },
+        async saveOwnPercent() {
+            if (!this.isValidOwnPercent) {
+                this.notify('Процент должен быть от 0 до 100', 'error')
+                return
+            }
+            this.savingOwnPercent = true
+            try {
+                const endpointType = String(this.ownerType).toLowerCase()
+                const endpoint = endpointType === 'agent'
+                    ? `/agents/${this.ownerId}`
+                    : endpointType === 'supplier'
+                        ? `/suppliers/${this.ownerId}`
+                        : `/users/${this.ownerId}`
+
+                await makeAxiosFactory(endpoint, 'PUT', { percent: Number(this.ownPercentValue) })
+                this.$emit('update:ownerPercent', Number(this.ownPercentValue))
+                this.notify('Собственный процент обновлён')
+            } catch (error) {
+                this.notify(error?.response?.data?.message || 'Не удалось обновить собственный процент', 'error')
+            } finally {
+                this.savingOwnPercent = false
+            }
+        },
+        async loadUsers() {
+            try {
+                const store = useUsersStore()
+                if (!store.items?.length) await store.fetchAll()
+                this.users = store.items || []
+            } catch (error) {
+                this.notify('Не удалось загрузить пользователей', 'error')
+            }
         },
         async loadPercentages() {
             this.loading = true
             try {
-                const { data } = await makeAxiosFactory(
-                    `/percentages?type=${this.ownerType}&id=${this.ownerId}`,
-                    'GET'
-                )
-                this.percentages = data.percentages || []
-            } catch (e) {
-                console.error('Ошибка загрузки процентов:', e)
+                const direction = this.isUserOwner ? this.direction : 'outgoing'
+                const params = this.isUserOwner
+                    ? `type=user&id=${this.ownerId}&direction=${direction}&_=${Date.now()}`
+                    : `type=${this.ownerType}&id=${this.ownerId}&_=${Date.now()}`
+                const { data } = await makeAxiosFactory(`/percentages?${params}`, 'GET')
+                const rows = Array.isArray(data?.percentages) ? data.percentages : []
+
+                // Защита от старого backend, который возвращает смешанный список.
+                if (this.isUserOwner && direction === 'incoming') {
+                    this.percentages = rows.filter(item =>
+                        Number(item.user_id) === Number(this.ownerId) &&
+                        String(item.percentable_type || '').toLowerCase().includes('user')
+                    )
+                } else if (this.isUserOwner) {
+                    this.percentages = rows.filter(item =>
+                        Number(item.percentable_id) === Number(this.ownerId) &&
+                        String(item.percentable_type || '').toLowerCase().includes('user')
+                    )
+                } else {
+                    this.percentages = rows
+                }
+            } catch (error) {
+                this.percentages = []
+                this.notify(error?.response?.data?.message || 'Не удалось загрузить проценты', 'error')
             } finally {
                 this.loading = false
             }
         },
-
-        async loadUsers() {
-            try {
-                const usersStore = useUsersStore()
-                if (usersStore.items.length === 0) {
-                    await usersStore.fetchAll()
-                }
-                this.users = usersStore.items
-            } catch (e) {
-                console.error('Ошибка загрузки пользователей:', e)
-            }
+        async switchDirection(direction) {
+            if (this.direction === direction) return
+            this.direction = direction
+            this.showAddForm = false
+            this.userSearch = ''
+            this.newPercentage = { user_id: null, percentage: 0, is_active: true }
+            await this.loadPercentages()
         },
-
+        toggleForm() {
+            this.showAddForm = !this.showAddForm
+            this.userSearch = ''
+            this.newPercentage = { user_id: null, percentage: 0, is_active: true }
+        },
+        relatedUser(item) {
+            return this.isUserOwner && this.direction === 'incoming' ? item.percentable : item.user
+        },
+        relatedUserId(item) {
+            return this.isUserOwner && this.direction === 'incoming' ? item.percentable_id : item.user_id
+        },
+        formatPercent(value) {
+            return Number(value || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+        },
         async addPercentage() {
-            if (!this.newPercentage.user_id) {
-                this.alertStore.show('Выберите получателя', 'warning')
+            const value = Number(this.newPercentage.percentage)
+            if (!this.newPercentage.user_id || !Number.isFinite(value) || value <= 0 || value > 100) {
+                this.notify('Выберите пользователя и укажите процент больше 0 и не больше 100', 'error')
                 return
             }
-            if (!this.newPercentage.percentage || this.newPercentage.percentage <= 0) {
-                this.alertStore.show('Укажите процент больше 0', 'warning')
-                return
-            }
-            if (this.newPercentage.percentage > 100) {
-                this.alertStore.show('Процент не может превышать 100', 'warning')
-                return
-            }
-
+            this.saving = true
             try {
-                const { data } = await makeAxiosFactory('/percentages', 'POST', {
-                    type: this.ownerType,
-                    owner_id: this.ownerId,
-                    ...this.newPercentage,
-                })
-                this.percentages.push(data)
-                this.newPercentage = { user_id: null, percentage: 0, is_active: true }
-                this.showAddForm = false
-                this.alertStore.show('Процент добавлен', 'success')
-            } catch (e) {
-                console.error('Ошибка добавления:', e)
-            }
-        },
-
-        async toggleActive(p) {
-            try {
-                const { data } = await makeAxiosFactory(
-                    `/percentages/${p.id}`,
-                    'PUT',
-                    { is_active: !p.is_active }
-                )
-                const idx = this.percentages.findIndex(x => x.id === p.id)
-                if (idx !== -1) this.percentages[idx] = data
-            } catch (e) {
-                console.error('Ошибка обновления:', e)
-            }
-        },
-
-        confirmDelete(p) {
-            this.modalStore.open(
-                `Удалить процент <b>${p.percentage}%</b> для <b>${p.user?.name || 'Неизвестно'}</b>?`,
-                async () => {
-                    try {
-                        await makeAxiosFactory(`/percentages/${p.id}`, 'DELETE')
-                        this.percentages = this.percentages.filter(x => x.id !== p.id)
-                        this.alertStore.show('Процент удалён', 'success')
-                    } catch (e) {
-                        console.error('Ошибка удаления:', e)
+                const payload = this.isUserOwner
+                    ? {
+                        type: 'user',
+                        owner_id: this.direction === 'incoming' ? this.newPercentage.user_id : this.ownerId,
+                        direction: this.direction,
+                        user_id: this.direction === 'outgoing' ? this.newPercentage.user_id : undefined,
+                        recipient_admin_id: this.direction === 'incoming' ? this.ownerId : undefined,
+                        percentage: value,
+                        is_active: true,
                     }
-                    this.modalStore.close()
-                },
-                () => this.modalStore.close()
-            )
+                    : {
+                        type: this.ownerType,
+                        owner_id: this.ownerId,
+                        user_id: this.newPercentage.user_id,
+                        percentage: value,
+                        is_active: true,
+                    }
+                // Передаём направление и в query string, и в JSON body: некоторые
+                // существующие backend-обработчики читают только один из этих источников.
+                const endpoint = this.isUserOwner
+                    ? `/percentages?direction=${encodeURIComponent(this.direction)}`
+                    : '/percentages'
+                await makeAxiosFactory(endpoint, 'POST', payload)
+                await this.loadPercentages()
+                this.showAddForm = false
+                this.userSearch = ''
+                this.newPercentage = { user_id: null, percentage: 0, is_active: true }
+                this.notify('Процент сохранён')
+            } catch (error) {
+                this.notify(error?.response?.data?.message || 'Не удалось сохранить процент', 'error')
+            } finally {
+                this.saving = false
+            }
+        },
+        async toggleActive(item) {
+            this.busyId = item.id
+            try {
+                const { data } = await makeAxiosFactory(`/percentages/${item.id}`, 'PUT', { is_active: !item.is_active })
+                const index = this.percentages.findIndex(row => row.id === item.id)
+                if (index !== -1) this.percentages.splice(index, 1, data)
+                this.notify('Статус обновлён')
+            } catch (error) {
+                this.notify(error?.response?.data?.message || 'Не удалось обновить статус', 'error')
+            } finally {
+                this.busyId = null
+            }
+        },
+        async removePercentage(item) {
+            if (!window.confirm('Удалить назначение процента?')) return
+            this.busyId = item.id
+            try {
+                await makeAxiosFactory(`/percentages/${item.id}`, 'DELETE')
+                this.percentages = this.percentages.filter(row => row.id !== item.id)
+                this.notify('Процент удалён')
+            } catch (error) {
+                this.notify(error?.response?.data?.message || 'Не удалось удалить процент', 'error')
+            } finally {
+                this.busyId = null
+            }
         },
     },
 }
 </script>
 
 <style scoped>
-.percentage-manager {
-    --pm-blue: #2457d6;
-    --pm-blue-dark: #173eaa;
-    --pm-text: #17243b;
-    --pm-muted: #758198;
-    --pm-border: #e5eaf2;
-    color: var(--pm-text);
-    background: #fff;
+.pm {
+    --pm-primary: var(--bs-primary, #3459e6);
+    --pm-border: var(--bs-border-color, #e5e7eb);
+    --pm-muted: var(--bs-secondary-color, #737b8c);
+    color: var(--bs-body-color);
+    min-width: 0;
     border: 1px solid var(--pm-border);
-    border-radius: 18px;
-    padding: 22px;
-    box-shadow: 0 8px 28px rgba(27, 47, 87, .06);
+    border-radius: 1rem;
+    background: var(--bs-body-bg);
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+    box-shadow: 0 8px 30px rgba(30, 41, 59, .045);
 }
-.manager-header,
-.heading-content,
-.panel-heading,
-.recipient-cell,
-.form-actions,
-.summary-copy {
+.pm__header, .pm__heading, .pm__toolbar, .pm__form-heading, .pm__person, .pm__table-person {
     display: flex;
     align-items: center;
 }
-.manager-header {
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 22px;
+.pm__header { justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
+.pm__heading { gap: .85rem; min-width: 0; }
+.pm__icon {
+    width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center;
+    border-radius: 14px; color: var(--pm-primary); background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
+    font-size: 1.15rem;
 }
-.heading-content { gap: 13px; min-width: 0; }
-.heading-icon,
-.panel-icon,
-.recipient-avatar,
-.empty-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+.pm__title { margin: 0 0 .2rem; font-size: 1.08rem; font-weight: 750; letter-spacing: -.02em; }
+.pm__subtitle, .pm__hint { color: var(--pm-muted); font-size: .83rem; }
+.pm__counter { display: flex; flex-direction: column; align-items: flex-end; }
+.pm__counter-value { font-size: 1.35rem; font-weight: 750; line-height: 1.1; }
+.pm__counter-label { color: var(--pm-muted); font-size: .73rem; }
+.pm__own-percent {
+    display: flex; align-items: center; gap: .85rem; padding: .9rem 1rem;
+    margin: 0 0 1.25rem; border: 1px solid var(--pm-border); border-radius: .85rem;
+    background: var(--bs-tertiary-bg, #f8fafc);
 }
-.heading-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    color: var(--pm-blue);
-    background: #edf3ff;
-    font-size: 20px;
+.pm__own-percent-icon {
+    display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px;
+    border-radius: 12px; color: var(--pm-primary);
+    background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
 }
-.heading-copy h6 { margin: 0 0 4px; font-size: 16px; font-weight: 750; letter-spacing: -.02em; }
-.owner-name { margin: 0; color: var(--pm-muted); font-size: 13px; }
-.owner-name strong { color: var(--pm-blue); font-weight: 700; }
-.btn-add,
-.btn-save,
-.btn-cancel,
-.btn-delete,
-.status-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border: 0;
-    cursor: pointer;
-    transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+.pm__own-percent-copy { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.pm__own-percent-copy strong { font-size: .9rem; }
+.pm__own-percent-copy span { color: var(--pm-muted); font-size: .78rem; }
+.pm__own-percent-editor { margin-left: auto; width: min(220px, 42%); }
+.pm__own-percent-editor .input-group { flex-wrap: nowrap; }
+.pm__own-percent-editor input { min-width: 0; }
+.pm__own-percent-editor .btn { min-width: 38px; }
+.pm__direction-switch {
+    display: inline-flex; gap: .25rem; padding: .25rem; margin-bottom: 1.25rem;
+    border: 1px solid var(--pm-border); border-radius: .7rem;
+    background: var(--bs-tertiary-bg, #f4f6f9);
 }
-.btn-add {
-    padding: 10px 15px;
-    border-radius: 11px;
-    background: var(--pm-blue);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-    box-shadow: 0 5px 12px rgba(36, 87, 214, .18);
+.pm__direction {
+    border: 0; border-radius: .5rem; padding: .6rem 1rem;
+    background: transparent; color: var(--pm-muted); font-size: .86rem;
+    font-weight: 650; white-space: nowrap; transition: background .15s, color .15s, box-shadow .15s;
 }
-.btn-add:hover, .btn-save:hover { background: var(--pm-blue-dark); transform: translateY(-1px); }
-.add-panel {
-    margin-bottom: 22px;
-    padding: 20px;
-    border: 1px solid #dbe6ff;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #f8faff, #f1f5ff);
+.pm__direction:hover { color: var(--bs-body-color); }
+.pm__direction.is-active {
+    color: var(--pm-primary); background: var(--bs-body-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .10);
 }
-.panel-heading { gap: 11px; margin-bottom: 18px; }
-.panel-icon { width: 38px; height: 38px; border-radius: 12px; background: #e2ebff; color: var(--pm-blue); }
-.panel-heading h6 { margin: 0 0 3px; font-size: 14px; font-weight: 750; }
-.panel-heading p { margin: 0; color: var(--pm-muted); font-size: 12px; }
-.field-label { display: block; margin-bottom: 7px; color: #4b5870; font-size: 12px; font-weight: 700; }
-.modern-control {
-    min-height: 42px;
-    border: 1px solid #dce3ef;
-    border-radius: 10px;
-    background-color: #fff;
-    color: var(--pm-text);
-    font-size: 13px;
-    box-shadow: none;
+.pm__toolbar { justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.pm__section-title { font-size: .95rem; font-weight: 750; margin: 0 0 .25rem; }
+.pm__add-button, .pm__save-button, .pm__empty-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    border: 0; border-radius: .7rem; padding: .7rem 1rem; font-size: .84rem; font-weight: 650;
+    background: var(--pm-primary); color: #fff; transition: transform .15s, opacity .15s;
 }
-.modern-control:focus { border-color: #7da2ff; box-shadow: 0 0 0 3px rgba(36, 87, 214, .1); }
-.percentage-input-wrap { position: relative; }
-.percentage-input-wrap .modern-control { padding-right: 38px; }
-.input-suffix { position: absolute; top: 50%; right: 13px; transform: translateY(-50%); color: var(--pm-muted); font-weight: 700; pointer-events: none; }
-.form-actions { gap: 8px; min-height: 42px; }
-.btn-save { min-height: 40px; padding: 0 14px; border-radius: 10px; background: var(--pm-blue); color: #fff; font-size: 12px; font-weight: 700; }
-.btn-cancel { min-height: 40px; padding: 0 13px; border: 1px solid #dce3ef; border-radius: 10px; background: #fff; color: #59667c; font-size: 12px; font-weight: 650; }
-.btn-cancel:hover { background: #f2f5fa; }
-.summary-strip { display: grid; grid-template-columns: auto minmax(80px, 1fr) auto; align-items: center; gap: 18px; margin-bottom: 18px; padding: 15px 17px; border: 1px solid #e7edfa; border-radius: 13px; background: #f8faff; }
-.summary-copy { flex-direction: column; align-items: flex-start; gap: 3px; }
-.summary-label { color: var(--pm-muted); font-size: 11px; font-weight: 650; }
-.summary-copy strong { color: var(--pm-blue); font-size: 22px; line-height: 1.1; letter-spacing: -.03em; }
-.summary-progress { height: 8px; overflow: hidden; border-radius: 99px; background: #e3eaf7; }
-.summary-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3977f6, #2457d6); transition: width .25s ease; }
-.summary-progress-fill.is-overflow { background: linear-gradient(90deg, #f5a623, #dc3545); }
-.summary-caption { font-size: 11px; font-weight: 650; white-space: nowrap; }
-.caption-muted { color: var(--pm-muted); }
-.caption-warning { color: #c24135; }
-.percentage-table-wrap { border: 1px solid var(--pm-border); border-radius: 13px; overflow: hidden; }
-.percentage-table { min-width: 550px; }
-.percentage-table thead th { padding: 13px 16px; background: #f7f9fc; color: #7b879a; border-bottom: 1px solid var(--pm-border); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
-.percentage-table tbody td, .percentage-table tfoot td { padding: 13px 16px; border-color: #edf0f5; font-size: 13px; }
-.percentage-table tbody tr:last-child td { border-bottom: 0; }
-.percentage-table tbody tr:hover { background: #fafcff; }
-.recipient-cell { gap: 10px; }
-.recipient-avatar { width: 34px; height: 34px; border-radius: 11px; background: #edf3ff; color: var(--pm-blue); }
-.recipient-name { font-weight: 650; }
-.percentage-pill, .total-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 60px; padding: 6px 10px; border-radius: 8px; background: #eaf0ff; color: var(--pm-blue); font-size: 12px; font-weight: 800; }
-.status-toggle { gap: 6px; padding: 6px 9px; border-radius: 8px; background: transparent; font-size: 11px; font-weight: 700; }
-.status-active { background: #eaf8f0; color: #16804a; }
-.status-active:hover { background: #d8f2e4; }
-.status-inactive { background: #f0f2f5; color: #7c8798; }
-.status-inactive:hover { background: #e3e7ed; }
-.btn-delete { width: 34px; height: 34px; border: 1px solid #f2d9dc; border-radius: 9px; background: #fff7f7; color: #d3424f; }
-.btn-delete:hover { background: #d3424f; color: #fff; border-color: #d3424f; }
-.percentage-table tfoot td { background: #f8faff; border-top: 1px solid var(--pm-border); }
-.percentage-table tfoot strong { font-size: 12px; }
-.total-pill { background: #e4f7ec; color: #16804a; font-size: 13px; }
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 36px 20px 28px; text-align: center; border: 1px dashed #d9e2f0; border-radius: 14px; background: #fbfcff; }
-.empty-icon { width: 54px; height: 54px; margin-bottom: 14px; border-radius: 17px; background: #edf3ff; color: var(--pm-blue); font-size: 22px; }
-.empty-state h6 { margin-bottom: 6px; font-size: 15px; font-weight: 750; }
-.empty-state p { max-width: 320px; margin-bottom: 17px; color: var(--pm-muted); font-size: 12px; }
-.empty-action { font-size: 12px; }
-.loading-state { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 28px; color: var(--pm-muted); font-size: 13px; }
-.fade-enter-active, .fade-leave-active { transition: opacity .22s ease, transform .22s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-8px); }
-@media (max-width: 767.98px) {
-    .percentage-manager { padding: 16px; border-radius: 15px; }
-    .manager-header { align-items: flex-start; flex-direction: column; }
-    .btn-add { width: 100%; }
-    .add-panel { padding: 15px; }
-    .form-actions { align-items: stretch; }
-    .btn-save, .btn-cancel { flex: 1; }
-    .summary-strip { grid-template-columns: 1fr; gap: 10px; }
-    .summary-caption { white-space: normal; }
+.pm__add-button:hover, .pm__save-button:hover, .pm__empty-button:hover { transform: translateY(-1px); }
+.pm__form { border: 1px solid var(--pm-border); border-radius: .9rem; padding: clamp(.9rem, 2vw, 1.25rem); margin-bottom: 1.5rem; background: var(--bs-tertiary-bg, #f8fafc); }
+.pm__form-heading { gap: .7rem; margin-bottom: 1rem; }
+.pm__form-heading h6 { font-size: .95rem; font-weight: 750; }
+.pm__form-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--bs-body-bg); color: var(--pm-primary); border: 1px solid var(--pm-border); }
+.pm__flow { display: grid; grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr); gap: .65rem; align-items: center; }
+.pm__person-card { min-width: 0; border: 1px solid var(--pm-border); border-radius: .8rem; padding: .85rem; background: var(--bs-body-bg); }
+.pm__label { display: block; margin-bottom: .55rem; color: var(--pm-muted); font-size: .76rem; font-weight: 700; }
+.pm__person { gap: .65rem; min-width: 0; margin-bottom: .75rem; }
+.pm__avatar { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; color: var(--pm-muted); background: var(--bs-tertiary-bg, #f3f4f6); }
+.pm__avatar--fixed { color: var(--pm-primary); background: color-mix(in srgb, var(--pm-primary) 10%, transparent); }
+.pm__person-info { display: flex; flex-direction: column; min-width: 0; gap: .15rem; }
+.pm__person-info strong { overflow-wrap: anywhere; font-size: .82rem; }
+.pm__person-info small { color: var(--pm-muted); font-size: .72rem; }
+.pm__lock { margin-left: auto; color: var(--pm-muted); font-size: .75rem; }
+.pm__search, .pm__select { font-size: .82rem; }
+.pm__search { margin-bottom: .5rem; }
+.pm__field-note { display: block; margin-top: .4rem; color: var(--pm-muted); }
+.pm__flow-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .45rem; color: var(--pm-primary); }
+.pm__flow-arrow span { border-radius: 99px; padding: .25rem .55rem; background: color-mix(in srgb, var(--pm-primary) 10%, transparent); font-size: .8rem; font-weight: 800; white-space: nowrap; }
+.pm__flow-arrow i { font-size: 1.05rem; transition: transform .2s ease; }
+.pm__flow-arrow--incoming i { transform: rotate(180deg); }
+.pm__form-bottom { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto; align-items: end; gap: 1rem; margin-top: 1rem; }
+.pm__percent-field .input-group-text { background: var(--bs-body-bg); }
+.pm__form-note { display: flex; align-items: flex-start; gap: .5rem; color: var(--pm-muted); font-size: .77rem; line-height: 1.45; padding-bottom: .5rem; }
+.pm__form-note i { color: var(--pm-primary); margin-top: .1rem; }
+.pm__save-button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.pm__loading { display: flex; justify-content: center; align-items: center; gap: .6rem; padding: 3rem 1rem; color: var(--pm-muted); font-size: .85rem; }
+.pm__empty { padding: 2.5rem 1rem; text-align: center; border: 1px dashed var(--pm-border); border-radius: .85rem; }
+.pm__empty-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto .85rem; border-radius: 16px; background: var(--bs-tertiary-bg, #f8fafc); color: var(--pm-muted); font-size: 1.25rem; }
+.pm__empty h6 { font-weight: 750; font-size: .95rem; }
+.pm__empty p { color: var(--pm-muted); font-size: .82rem; margin-bottom: 1rem; }
+.pm__empty-button { padding: .6rem .85rem; font-size: .8rem; }
+.pm__table-wrap { overflow: hidden; border: 1px solid var(--pm-border); border-radius: .8rem; }
+.pm__table thead th { padding: .8rem 1rem; color: var(--pm-muted); background: var(--bs-tertiary-bg, #f8fafc); border-bottom: 1px solid var(--pm-border); font-size: .73rem; font-weight: 750; text-transform: uppercase; letter-spacing: .035em; white-space: nowrap; }
+.pm__table tbody td { padding: .85rem 1rem; border-color: var(--pm-border); }
+.pm__table tbody tr:last-child td { border-bottom: 0; }
+.pm__table-person { gap: .65rem; min-width: 180px; }
+.pm__table-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px; background: var(--bs-tertiary-bg, #f8fafc); color: var(--pm-muted); }
+.pm__table-person > span:last-child { display: flex; flex-direction: column; min-width: 0; gap: .15rem; }
+.pm__table-person strong { font-size: .83rem; }
+.pm__table-person small { color: var(--pm-muted); font-size: .73rem; }
+.pm__percent-pill { display: inline-flex; padding: .35rem .6rem; border-radius: .55rem; background: rgba(21, 150, 106, .1); color: #13845f; font-size: .82rem; font-weight: 800; }
+.pm__status { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 650; white-space: nowrap; }
+.pm__status > span { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pm__status--active { color: #13845f; }
+.pm__status--inactive { color: var(--pm-muted); }
+.pm__icon-button { display: inline-grid; place-items: center; width: 33px; height: 33px; border: 1px solid var(--pm-border); border-radius: .55rem; color: var(--pm-muted); background: var(--bs-body-bg); margin-left: .25rem; transition: .15s; }
+.pm__icon-button:hover:not(:disabled) { color: var(--pm-primary); border-color: var(--pm-primary); }
+.pm__icon-button--danger:hover:not(:disabled) { color: #dc3545; border-color: #dc3545; }
+.pm__icon-button:disabled { opacity: .5; cursor: wait; }
+@media (max-width: 900px) {
+    .pm__form-bottom { grid-template-columns: minmax(140px, 200px) minmax(0, 1fr); }
+    .pm__save-button { grid-column: 1 / -1; }
+}
+@media (max-width: 650px) {
+    .pm__direction-switch { display: flex; max-width: 100%; }
+    .pm__direction { padding: .55rem .7rem; font-size: .8rem; }
+    .pm__toolbar { align-items: flex-start; }
+    .pm__add-button { white-space: nowrap; }
+    .pm__flow { grid-template-columns: 1fr; }
+    .pm__flow-arrow { flex-direction: row; padding: .15rem 0; }
+    .pm__flow-arrow i { transform: rotate(90deg); }
+    .pm__flow-arrow--incoming i { transform: rotate(270deg); }
+    .pm__form-bottom { grid-template-columns: 1fr; }
+    .pm__save-button { grid-column: auto; width: 100%; }
+    .pm__header { align-items: flex-start; }
+    .pm__own-percent { flex-wrap: wrap; }
+    .pm__own-percent-editor { width: 100%; margin-left: 0; }
 }
 </style>
+
+```

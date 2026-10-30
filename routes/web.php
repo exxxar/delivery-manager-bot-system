@@ -7,6 +7,7 @@ use App\Facades\BotMethods;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminRegisterPageController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\AgentLoginLinkController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Forms\AdminJobController;
@@ -170,12 +171,17 @@ Route::get("/upload-suppliers", function () {
     });
 });
 
-    Route::any('/register-webhook', [\App\Http\Controllers\TelegramController::class, "registerWebhooks"]);
+Route::any('/register-webhook', [\App\Http\Controllers\TelegramController::class, "registerWebhooks"]);
 Route::post('/webhook', [\App\Http\Controllers\TelegramController::class, "handler"]);
 Route::get("/bot", [\App\Http\Controllers\TelegramController::class, "homePageBot"]);
 Route::get("/pwa", [\App\Http\Controllers\TelegramController::class, "homePagePwa"]);
 Route::any("/callback/telegram", [\App\Http\Controllers\TelegramController::class, "login"]);
 
+Route::get('/auth/magic/{token}', [AgentLoginLinkController::class, 'show'])
+    ->name('agent.magic-login.show');
+
+Route::post('/auth/magic/{token}', [AgentLoginLinkController::class, 'consume'])
+    ->name('agent.magic-login.consume');
 
 Route::get("/login", function (){
     Inertia::setRootView("pwa");

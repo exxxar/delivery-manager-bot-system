@@ -1,4 +1,3 @@
-
 <script setup>
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -7,6 +6,7 @@ import { useBaseExports } from "@/stores/baseExports";
 import { useUsersStore } from "@/stores/users";
 
 import ReportIndividualGenerator from "@/Components/Admins/ReportIndividualGenerator.vue";
+import AgentMagicLinkManager from "@/Components/Agents/AgentMagicLinkManager.vue";
 
 const router = useRouter();
 const userStore = useUsersStore();
@@ -15,6 +15,13 @@ const reportStore = useBaseExports();
 const agentId = computed(() => userStore.self?.agent?.id ?? null);
 
 const menuItems = [
+    {
+        title: "Мой доход",
+        description: "Просмотр и контроль своих источников дохода",
+        icon: "fa-wallet",
+        color: "green",
+        action: () => goTo("admin-my-income"),
+    },
     {
         title: "Мои доставки",
         description: "Просмотр и контроль своих доставок",
@@ -71,6 +78,14 @@ function openReportModal() {
     }
 }
 
+function openLoginLinkModal() {
+    const element = document.getElementById("loginLinkModal");
+
+    if (element && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(element).show();
+    }
+}
+
 function handleReport(payload) {
     const element = document.getElementById("reportModal");
 
@@ -99,9 +114,22 @@ function handleReport(payload) {
                 </div>
             </div>
 
-            <div class="dashboard-counter">
-                <i class="fa-solid fa-grip"></i>
-                <span>{{ menuItems.length }} разделов</span>
+            <div class="dashboard-header-actions">
+                <button
+                    type="button"
+                    class="login-link-trigger"
+                    @click="openLoginLinkModal"
+                    :disabled="agentId == null"
+                    title="Создать персональную ссылку для входа"
+                >
+                    <i class="fa-solid fa-link"></i>
+                    <span>Ссылка для входа</span>
+                </button>
+
+                <div class="dashboard-counter">
+                    <i class="fa-solid fa-grip"></i>
+                    <span>{{ menuItems.length }} разделов</span>
+                </div>
             </div>
         </header>
 
@@ -202,11 +230,60 @@ function handleReport(payload) {
             </div>
         </div>
     </div>
+
+    <!-- Персональная ссылка для входа текущего администратора -->
+    <div
+        id="loginLinkModal"
+        class="modal fade"
+        tabindex="-1"
+        aria-labelledby="loginLinkModalTitle"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-modal">
+                <div class="modal-header custom-modal__header">
+                    <div class="custom-modal__heading">
+                        <div class="custom-modal__icon login-link-modal-icon">
+                            <i class="fa-solid fa-link"></i>
+                        </div>
+                        <div>
+                            <h2 id="loginLinkModalTitle" class="modal-title">
+                                Персональная ссылка
+                            </h2>
+                            <p class="custom-modal__subtitle mb-0">
+                                Быстрый вход в ваш аккаунт на другом устройстве
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Закрыть"
+                    ></button>
+                </div>
+
+                <div class="modal-body custom-modal__body">
+                    <AgentMagicLinkManager
+                        v-if="agentId != null"
+                        :agent="{ id: agentId, name: userStore.self?.name || 'Мой аккаунт' }"
+                    />
+
+                    <div v-else class="agent-warning">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>Данные агента не найдены. Проверьте привязку агента к вашему профилю.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
 <style scoped>
 .agent-dashboard {
     --dashboard-blue: #2457d6;
+    --dashboard-green: #01a401;
     --dashboard-red: #df3548;
     --dashboard-text: #17233b;
     --dashboard-muted: #778399;
@@ -312,6 +389,11 @@ function handleReport(payload) {
 
 .menu-card--blue {
     --card-accent: var(--dashboard-blue);
+    --card-icon-bg: #edf3ff;
+}
+
+.menu-card--green {
+    --card-accent: var(--dashboard-green);
     --card-icon-bg: #edf3ff;
 }
 
@@ -476,6 +558,46 @@ function handleReport(payload) {
     margin-top: 3px;
 }
 
+.dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.login-link-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 10px 15px;
+    border: 1px solid #cbd9f4;
+    border-radius: 12px;
+    background: #edf3ff;
+    color: #2457d6;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.login-link-trigger:hover:not(:disabled) {
+    border-color: #2457d6;
+    background: #e2ecff;
+    transform: translateY(-1px);
+}
+
+.login-link-trigger:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.login-link-modal-icon {
+    background: #eaf1ff;
+    color: #2457d6;
+}
+
 @media (max-width: 1199.98px) {
     .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -486,8 +608,20 @@ function handleReport(payload) {
 @media (max-width: 575.98px) {
     .dashboard-header {
         align-items: flex-start;
+        flex-wrap: wrap;
         margin-bottom: 18px;
         padding-bottom: 16px;
+    }
+
+    .dashboard-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .login-link-trigger {
+        min-height: 38px;
+        padding: 8px 11px;
+        font-size: 12px;
     }
 
     .dashboard-heading {
@@ -587,3 +721,5 @@ function handleReport(payload) {
     }
 }
 </style>
+
+

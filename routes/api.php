@@ -3,6 +3,8 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AgentController;
+use App\Http\Controllers\AgentLoginLinkController;
+use App\Http\Controllers\AgentPasswordController;
 use App\Http\Controllers\AgentSalaryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BirthdayController;
@@ -64,7 +66,10 @@ Route::prefix('supplier-invite')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout']);
-
+    Route::post(
+        '/users/{user}/reset-password',
+        [UserController::class, 'resetPassword']
+    );
 
 });
 
@@ -74,6 +79,11 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
 
     Route::get('/my-income', [MyIncomeController::class, 'index'])
         ->name('my-income.index');
+
+    Route::post(
+        '/agents/{agentId}/reset-password',
+        [AgentPasswordController::class, 'reset']
+    );
 
     Route::get('/suppliers/{supplierId}/salary', [SupplierSalaryController::class, 'show'])
         ->whereNumber('supplierId')
@@ -127,6 +137,9 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/', [AgentController::class, 'index']);
             // Создать нового агента
             Route::post('/', [AgentController::class, 'store']);
+
+            Route::post('/{agentId}/login-link', [AgentLoginLinkController::class, 'store']);
+            Route::delete('/{agentId}/login-link', [AgentLoginLinkController::class, 'destroy']);
 
             Route::get('/active', [AgentController::class, 'active'])->name('agents.active');
             Route::get('/inactive', [AgentController::class, 'inactive'])->name('agents.inactive');

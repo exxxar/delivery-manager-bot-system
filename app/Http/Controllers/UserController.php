@@ -14,10 +14,29 @@ use App\Models\User;
 use Carbon\Carbon;
 use HttpException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
+    public function resetPassword(Request $request, User $user)
+    {
+        $admin = $request->user();
+
+        if (!$admin || (int) $admin->role < 3) {
+            return response()->json([
+                'message' => 'Недостаточно прав для сброса пароля.',
+            ], 403);
+        }
+
+        $user->password = bcrypt('12345678');
+        $user->save();
+
+        return response()->json([
+            'message' => 'Пароль пользователя успешно сброшен.',
+        ]);
+    }
+
     public function index(Request $request)
     {
         $query = User::query()

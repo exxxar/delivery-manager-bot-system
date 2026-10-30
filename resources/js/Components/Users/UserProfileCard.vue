@@ -115,6 +115,62 @@
                         <p>Установите новый пароль для своей учётной записи</p>
                     </div>
 
+                    <div class="password-reset-section">
+                        <div class="password-reset-heading">
+        <span class="password-reset-icon">
+            <i class="fa-solid fa-key"></i>
+        </span>
+
+                            <div>
+                                <h3>Сброс пароля</h3>
+                                <p>Установить пользователю пароль по умолчанию</p>
+                            </div>
+                        </div>
+
+                        <div class="password-reset-warning" role="alert">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>
+            После сброса пароль пользователя станет
+            <strong>12345678</strong>.
+            Рекомендуется сменить его после входа в систему.
+        </span>
+                        </div>
+
+                        <div v-if="resetPasswordError"
+                             class="password-alert password-alert-error"
+                             role="alert">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>{{ resetPasswordError }}</span>
+                        </div>
+
+                        <div v-if="resetPasswordSuccess"
+                             class="password-alert password-alert-success"
+                             role="status">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>{{ resetPasswordSuccess }}</span>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="password-reset-button"
+                            :disabled="resetPasswordSaving || passwordSaving"
+                            @click="resetUserPassword"
+                        >
+                            <i :class="resetPasswordSaving
+            ? 'fa-solid fa-spinner fa-spin'
+            : 'fa-solid fa-rotate'"></i>
+
+                            {{
+                                resetPasswordSaving
+                                    ? 'Сбрасываем пароль…'
+                                    : 'Сбросить пароль на 12345678'
+                            }}
+                        </button>
+                    </div>
+
+                    <div class="password-divider">
+                        <span>Или сменить пароль вручную</span>
+                    </div>
                     <form class="password-form" @submit.prevent="submitPasswordChange">
                         <div class="password-field">
                             <label for="current-password">Текущий пароль</label>
@@ -186,6 +242,9 @@ export default {
     },
     data() {
         return {
+            resetPasswordSaving: false,
+            resetPasswordError: '',
+            resetPasswordSuccess: '',
             userStore: useUsersStore(),
             minimize: true,
             showPasswordModal: false,
@@ -215,6 +274,43 @@ export default {
         }
     },
     methods: {
+        async resetUserPassword() {
+            if (this.resetPasswordSaving || this.passwordSaving) return;
+
+            if (!this.user?.id) {
+                this.resetPasswordError = 'Не удалось определить пользователя.';
+                return;
+            }
+
+            const confirmed = window.confirm(
+                `Сбросить пароль пользователя ${this.user.name}?\n\n` +
+                'Новый пароль: 12345678'
+            );
+
+            if (!confirmed) return;
+
+            this.resetPasswordSaving = true;
+            this.resetPasswordError = '';
+            this.resetPasswordSuccess = '';
+            this.passwordError = '';
+            this.passwordSuccess = '';
+
+            try {
+                const response = await axios.post(
+                    `/api/users/${this.user.id}/reset-password`
+                );
+
+                this.resetPasswordSuccess =
+                    response?.data?.message || 'Пароль успешно сброшен.';
+            } catch (error) {
+                const data = error?.response?.data;
+
+                this.resetPasswordError =
+                    data?.message || 'Не удалось сбросить пароль.';
+            } finally {
+                this.resetPasswordSaving = false;
+            }
+        },
         openMyIncome() {
             const role = Number(this.user?.role);
 
@@ -611,37 +707,57 @@ export default {
 }
 .profile-action-button span, .change-password-button span { flex: 1; }
 .change-password-button .action-arrow { color: #7892bd; font-size: .78rem; }
+/* =========================================================
+   МОДАЛЬНОЕ ОКНО СМЕНЫ И СБРОСА ПАРОЛЯ
+   ========================================================= */
 
 .password-modal-backdrop {
     position: fixed;
-    z-index: 20000;
     inset: 0;
+    z-index: 20000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
     overflow-y: auto;
-    background: rgba(12, 24, 43, .64);
+    background: rgba(12, 24, 43, 0.68);
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
 }
+
+.password-modal-backdrop,
+.password-modal-backdrop * {
+    box-sizing: border-box;
+}
+
 .password-modal {
-    width: min(100%, 460px);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 480px;
     max-height: calc(100dvh - 40px);
+    overflow-x: hidden;
     overflow-y: auto;
     color: #172b4d;
     background: #fff;
-    border: 1px solid rgba(230, 235, 242, .9);
+    border: 1px solid #e6ebf2;
     border-radius: 22px;
-    box-shadow: 0 24px 80px rgba(8, 20, 40, .28);
+    box-shadow: 0 24px 80px rgba(8, 20, 40, 0.28);
+    overscroll-behavior: contain;
 }
-.password-modal-header {
+
+/* Заголовок */
+
+.password-modal .password-modal-header {
     position: relative;
+    flex-shrink: 0;
     padding: 25px 26px 20px;
     background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
     border-bottom: 1px solid #edf1f7;
 }
-.password-modal-icon {
+
+.password-modal .password-modal-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -654,20 +770,25 @@ export default {
     border-radius: 15px;
     font-size: 20px;
 }
-.password-modal-header h2 {
+
+.password-modal .password-modal-header h2 {
     margin: 0 40px 7px 0;
     color: #172b4d;
     font-size: 1.25rem;
     font-weight: 800;
-    letter-spacing: -.02em;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
 }
-.password-modal-header p {
+
+.password-modal .password-modal-header p {
     margin: 0;
     color: #718096;
-    font-size: .88rem;
+    font-size: 0.88rem;
+    font-weight: 400;
     line-height: 1.5;
 }
-.password-modal-close {
+
+.password-modal .password-modal-close {
     position: absolute;
     top: 18px;
     right: 18px;
@@ -676,112 +797,494 @@ export default {
     justify-content: center;
     width: 36px;
     height: 36px;
+    padding: 0;
     color: #64748b;
     background: #fff;
     border: 1px solid #e5eaf2;
     border-radius: 11px;
+    font-size: 1rem;
     cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease;
 }
-.password-modal-close:hover { color: #e5484d; background: #fff3f3; }
-.password-form {
+
+.password-modal .password-modal-close:hover {
+    color: #e5484d;
+    background: #fff3f3;
+}
+
+.password-modal .password-modal-close:focus-visible,
+.password-modal button:focus-visible {
+    outline: 3px solid rgba(36, 107, 253, 0.3);
+    outline-offset: 2px;
+}
+
+/* =========================================================
+   БЛОК СБРОСА ПАРОЛЯ
+   ========================================================= */
+
+.password-modal .password-reset-section {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    padding: 22px 26px 0;
+}
+
+.password-modal .password-reset-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.password-modal .password-reset-icon {
+    display: inline-flex;
+    flex: 0 0 42px;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    color: #b4232d;
+    background: #ffebed;
+    border: 1px solid #ffd3d7;
+    border-radius: 12px;
+    font-size: 17px;
+}
+
+.password-modal .password-reset-heading > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.password-modal .password-reset-heading h3 {
+    margin: 0 0 4px;
+    color: #172b4d;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.password-modal .password-reset-heading p {
+    margin: 0;
+    color: #718096;
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+.password-modal .password-reset-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px 13px;
+    color: #854d0e;
+    background: #fff8e6;
+    border: 1px solid #f5dda0;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.password-modal .password-reset-warning > i {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    color: #d97706;
+}
+
+.password-modal .password-reset-warning strong {
+    color: #7c2d12;
+    font-size: 0.95rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.password-modal .password-reset-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 46px;
+    margin: 0;
+    padding: 11px 14px;
+    color: #fff;
+    background: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 750;
+    line-height: 1.4;
+    text-align: center;
+    white-space: normal;
+    cursor: pointer;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.password-modal .password-reset-button:hover:not(:disabled) {
+    background: #bb2d3b;
+    border-color: #bb2d3b;
+    transform: translateY(-1px);
+}
+
+.password-modal .password-reset-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Разделитель между сбросом и ручной сменой */
+
+.password-modal .password-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 26px 0;
+    color: #8793a5;
+    font-size: 0.76rem;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.password-modal .password-divider::before,
+.password-modal .password-divider::after {
+    content: "";
+    flex: 1 1 auto;
+    min-width: 12px;
+    height: 1px;
+    background: #e5eaf2;
+}
+
+/* =========================================================
+   ФОРМА РУЧНОЙ СМЕНЫ ПАРОЛЯ
+   ========================================================= */
+
+.password-modal .password-form {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding: 22px 26px 26px;
+    min-width: 0;
+    margin: 0;
+    padding: 18px 26px 26px;
+    background: #fff;
 }
-.password-field { display: flex; flex-direction: column; gap: 7px; }
-.password-field > label {
+
+.password-modal .password-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.password-modal .password-field > label {
+    display: block;
+    margin: 0;
     color: #34445b;
-    font-size: .82rem;
+    font-size: 0.82rem;
     font-weight: 750;
+    line-height: 1.4;
 }
-.password-input-wrap {
+
+.password-modal .password-input-wrap {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
+    min-width: 0;
     min-height: 48px;
     padding: 0 12px;
     background: #fff;
     border: 1px solid #dce3ed;
     border-radius: 12px;
-    transition: border-color .18s ease, box-shadow .18s ease;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
 }
-.password-input-wrap:focus-within {
+
+.password-modal .password-input-wrap:focus-within {
     border-color: #78a4ff;
-    box-shadow: 0 0 0 3px rgba(36, 107, 253, .11);
+    box-shadow: 0 0 0 3px rgba(36, 107, 253, 0.11);
 }
-.password-input-wrap > i:first-child { color: #7890b2; width: 17px; text-align: center; }
-.password-input-wrap input {
-    flex: 1;
+
+.password-modal .password-input-wrap > i:first-child {
+    flex: 0 0 17px;
+    width: 17px;
+    color: #7890b2;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.password-modal .password-input-wrap input {
+    display: block;
+    flex: 1 1 auto;
     width: 0;
     min-width: 0;
-    padding: 12px 0;
+    min-height: 46px;
+    margin: 0;
+    padding: 10px 0;
     color: #172b4d;
     background: transparent;
     border: 0;
-    outline: 0;
-    font: inherit;
-    font-size: .9rem;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.4;
 }
-.password-input-wrap input:focus { outline: 0; }
-.password-visibility {
-    padding: 6px;
+
+.password-modal .password-input-wrap input:focus {
+    outline: none;
+    border: 0;
+    box-shadow: none;
+}
+
+.password-modal .password-input-wrap input::placeholder {
+    color: #9aa6b6;
+    opacity: 1;
+}
+
+.password-modal .password-visibility {
+    display: inline-flex;
+    flex: 0 0 30px;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 34px;
+    margin: 0;
+    padding: 5px;
     color: #718096;
     background: transparent;
     border: 0;
+    border-radius: 8px;
+    font-size: 0.9rem;
     cursor: pointer;
 }
-.password-hint { color: #8793a5; font-size: .75rem; }
-.password-inline-error { color: #c62835; font-size: .76rem; }
-.password-alert {
+
+.password-modal .password-visibility:hover {
+    color: #246bfd;
+    background: #f0f5ff;
+}
+
+.password-modal .password-hint {
+    color: #8793a5;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.password-modal .password-inline-error {
+    color: #c62835;
+    font-size: 0.76rem;
+    line-height: 1.4;
+}
+
+/* Сообщения об успехе и ошибках */
+
+.password-modal .password-alert {
     display: flex;
     align-items: flex-start;
     gap: 9px;
+    min-width: 0;
     padding: 11px 12px;
     border-radius: 11px;
-    font-size: .82rem;
-    line-height: 1.45;
+    font-size: 0.82rem;
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
 }
-.password-alert-error { color: #a8202a; background: #fff0f1; border: 1px solid #ffd9dc; }
-.password-alert-success { color: #087443; background: #eafaf1; border: 1px solid #c9f0d8; }
-.password-modal-actions { display: flex; gap: 10px; padding-top: 3px; }
-.password-cancel-button, .password-submit-button {
+
+.password-modal .password-alert > i {
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+
+.password-modal .password-alert-error {
+    color: #a8202a;
+    background: #fff0f1;
+    border: 1px solid #ffd9dc;
+}
+
+.password-modal .password-alert-success {
+    color: #087443;
+    background: #eafaf1;
+    border: 1px solid #c9f0d8;
+}
+
+/* Кнопки внизу формы */
+
+.password-modal .password-modal-actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 3px;
+}
+
+.password-modal .password-cancel-button,
+.password-modal .password-submit-button {
     display: inline-flex;
-    flex: 1;
+    flex: 1 1 0;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    min-width: 0;
     min-height: 46px;
+    margin: 0;
     padding: 10px 14px;
     border-radius: 12px;
-    font: inherit;
-    font-size: .86rem;
+    font-family: inherit;
+    font-size: 0.86rem;
     font-weight: 750;
+    line-height: 1.4;
+    text-align: center;
     cursor: pointer;
-    transition: background .18s ease, transform .18s ease;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
 }
-.password-cancel-button { color: #475569; background: #f7f9fc; border: 1px solid #e2e8f0; }
-.password-cancel-button:hover { background: #edf1f7; }
-.password-submit-button { color: #fff; background: #246bfd; border: 1px solid #246bfd; box-shadow: 0 5px 12px rgba(36, 107, 253, .18); }
-.password-submit-button:hover:not(:disabled) { background: #1557e8; transform: translateY(-1px); }
-.password-submit-button:disabled, .password-cancel-button:disabled { opacity: .6; cursor: not-allowed; }
-.password-modal-enter-active, .password-modal-leave-active { transition: opacity .2s ease; }
-.password-modal-enter-active .password-modal, .password-modal-leave-active .password-modal { transition: transform .2s ease, opacity .2s ease; }
-.password-modal-enter-from, .password-modal-leave-to { opacity: 0; }
-.password-modal-enter-from .password-modal, .password-modal-leave-to .password-modal { opacity: 0; transform: translateY(10px) scale(.985); }
+
+.password-modal .password-cancel-button {
+    color: #475569;
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+}
+
+.password-modal .password-cancel-button:hover:not(:disabled) {
+    background: #edf1f7;
+}
+
+.password-modal .password-submit-button {
+    color: #fff;
+    background: #246bfd;
+    border: 1px solid #246bfd;
+    box-shadow: 0 5px 12px rgba(36, 107, 253, 0.18);
+}
+
+.password-modal .password-submit-button:hover:not(:disabled) {
+    background: #1557e8;
+    border-color: #1557e8;
+    transform: translateY(-1px);
+}
+
+.password-modal .password-submit-button:disabled,
+.password-modal .password-cancel-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* =========================================================
+   АНИМАЦИЯ МОДАЛЬНОГО ОКНА
+   ========================================================= */
+
+.password-modal-enter-active,
+.password-modal-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.password-modal-enter-active .password-modal,
+.password-modal-leave-active .password-modal {
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.password-modal-enter-from,
+.password-modal-leave-to {
+    opacity: 0;
+}
+
+.password-modal-enter-from .password-modal,
+.password-modal-leave-to .password-modal {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+}
+
+/* =========================================================
+   МОБИЛЬНАЯ ВЕРСИЯ
+   ========================================================= */
 
 @media (max-width: 520px) {
-    .password-modal-backdrop { align-items: flex-end; padding: 0; }
+    .password-modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
     .password-modal {
         width: 100%;
+        max-width: none;
         max-height: 92dvh;
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
         border-radius: 22px 22px 0 0;
         padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    .password-modal-header { padding: 22px 20px 17px; }
-    .password-form { padding: 20px; gap: 14px; }
-    .password-modal-actions { flex-direction: column-reverse; }
-    .password-cancel-button, .password-submit-button { flex: auto; width: 100%; }
+
+    .password-modal .password-modal-header {
+        padding: 22px 20px 17px;
+    }
+
+    .password-modal .password-reset-section {
+        gap: 12px;
+        padding: 18px 20px 0;
+    }
+
+    .password-modal .password-divider {
+        gap: 9px;
+        padding: 18px 20px 0;
+        font-size: 0.72rem;
+    }
+
+    .password-modal .password-form {
+        gap: 14px;
+        padding: 16px 20px 22px;
+    }
+
+    .password-modal .password-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .password-modal .password-cancel-button,
+    .password-modal .password-submit-button {
+        flex: 0 0 auto;
+        width: 100%;
+    }
 }
 
+@media (max-width: 360px) {
+    .password-modal .password-reset-heading {
+        align-items: flex-start;
+    }
+
+    .password-modal .password-reset-warning {
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+
+    .password-modal .password-reset-button {
+        font-size: 0.81rem;
+    }
+
+    .password-modal .password-modal-header h2 {
+        font-size: 1.15rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .password-modal-enter-active,
+    .password-modal-leave-active,
+    .password-modal-enter-active .password-modal,
+    .password-modal-leave-active .password-modal,
+    .password-modal .password-reset-button,
+    .password-modal .password-submit-button,
+    .password-modal .password-cancel-button {
+        transition: none;
+    }
+}
 </style>

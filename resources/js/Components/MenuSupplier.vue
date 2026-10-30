@@ -1,5 +1,5 @@
 <template>
-    <div class="agent-dashboard">
+    <div class="supplier-dashboard">
         <div class="dashboard-heading">
             <div class="heading-icon">
                 <i class="fa-solid fa-layer-group"></i>
@@ -119,7 +119,7 @@ export default {
 </script>
 
 <style scoped>
-.agent-dashboard {
+.supplier-dashboard {
     --navy: #172b4d;
     --muted: #748198;
     --blue: #2864dc;
