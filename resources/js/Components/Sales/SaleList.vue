@@ -1702,10 +1702,10 @@ p {
     overflow: visible;
     border-radius: 16px;
     padding:10px;
-  /*  background: var(--sales-surface);
+    /*  background: var(--sales-surface);
 
 
-    box-shadow: 0 3px 12px rgba(23, 35, 59, .045);*/
+      box-shadow: 0 3px 12px rgba(23, 35, 59, .045);*/
     transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 
@@ -2059,43 +2059,18 @@ p {
 
 
 
-/* Фиксированная позиция меню внутри карточки */
-.sales-page .sale-card {
-    position: relative;
-}
-
-.sales-page .sale-card__dropdown {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 20;
-    display: block;
-    width: 40px;
-    height: 40px;
-}
-
+/* Нижняя модалка действий со сделкой */
+.sales-page .sale-card__dropdown { display:flex; justify-content:flex-end; }
 .sales-page .sale-card__menu-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border: 1px solid var(--sales-border);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, .95);
-    color: var(--sales-blue);
-    box-shadow: 0 3px 10px rgba(23, 35, 59, .08);
-    cursor: pointer;
-    transition: .2s ease;
+    display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px;
+    border:1px solid var(--sales-border); border-radius:12px; background:#fff; color:var(--sales-blue);
+    box-shadow:0 3px 10px rgba(23,35,59,.06); transition:background .2s,transform .2s,border-color .2s;
 }
-
-.sales-page .sale-card__menu-button:hover {
-    background: var(--sales-soft-blue);
-    border-color: #cbd9f7;
-    transform: translateY(-1px);
+.sales-page .sale-card__menu-button:hover { background:var(--sales-soft-blue); border-color:#cbd9f7; transform:translateY(-1px); }
+.sale-actions-backdrop {
+    position:fixed; inset:0; z-index:1090; display:flex; align-items:flex-end; justify-content:center;
+    padding:0; background:rgba(14,25,45,.48); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
 }
-
 .sale-actions-sheet {
     width:100%; max-width:640px; max-height:min(82vh,760px); overflow:auto; overscroll-behavior:contain;
     background:#fff !important; color:#17233b; border:1px solid rgba(255,255,255,.8); border-bottom:0;
@@ -2152,31 +2127,46 @@ p {
     box-shadow: 0 8px 24px rgba(20, 33, 61, 0.08);
 }
 
-/* 🔹 Стили для кнопки меню (если их ещё нет в глобальных стилях) */
-.sale-card__dropdown {
+/* Единая позиция кнопки действий во всех режимах карточек */
+.sales-page .sale-card {
+    position: relative;
+}
+
+.sales-page .bad-sale-card-wrapper {
+    position: relative;
+    height: 100%;
+}
+
+.sales-page .sale-card__dropdown {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    z-index: 10;
+    top: 12px;
+    right: 12px;
+    z-index: 30;
+    display: block;
+    width: 40px;
+    height: 40px;
 }
 
-.sale-card__menu-button {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid #e6ebf3;
-    border-radius: 10px;
-    color: #596579;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(4px);
-    transition: all 0.2s ease;
+.sales-page .sale-card__menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--sales-border, #e5eaf2);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .96);
+    color: var(--sales-blue, #2457d6);
+    box-shadow: 0 3px 10px rgba(23, 35, 59, .08);
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, transform .2s ease;
 }
 
-.sale-card__menu-button:hover {
-    color: #175cd3;
-    border-color: #bfd1f8;
-    background: #f4f7ff;
+.sales-page .sale-card__menu-button:hover {
+    background: var(--sales-soft-blue, #edf3ff);
+    border-color: #cbd9f7;
+    transform: translateY(-1px);
 }
 
 /* 🔹 Адаптив: на очень маленьких экранах убираем лишние отступы */
@@ -2184,10 +2174,5 @@ p {
     .bad-sale-card-wrapper {
         border-radius: 12px;
     }
-}
-
-.sales-page .bad-sale-card-wrapper {
-    position: relative;
-    height: 100%;
 }
 </style>
