@@ -8,16 +8,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-
 class ImpersonationController extends Controller
 {
-    /**
-     * Войти под учётной записью агента.
-     */
     public function start(Request $request, int $agentId)
     {
         $agent = Agent::query()->findOrFail($agentId);
-
         $target = User::query()->find($agent->user_id);
 
         if (!$target || (int) $target->role !== RoleEnum::AGENT->value) {
@@ -32,14 +27,19 @@ class ImpersonationController extends Controller
             ], 403);
         }
 
-        Auth::guard("api")->login($target);
+        // Завершаем старую авторизацию
+        Auth::guard('web')->logout();
+
+        // Полностью очищаем старую сессию
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Создаём новую авторизацию
+        Auth::guard('web')->login($target);
+
+        // Обновляем идентификатор сессии
         $request->session()->regenerate();
 
-        return response()->json([
-            'success' => true,
-            'user' => $target->fresh(),
-            'redirect' => '/',
-        ]);
+        return redirect('/');
     }
 }
-

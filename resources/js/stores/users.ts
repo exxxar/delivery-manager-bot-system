@@ -36,23 +36,36 @@ export const useUsersStore = defineStore('users', {
     },
     actions: {
 
-        async impersonateAgent(agentId) {
-            await axios.get('/sanctum/csrf-cookie', {
-                withCredentials: true,
-            });
+        impersonateAgent(agent) {
+            if (!agent?.id) return;
 
-            const { data } = await axios.post(
-                `/api/agents/${agentId}/impersonate`,
-                {},
-                { withCredentials: true }
+            const confirmed = window.confirm(
+                `Войти под учётной записью ${agent.name}?`
             );
 
-            this.self = data.user;
+            if (!confirmed) return;
 
-            // Полная перезагрузка приложения
-            window.location.href = data.redirect || '/';
+            const form = document.createElement('form');
 
-            return data;
+            form.method = 'POST';
+            form.action = `/api/agents/${agent.id}/impersonate`;
+            form.target = '_blank';
+
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+
+            if (csrfToken) {
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = csrfToken;
+                form.appendChild(csrf);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+            form.remove();
         },
         setRole(role) {
             this.self.role = role

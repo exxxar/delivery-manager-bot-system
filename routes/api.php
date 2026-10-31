@@ -79,6 +79,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
+Route::post(
+    '/agents/{agentId}/impersonate',
+    [ImpersonationController::class, 'start']
+)->middleware(['auth:sanctum', 'bot.user', 'tg.role:admin']);
+
 Route::middleware(['auth:sanctum','bot.user'])->group(function(){
 
     Route::get('/my-income', [MyIncomeController::class, 'index'])
@@ -142,10 +147,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             // Создать нового агента
             Route::post('/', [AgentController::class, 'store']);
 
-            Route::post('/{agentId}/impersonate', [
-                ImpersonationController::class,
-                'start',
-            ])->whereNumber('agentId');
+
 
             Route::post('/{agentId}/login-link', [AgentLoginLinkController::class, 'store']);
             Route::delete('/{agentId}/login-link', [AgentLoginLinkController::class, 'destroy']);
