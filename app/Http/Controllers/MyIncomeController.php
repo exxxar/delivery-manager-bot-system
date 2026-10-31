@@ -288,7 +288,7 @@ class MyIncomeController extends Controller
         );
 
         $netTotal = round(
-            $ownCommission + $incomingTotal - $outgoingTotal,
+            $ownCommission + $incomingTotal,
             2
         );
 
