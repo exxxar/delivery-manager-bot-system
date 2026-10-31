@@ -39,24 +39,34 @@ export const useUsersStore = defineStore('users', {
         impersonateAgent(agent) {
             if (!agent?.id) return;
 
-            const form = document.createElement('form');
+            const csrfCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('XSRF-TOKEN='))
+                ?.split('=')
+                .slice(1)
+                .join('=');
 
+            const csrfToken = csrfCookie
+                ? decodeURIComponent(csrfCookie)
+                : document.querySelector('meta[name="csrf-token"]')?.content;
+
+            if (!csrfToken) {
+                console.error('CSRF token не найден');
+                alert('Не найден CSRF-токен. Обновите страницу и попробуйте снова.');
+                return;
+            }
+
+            const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/api/agents/${agent.id}/impersonate`;
             form.target = '_blank';
 
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = '_token';
+            input.value = csrfToken;
 
-            if (csrfToken) {
-                const csrf = document.createElement('input');
-                csrf.type = 'hidden';
-                csrf.name = '_token';
-                csrf.value = csrfToken;
-                form.appendChild(csrf);
-            }
-
+            form.appendChild(input);
             document.body.appendChild(form);
             form.submit();
             form.remove();
