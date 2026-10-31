@@ -43,7 +43,7 @@ export const useUsersStore = defineStore('users', {
 
             try {
                 const response = await axios.post(
-                    '/api/agents/${agent.id}/impersonat',
+                    `/api/agents/${agent.id}/impersonate`,
                     form,
                     {
                         withCredentials: true
