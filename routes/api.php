@@ -13,6 +13,7 @@ use App\Http\Controllers\Forms\AdminJobController;
 use App\Http\Controllers\Forms\AgentJobController;
 use App\Http\Controllers\Forms\ClientJobController;
 use App\Http\Controllers\Forms\SupplierJobController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\MyIncomeController;
 use App\Http\Controllers\PercentageController;
 use App\Http\Controllers\ProductCategoryController;
@@ -71,7 +72,18 @@ Route::middleware('auth:sanctum')->group(function () {
         [UserController::class, 'resetPassword']
     );
 
+    Route::get('/auth/impersonation', [
+        ImpersonationController::class,
+        'status',
+    ]);
+
+    Route::post('/auth/impersonation/stop', [
+        ImpersonationController::class,
+        'stop',
+    ]);
+
 });
+
 
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
@@ -137,6 +149,12 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/', [AgentController::class, 'index']);
             // Создать нового агента
             Route::post('/', [AgentController::class, 'store']);
+
+            Route::post('/{agentId}/impersonate', [
+                ImpersonationController::class,
+                'start',
+            ])->whereNumber('agentId')
+                ->middleware(["tg.role:admin"]);
 
             Route::post('/{agentId}/login-link', [AgentLoginLinkController::class, 'store']);
             Route::delete('/{agentId}/login-link', [AgentLoginLinkController::class, 'destroy']);

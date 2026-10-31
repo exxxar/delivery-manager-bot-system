@@ -189,9 +189,10 @@
             </div>
         </section>
 
-        <button type="submit" class="deal-submit">
-            <i class="fa-solid fa-check" aria-hidden="true"></i>
-            Подтвердить
+        <button type="submit" class="deal-submit" :disabled="isSubmitting">
+            <i v-if="isSubmitting" class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+            <i v-else class="fa-solid fa-check" aria-hidden="true"></i>
+            {{ isSubmitting ? 'Сохранение…' : 'Подтвердить' }}
         </button>
     </form>
 </template>
@@ -206,17 +207,17 @@ export default {
         modelValue: {
             type: Object,
             required: true
+        },
+        isSubmitting: {
+            type: Boolean,
+            default: false
         }
     },
 
     data() {
         return {
             salesStore: useSalesStore(),
-            localForm: {
-                files: [],
-                ...this.modelValue,
-                files: Array.isArray(this.modelValue.files) ? [...this.modelValue.files] : []
-            }
+            localForm: this.normalizeForm(this.modelValue)
         };
     },
 
@@ -224,15 +225,18 @@ export default {
         modelValue: {
             deep: true,
             handler(newValue) {
-                const incoming = { ...newValue };
-                if (!Array.isArray(incoming.files)) incoming.files = this.files;
-                this.localForm = { ...this.localForm, ...incoming };
+                // Не перезаписываем локальную форму теми же данными,
+                // которые только что отправили родителю через v-model.
+                if (this.formsEqual(this.localForm, newValue)) return;
+                this.localForm = this.normalizeForm(newValue);
             }
         },
         localForm: {
             deep: true,
             handler(newValue) {
-                this.$emit("update:modelValue", newValue);
+                // Не создаём обратный цикл watcher -> v-model -> watcher.
+                if (this.formsEqual(newValue, this.modelValue)) return;
+                this.$emit('update:modelValue', this.normalizeForm(newValue));
             }
         }
     },
@@ -244,6 +248,33 @@ export default {
     },
 
     methods: {
+        normalizeForm(form = {}) {
+            return {
+                ...form,
+                files: Array.isArray(form.files) ? [...form.files] : [],
+                payment_type: String(form.payment_type ?? '0'),
+                receipt_is_lost: Boolean(form.receipt_is_lost),
+                same_sale_delivery_date: form.same_sale_delivery_date !== false,
+                need_additional_comment: Boolean(form.need_additional_comment),
+            };
+        },
+
+        formsEqual(a = {}, b = {}) {
+            const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+            for (const key of keys) {
+                if (key === 'files') {
+                    const left = Array.isArray(a.files) ? a.files : [];
+                    const right = Array.isArray(b.files) ? b.files : [];
+                    if (left.length !== right.length || left.some((file, index) => file !== right[index])) {
+                        return false;
+                    }
+                } else if (a[key] !== b[key]) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
         async sendPaymentDocumentToTg() {
             try {
                 await this.salesStore.sendPaymentDocumentToTg(this.localForm.id);
@@ -263,7 +294,8 @@ export default {
         },
 
         onSubmit() {
-            this.$emit("callback", this.localForm);
+            if (this.isSubmitting) return;
+            this.$emit('callback', this.normalizeForm(this.localForm));
         },
 
         removeFile(index) {

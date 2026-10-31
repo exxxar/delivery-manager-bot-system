@@ -234,6 +234,11 @@
                                 <span><strong>Проценты</strong><small>Настроить распределение выплат</small></span>
                                 <i class="fa-solid fa-chevron-right agent-action-chevron"></i>
                             </button>
+                            <button type="button" class="agent-action" @click="runAgentAction('impersonate')">
+                                <span class="agent-action-icon is-blue"><i class="fa-solid fa-user-secret"></i></span>
+                                <span><strong>Войти от имени</strong><small>Открыть приложение под учётной записью администратора</small></span>
+                                <i class="fa-solid fa-chevron-right agent-action-chevron"></i>
+                            </button>
                             <button type="button" class="agent-action" @click="runAgentAction('resetPassword')">
                                 <span class="agent-action-icon is-indigo"><i class="fa-solid fa-key"></i></span>
                                 <span><strong>Сбросить пароль</strong><small>Установить временный пароль 12345678</small></span>
@@ -560,8 +565,34 @@ export default {
                     case 'resetPassword':
                         this.resetAgentPassword(agent);
                         break
+                    case 'impersonate':
+                        this.impersonateAgent(agent);
+                        break
                 }
             })
+        },
+
+        async impersonateAgent(agent) {
+            if (!agent?.id) return;
+
+            const confirmed = window.confirm(
+                `Переключиться на учётную запись «${agent.name || 'администратора'}»?\n\n` +
+                'Текущая учётная запись сохранится — из личного кабинета можно будет вернуться обратно.'
+            );
+            if (!confirmed) return;
+
+            try {
+                await this.userStore.impersonateAgent(Number(agent.id));
+                // userStore.self уже обновлён ответом сервера. Перезагрузка не требуется.
+                this.$emit?.('impersonated', agent);
+                window.alert(`Теперь вы работаете от имени: ${agent.name || 'администратора'}.`);
+            } catch (error) {
+                console.error('Ошибка переключения учётной записи:', error);
+                window.alert(
+                    error?.response?.data?.message ||
+                    'Не удалось войти от имени администратора. Проверьте права доступа и API.'
+                );
+            }
         },
 
         openAgentSalary(agent) {
@@ -1291,3 +1322,4 @@ export default {
     }
 }
 </style>
+

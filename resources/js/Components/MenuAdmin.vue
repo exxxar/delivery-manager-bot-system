@@ -9,6 +9,13 @@ const router = useRouter();
 
 const menuItems = [
     {
+        title: "Мой доход",
+        description: "Просмотр и контроль своих источников дохода",
+        icon: "fa-wallet",
+        color: "green",
+        action: () => goTo("admin-my-income"),
+    },
+    {
         title: "Список доставок",
         description: "Просмотр и контроль всех доставок",
         icon: "fa-truck-fast",
@@ -249,6 +256,7 @@ async function fetchData() {
 .agent-dashboard {
     --dashboard-blue: #2457d6;
     --dashboard-blue-dark: #173b91;
+    --dashboard-green: #01a401;
     --dashboard-red: #df3548;
     --dashboard-text: #17233b;
     --dashboard-muted: #778399;
@@ -367,6 +375,11 @@ async function fetchData() {
 .menu-card--red {
     --card-accent: var(--dashboard-red);
     --card-icon-bg: #fff0f1;
+}
+
+.menu-card--green {
+    --card-accent: var(--dashboard-green);
+    --card-icon-bg: #edf3ff;
 }
 
 .menu-card:hover {

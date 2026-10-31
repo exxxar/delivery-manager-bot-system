@@ -247,30 +247,23 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                 </div>
 
                 <!-- Статистика месяца -->
-                <div v-if="salesStore.groupedMonth" class="alert alert-info month-stats mb-3">
-                    <div class="month-stats__grid">
-
-                        <div class="month-stats__item">
-                            <div class="month-stats__label">Всего сделок</div>
-                            <div class="month-stats__value">
-                                {{ salesStore.groupedMonth.month_stats.total_sales }}
+                <div v-if="salesStore.groupedMonth" class="alert alert-info mb-3">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="small text-muted">Всего сделок</div>
+                            <div class="fw-bold fs-5">{{ salesStore.groupedMonth.month_stats.total_sales }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small text-muted">Общая сумма</div>
+                            <div class="fw-bold fs-5 text-success">{{
+                                    formatMoney(salesStore.groupedMonth.month_stats.total_sum)
+                                }}
                             </div>
                         </div>
-
-                        <div class="month-stats__item">
-                            <div class="month-stats__label">Общая сумма</div>
-                            <div class="month-stats__value month-stats__value--success">
-                                {{ formatMoney(salesStore.groupedMonth.month_stats.total_sum) }}
-                            </div>
+                        <div class="col-4">
+                            <div class="small text-muted">Средний чек</div>
+                            <div class="fw-bold fs-5">{{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}</div>
                         </div>
-
-                        <div class="month-stats__item">
-                            <div class="month-stats__label">Средний чек</div>
-                            <div class="month-stats__value">
-                                {{ formatMoney(salesStore.groupedMonth.month_stats.avg_sum) }}
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
@@ -711,7 +704,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                         <div class="modal-body">
                             <DealForm
                                 v-if="selectedSale"
-                                v-model="dealForm" @callback="confirmDeal"/>
+                                v-model="dealForm" :is-submitting="confirmingDeal" @callback="confirmDeal"/>
                         </div>
                     </div>
                 </div>
@@ -802,6 +795,7 @@ export default {
             selectedActionSale: null,
             selectedActionContext: 'standard',
             pendingSaleAction: null,
+            confirmingDeal: false,
             saleStatuses: {
                 pending: "В ожидании",
                 assigned: "Назначено",
@@ -1014,10 +1008,15 @@ export default {
         },
 
         async sendPaymentDocumentToTg(id) {
-            await this.salesStore.sendPaymentDocumentToTg(id).then(() => {
-                this.alertStore.show("Чек отправлен вам в телеграм бот!");
-            })
-
+            try {
+                await this.salesStore.sendPaymentDocumentToTg(id);
+                this.alertStore.show('Чек отправлен вам в Telegram!');
+            } catch (error) {
+                console.error('Ошибка отправки чека в Telegram:', error);
+                this.alertStore.show(
+                    error?.response?.data?.message || 'Не удалось отправить чек в Telegram.'
+                );
+            }
         },
 
         selectAll() {
@@ -1136,38 +1135,76 @@ export default {
             }
         },
         openConfirmDeal(sale) {
-            this.selectedSale = null
-            this.salesStore.progress = 0
+            this.selectedSale = null;
+            this.salesStore.progress = 0;
+
+            // Создаём чистую форму для каждой сделки, чтобы данные
+            // предыдущего подтверждения не переносились в следующую.
+            this.dealForm = {
+                id: sale.id,
+                sale_date: sale.sale_date || null,
+                actual_delivery_date: sale.actual_delivery_date || null,
+                quantity: sale.quantity ?? 1,
+                total_price: sale.total_price ?? 0,
+                files: [],
+                additional_comment: '',
+                payment_document_name: sale.payment_document_name || null,
+                payment_type: String(sale.payment_type ?? '0'),
+                receipt_is_lost: false,
+                same_sale_delivery_date: true,
+                need_additional_comment: false,
+            };
+
             this.$nextTick(() => {
-                this.selectedSale = sale
-                this.dealForm.quantity = sale.quantity
-                this.dealForm.id = sale.id
-                this.dealForm.payment_type = '' + sale.payment_type
-                this.dealForm.total_price = sale.total_price
-                this.dealForm.payment_document_name = sale.payment_document_name
-                new bootstrap.Modal(document.getElementById('confirmDealModal')).show()
-            })
-
+                this.selectedSale = sale;
+                bootstrap.Modal
+                    .getOrCreateInstance(document.getElementById('confirmDealModal'))
+                    .show();
+            });
         },
-        /* async confirmPayment() {
-             this.paymentConfirmForm.id = this.selectedSale.id
-             await this.salesStore.confirmPayment(this.paymentConfirmForm)
-             bootstrap.Modal.getInstance(document.getElementById('paymentConfirmForm')).hide()
+        async confirmDeal(form = this.dealForm) {
+            if (this.confirmingDeal || !this.selectedSale?.id) return;
 
-         },*/
-        async confirmDeal() {
-            this.dealForm.id = this.selectedSale.id
-            await this.salesStore.confirmDealAndPayment(this.dealForm).then(() => {
-                this.dealForm.files = []
-                this.dealForm.actual_delivery_date = ''
-                this.dealForm.quantity = 1
-                this.dealForm.total_price = 0
-                this.dealForm.same_sale_delivery_date = true
-                this.dealForm.need_additional_comment = false
-                this.dealForm.additional_comment = ''
-            })
-            bootstrap.Modal.getInstance(document.getElementById('confirmDealModal')).hide()
+            this.confirmingDeal = true;
+            try {
+                const payload = {
+                    ...form,
+                    id: this.selectedSale.id,
+                    files: Array.isArray(form.files) ? [...form.files] : [],
+                };
 
+                await this.salesStore.confirmDealAndPayment(payload);
+
+                this.dealForm = {
+                    sale_date: null,
+                    actual_delivery_date: null,
+                    quantity: 1,
+                    total_price: 0,
+                    files: [],
+                    additional_comment: '',
+                    payment_document_name: null,
+                    payment_type: '0',
+                    receipt_is_lost: false,
+                    same_sale_delivery_date: true,
+                    need_additional_comment: false,
+                };
+
+                await this.loadTabData(this.currentTab);
+
+                bootstrap.Modal
+                    .getInstance(document.getElementById('confirmDealModal'))
+                    ?.hide();
+
+                this.alertStore.show('Сделка успешно подтверждена!');
+            } catch (error) {
+                console.error('Ошибка подтверждения сделки:', error);
+                this.alertStore.show(
+                    error?.response?.data?.message ||
+                    'Не удалось подтвердить сделку. Попробуйте ещё раз.'
+                );
+            } finally {
+                this.confirmingDeal = false;
+            }
         },
         async cancelDeal(sale) {
             try {
@@ -2180,98 +2217,6 @@ p {
 @media (max-width: 575.98px) {
     .bad-sale-card-wrapper {
         border-radius: 12px;
-    }
-}
-
-/* Статистика месяца */
-.sales-page .month-stats {
-    padding: 14px;
-    border-radius: 16px;
-    overflow: hidden;
-}
-
-.sales-page .month-stats__grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0;
-    width: 100%;
-}
-
-.sales-page .month-stats__item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    padding: 8px 6px;
-    text-align: center;
-}
-
-.sales-page .month-stats__item + .month-stats__item {
-    border-left: 1px solid rgba(36, 87, 214, .15);
-}
-
-.sales-page .month-stats__label {
-    margin-bottom: 6px;
-    color: #64748b;
-    font-size: 13px;
-    line-height: 1.35;
-}
-
-.sales-page .month-stats__value {
-    color: #17233b;
-    font-size: clamp(16px, 2vw, 22px);
-    font-weight: 750;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow-wrap: normal;
-}
-
-.sales-page .month-stats__value--success {
-    color: #168252;
-}
-
-/* Планшет */
-@media (max-width: 768px) {
-    .sales-page .month-stats__value {
-        font-size: 16px;
-    }
-}
-
-/* Телефон */
-@media (max-width: 576px) {
-    .sales-page .month-stats {
-        padding: 8px 14px;
-    }
-
-    .sales-page .month-stats__grid {
-        grid-template-columns: 1fr;
-    }
-
-    .sales-page .month-stats__item {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 4px;
-        text-align: left;
-    }
-
-    .sales-page .month-stats__item + .month-stats__item {
-        border-left: none;
-        border-top: 1px solid rgba(36, 87, 214, .15);
-    }
-
-    .sales-page .month-stats__label {
-        margin: 0;
-        font-size: 13px;
-        white-space: normal;
-    }
-
-    .sales-page .month-stats__value {
-        flex-shrink: 0;
-        font-size: 17px;
-        white-space: nowrap;
     }
 }
 </style>

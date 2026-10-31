@@ -35,6 +35,39 @@ export const useUsersStore = defineStore('users', {
         byId: (s) => (id: number) => s.items.find(u => u.id === id),
     },
     actions: {
+
+        async impersonateAgent(agentId: number) {
+            const { data } = await axios.post(
+                `/api/agents/${agentId}/impersonate`,
+                {},
+                { withCredentials: true }
+            );
+
+            this.self = data.user;
+
+            return data;
+        },
+
+        async stopImpersonation() {
+            const { data } = await axios.post(
+                '/api/auth/impersonation/stop',
+                {},
+                { withCredentials: true }
+            );
+
+            this.self = data.user;
+
+            return data;
+        },
+
+        async fetchImpersonationStatus() {
+            const { data } = await axios.get(
+                '/api/auth/impersonation',
+                { withCredentials: true }
+            );
+
+            return data;
+        },
         setRole(role) {
             this.self.role = role
         },

@@ -1,4 +1,3 @@
-
 <template>
     <form class="payment-confirm-form" @submit.prevent="onSubmit">
         <div class="payment-form-header">
@@ -71,7 +70,6 @@
                         type="file"
                         class="file-input"
                         accept=".jpg,.jpeg,.png,.pdf"
-                        :required="!localForm.receipt_is_lost"
                         @change="handleFile"
                     />
 
@@ -110,6 +108,16 @@
                 </label>
             </div>
         </Transition>
+
+        <p
+            v-if="errorMessage"
+            class="payment-error"
+            role="alert"
+            aria-live="polite"
+        >
+            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+            {{ errorMessage }}
+        </p>
 
         <button
             type="submit"
@@ -161,7 +169,8 @@ export default {
     data() {
         return {
             localForm: this.normalizeForm(this.modelValue),
-            selectedFileName: this.modelValue.file?.name || ""
+            selectedFileName: this.modelValue.file?.name || "",
+            errorMessage: ""
         };
     },
 
@@ -176,6 +185,7 @@ export default {
 
                 this.localForm = this.normalizeForm(newVal);
                 this.selectedFileName = newVal.file?.name || "";
+                this.errorMessage = "";
             }
         }
     },
@@ -204,6 +214,8 @@ export default {
         },
 
         syncToParent() {
+            this.errorMessage = "";
+
             this.$emit("update:modelValue", {
                 ...this.localForm
             });
@@ -214,6 +226,7 @@ export default {
 
             this.localForm.file = file;
             this.selectedFileName = file?.name || "";
+            this.errorMessage = "";
 
             this.syncToParent();
         },
@@ -221,6 +234,17 @@ export default {
         onSubmit() {
             if (this.submitting) return;
 
+            const requiresReceipt =
+                this.localForm.payment_type === "1" &&
+                !this.localForm.receipt_is_lost;
+
+            if (requiresReceipt && !this.localForm.file) {
+                this.errorMessage =
+                    "Прикрепите чек или отметьте, что он был утрачен.";
+                return;
+            }
+
+            this.errorMessage = "";
             this.syncToParent();
 
             this.$emit("submit", {
@@ -535,6 +559,25 @@ export default {
     color: var(--payment-muted);
     font-size: 11px;
     line-height: 1.4;
+}
+
+.payment-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 11px 13px;
+    color: #b42332;
+    background: #fff1f2;
+    border: 1px solid #ffd5da;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.payment-error i {
+    flex: 0 0 auto;
+    margin-top: 1px;
 }
 
 .confirm-button {

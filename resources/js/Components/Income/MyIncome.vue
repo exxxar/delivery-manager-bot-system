@@ -194,6 +194,7 @@ export default {
             summary: { sources_count: 0, total_income: 0, total_turnover: 0, sales_count: 0 },
             loading: false,
             error: '',
+            incomeRequestId: 0,
         }
     },
     components: {
@@ -217,17 +218,35 @@ export default {
         },
         async loadIncome() {
             if (!this.from || !this.to || this.from > this.to) return
+
+            // Не позволяем более медленному старому запросу перезаписать
+            // результат нового периода.
+            const requestId = ++this.incomeRequestId
             this.loading = true
             this.error = ''
+
             try {
-                const query = `from=${encodeURIComponent(this.from)}&to=${encodeURIComponent(this.to)}`
-                const { data } = await axios.get(`/api/my-income?${query}`)
-                this.sources = data.sources || []
-                this.summary = data.summary || { sources_count: 0, total_income: 0, total_turnover: 0, sales_count: 0 }
+                const params = { from: this.from, to: this.to }
+                const { data } = await axios.get('/api/my-income', { params })
+
+                if (requestId !== this.incomeRequestId) return
+
+                this.sources = Array.isArray(data?.sources) ? data.sources : []
+                this.summary = {
+                    sources_count: Number(data?.summary?.sources_count ?? this.sources.length),
+                    total_income: Number(data?.summary?.total_income ?? 0),
+                    total_turnover: Number(data?.summary?.total_turnover ?? 0),
+                    sales_count: Number(data?.summary?.sales_count ?? 0),
+                }
             } catch (e) {
+                if (requestId !== this.incomeRequestId) return
+
+                // При ошибке не подменяем реальные данные нулями.
                 this.error = e?.response?.data?.message || 'Не удалось загрузить данные о доходе.'
             } finally {
-                this.loading = false
+                if (requestId === this.incomeRequestId) {
+                    this.loading = false
+                }
             }
         },
         setThisMonth() {
@@ -327,4 +346,3 @@ export default {
     .report-modal .modal-header { padding: 15px 17px; }
 }
 </style>
-

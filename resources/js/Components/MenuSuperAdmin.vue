@@ -13,6 +13,13 @@ const load = ref(true);
 
 const menuItems = [
     {
+        title: "Мой доход",
+        description: "Просмотр и контроль своих источников дохода",
+        icon: "fa-wallet",
+        color: "green",
+        action: () => goTo("admin-my-income"),
+    },
+    {
         title: "Сформировать отчет",
         description: "Генерация отчетов по системе",
         icon: "fa-file-circle-plus",
@@ -234,6 +241,7 @@ async function handleReport(payload) {
     --dashboard-blue: #2457d6;
     --dashboard-red: #df3548;
     --dashboard-text: #17233b;
+    --dashboard-green: #01a401;
     --dashboard-muted: #778399;
     --dashboard-border: #e5eaf2;
 
@@ -343,6 +351,11 @@ async function handleReport(payload) {
 .menu-card--red {
     --card-accent: var(--dashboard-red);
     --card-icon-bg: #fff0f1;
+}
+
+.menu-card--green {
+    --card-accent: var(--dashboard-green);
+    --card-icon-bg: #edf3ff;
 }
 
 .menu-card:hover {

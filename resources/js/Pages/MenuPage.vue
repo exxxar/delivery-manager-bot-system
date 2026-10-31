@@ -1,6 +1,6 @@
 
 <script setup>
-import { onMounted, computed } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -23,6 +23,49 @@ const settingsStore = useUserSettingsStore();
 
 const user = computed(() => userStore.self || null);
 
+// Состояние режима «Войти от имени»
+const impersonation = ref({
+    active: false,
+    original_user: null,
+    started_at: null,
+});
+const stoppingImpersonation = ref(false);
+
+const loadImpersonationStatus = async () => {
+    try {
+        const status = await userStore.fetchImpersonationStatus();
+        impersonation.value = {
+            active: Boolean(status?.active),
+            original_user: status?.original_user || null,
+            started_at: status?.started_at || null,
+        };
+    } catch (error) {
+        console.error("Не удалось проверить режим переключения:", error);
+    }
+};
+
+const stopImpersonation = async () => {
+    if (stoppingImpersonation.value) return;
+
+    stoppingImpersonation.value = true;
+    try {
+        await userStore.stopImpersonation();
+        impersonation.value = {
+            active: false,
+            original_user: null,
+            started_at: null,
+        };
+    } catch (error) {
+        console.error("Не удалось вернуться в исходную учётную запись:", error);
+        window.alert(
+            error?.response?.data?.message ||
+            "Не удалось вернуться в исходную учётную запись. Попробуйте ещё раз."
+        );
+    } finally {
+        stoppingImpersonation.value = false;
+    }
+};
+
 const openPrimaryRegistration = () => {
     const element = document.getElementById("primaryUserModal");
 
@@ -34,6 +77,7 @@ const openPrimaryRegistration = () => {
 };
 
 onMounted(async () => {
+    await loadImpersonationStatus();
     await settingsStore.fetchSettings();
 
     if (user.value?.blocked_at != null) {
@@ -77,6 +121,32 @@ onMounted(async () => {
         </header>
 
         <template v-if="user">
+            <!-- Индикатор режима impersonation и возврат в исходную учётную запись -->
+            <section v-if="impersonation.active" class="impersonation-banner mb-4">
+                <div class="impersonation-banner__icon">
+                    <i class="fa-solid fa-user-secret"></i>
+                </div>
+
+                <div class="impersonation-banner__content">
+                    <strong>Вы работаете от имени другого пользователя</strong>
+                    <span>
+                        Исходная учётная запись:
+                        {{ impersonation.original_user?.name || impersonation.original_user?.email || 'Администратор' }}
+                    </span>
+                    <small>Действия в системе выполняются от имени текущего пользователя.</small>
+                </div>
+
+                <button
+                    type="button"
+                    class="impersonation-banner__button"
+                    :disabled="stoppingImpersonation"
+                    @click="stopImpersonation"
+                >
+                    <i :class="stoppingImpersonation ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-arrow-rotate-left'"></i>
+                    <span>{{ stoppingImpersonation ? 'Возврат...' : 'Вернуться' }}</span>
+                </button>
+            </section>
+
             <!-- Профиль -->
             <section
                 v-if="user.role > 0"
@@ -393,4 +463,67 @@ onMounted(async () => {
         padding: 14px;
     }
 }
+
+
+/* Режим работы от имени другого пользователя */
+.impersonation-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid rgba(37, 99, 235, .22);
+    border-radius: 16px;
+    background: linear-gradient(110deg, rgba(37, 99, 235, .09), rgba(255, 255, 255, .98));
+}
+
+.impersonation-banner__icon {
+    display: grid;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 13px;
+    color: #2563eb;
+    background: rgba(37, 99, 235, .12);
+    font-size: 19px;
+}
+
+.impersonation-banner__content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.impersonation-banner__content strong { color: #173b78; font-size: 14px; }
+.impersonation-banner__content span { color: #334155; font-size: 13px; }
+.impersonation-banner__content small { color: #64748b; font-size: 11px; }
+
+.impersonation-banner__button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 11px;
+    color: #fff;
+    background: #1d4ed8;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background .2s ease, opacity .2s ease;
+}
+
+.impersonation-banner__button:hover { background: #1e40af; }
+.impersonation-banner__button:disabled { cursor: wait; opacity: .65; }
+
+@media (max-width: 575.98px) {
+    .impersonation-banner { align-items: flex-start; flex-wrap: wrap; padding: 14px; }
+    .impersonation-banner__content { flex-basis: calc(100% - 60px); }
+    .impersonation-banner__button { width: 100%; }
+}
+
 </style>
