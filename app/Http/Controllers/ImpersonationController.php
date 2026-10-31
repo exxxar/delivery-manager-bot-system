@@ -58,7 +58,7 @@ class ImpersonationController extends Controller
             'impersonation_started_at' => now()->toIso8601String(),
         ]);
 
-        Auth::guard('web')->login($target);
+        Auth::guard('api')->login($target);
 
         $request->session()->regenerate();
 
@@ -97,7 +97,7 @@ class ImpersonationController extends Controller
             ], 401);
         }
 
-        Auth::guard('web')->login($actor);
+        Auth::guard('api')->login($actor);
 
         $request->session()->regenerate();
 
