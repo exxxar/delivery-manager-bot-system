@@ -36,7 +36,11 @@ export const useUsersStore = defineStore('users', {
     },
     actions: {
 
-        async impersonateAgent(agentId: number) {
+        async impersonateAgent(agentId) {
+            await axios.get('/sanctum/csrf-cookie', {
+                withCredentials: true,
+            });
+
             const { data } = await axios.post(
                 `/api/agents/${agentId}/impersonate`,
                 {},
@@ -45,26 +49,8 @@ export const useUsersStore = defineStore('users', {
 
             this.self = data.user;
 
-            return data;
-        },
-
-        async stopImpersonation() {
-            const { data } = await axios.post(
-                '/api/auth/impersonation/stop',
-                {},
-                { withCredentials: true }
-            );
-
-            this.self = data.user;
-
-            return data;
-        },
-
-        async fetchImpersonationStatus() {
-            const { data } = await axios.get(
-                '/api/auth/impersonation',
-                { withCredentials: true }
-            );
+            // Полная перезагрузка приложения
+            window.location.href = data.redirect || '/';
 
             return data;
         },

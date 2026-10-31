@@ -72,15 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
         [UserController::class, 'resetPassword']
     );
 
-    Route::get('/auth/impersonation', [
-        ImpersonationController::class,
-        'status',
-    ]);
 
-    Route::post('/auth/impersonation/stop', [
-        ImpersonationController::class,
-        'stop',
-    ]);
 
 });
 
