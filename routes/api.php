@@ -52,10 +52,6 @@ Route::post('/auth/change-password',
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-Route::post(
-    '/agents/{agentId}/impersonate',
-    [ImpersonationController::class, 'start']
-);
 
 Route::get('/auth/me', [AuthController::class, 'me']);
 Route::post('/auth/register', [\App\Http\Controllers\AuthController::class, 'register']);
@@ -91,6 +87,12 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
 
     Route::get('/my-income', [MyIncomeController::class, 'index'])
         ->name('my-income.index');
+
+
+    Route::get(
+        '/agents/{agentId}/impersonate',
+        [ImpersonationController::class, 'start']
+    )->middleware(["tg.role:admin"]);
 
     Route::post(
         '/agents/{agentId}/reset-password',

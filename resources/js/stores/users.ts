@@ -40,7 +40,7 @@ export const useUsersStore = defineStore('users', {
             if (!agent?.id) return;
 
             const form = document.createElement('form');
-            form.method = 'POST';
+            form.method = 'GET';
             form.action = `/api/agents/${agent.id}/impersonate`;
 
             document.body.appendChild(form);

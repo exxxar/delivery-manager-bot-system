@@ -12,6 +12,7 @@ class ImpersonationController extends Controller
 {
     public function start(Request $request, int $agentId)
     {
+
         Auth::logout();
 
         $request->session()->invalidate();
