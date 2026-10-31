@@ -32,7 +32,7 @@ class ImpersonationController extends Controller
         }
 
         // Авторизуем агента
-        Auth::guard('web')->login($target);
+        Auth::login($target);
 
         // Обновляем идентификатор сессии
         $request->session()->regenerate();
