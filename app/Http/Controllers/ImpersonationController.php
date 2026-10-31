@@ -12,6 +12,12 @@ class ImpersonationController extends Controller
 {
     public function start(Request $request, int $agentId)
     {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+
         $agent = Agent::query()->findOrFail($agentId);
         $target = User::query()->find($agent->user_id);
 
