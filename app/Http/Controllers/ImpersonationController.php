@@ -12,9 +12,8 @@ class ImpersonationController extends Controller
 {
     public function start(Request $request, int $agentId)
     {
-
-
         $agent = Agent::query()->findOrFail($agentId);
+
         $target = User::query()->find($agent->user_id);
 
         if (!$target || (int) $target->role !== RoleEnum::AGENT->value) {
@@ -29,13 +28,13 @@ class ImpersonationController extends Controller
             ], 403);
         }
 
+        Auth::guard('web')->login($target);
 
-        // Создаём новую авторизацию
-        Auth::guard("web")->login($target);
-
-        // Обновляем идентификатор сессии
         $request->session()->regenerate();
 
-        return response()->json(Auth::user());
+        return response()->json([
+            'success' => true,
+            'user' => $target,
+        ]);
     }
 }

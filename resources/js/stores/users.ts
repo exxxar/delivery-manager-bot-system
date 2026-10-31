@@ -39,20 +39,29 @@ export const useUsersStore = defineStore('users', {
         async impersonateAgent(agent) {
             if (!agent?.id) return;
 
-            const form = new FormData()
+            this.loading = true;
 
             try {
-                const response = await axios.post(
+                const { data } = await axios.post(
                     `/api/agents/${agent.id}/impersonate`,
-                    form,
+                    {},
                     {
-                        withCredentials: true
+                        withCredentials: true,
+                        headers: {
+                            Accept: 'application/json',
+                        },
                     }
                 );
 
-                this.self = response.data;
+                this.self = data.user ?? data;
+
+                // Полностью перезапускаем приложение с новой авторизацией
+                window.location.href = '/pwa';
 
                 return true;
+            } catch (error) {
+                console.error('Ошибка переключения пользователя:', error);
+                throw error;
             } finally {
                 this.loading = false;
             }
