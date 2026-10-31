@@ -36,15 +36,26 @@ export const useUsersStore = defineStore('users', {
     },
     actions: {
 
-        impersonateAgent(agent) {
+        async impersonateAgent(agent) {
             if (!agent?.id) return;
 
-            const form = document.createElement('form');
-            form.method = 'GET';
-            form.action = `/api/agents/${agent.id}/impersonate`;
+            const form = new FormData()
 
-            document.body.appendChild(form);
-            form.submit();
+            try {
+                const response = await axios.post(
+                    '/api/agents/${agent.id}/impersonat',
+                    form,
+                    {
+                        withCredentials: true
+                    }
+                );
+
+                this.self = response.data;
+
+                return true;
+            } finally {
+                this.loading = false;
+            }
         },
         setRole(role) {
             this.self.role = role

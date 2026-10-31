@@ -579,7 +579,7 @@ export default {
             });
         },
 
-        impersonateAgent(agent) {
+        async impersonateAgent(agent) {
             if (!agent?.id) return;
 
             const confirmed = window.confirm(
@@ -588,7 +588,8 @@ export default {
 
             if (!confirmed) return;
 
-            this.userStore.impersonateAgent(agent);
+            await  this.userStore.impersonateAgent(agent)
+            window.location.href = "/pwa"
         },
         openAgentSalary(agent) {
             if (!agent?.id) return;

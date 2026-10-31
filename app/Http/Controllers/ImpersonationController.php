@@ -31,11 +31,11 @@ class ImpersonationController extends Controller
 
 
         // Создаём новую авторизацию
-        Auth::guard("web")->login($target);
+        Auth::login($target);
 
         // Обновляем идентификатор сессии
         $request->session()->regenerate();
 
-        return redirect('/');
+        return response()->json(Auth::user());
     }
 }

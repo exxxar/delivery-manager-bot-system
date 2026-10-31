@@ -89,7 +89,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
         ->name('my-income.index');
 
 
-    Route::get(
+    Route::post(
         '/agents/{agentId}/impersonate',
         [ImpersonationController::class, 'start']
     )->middleware(["tg.role:admin"]);
