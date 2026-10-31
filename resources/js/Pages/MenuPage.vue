@@ -23,48 +23,9 @@ const settingsStore = useUserSettingsStore();
 
 const user = computed(() => userStore.self || null);
 
-// Состояние режима «Войти от имени»
-const impersonation = ref({
-    active: false,
-    original_user: null,
-    started_at: null,
-});
-const stoppingImpersonation = ref(false);
 
-const loadImpersonationStatus = async () => {
-    try {
-        const status = await userStore.fetchImpersonationStatus();
-        impersonation.value = {
-            active: Boolean(status?.active),
-            original_user: status?.original_user || null,
-            started_at: status?.started_at || null,
-        };
-    } catch (error) {
-        console.error("Не удалось проверить режим переключения:", error);
-    }
-};
 
-const stopImpersonation = async () => {
-    if (stoppingImpersonation.value) return;
 
-    stoppingImpersonation.value = true;
-    try {
-        await userStore.stopImpersonation();
-        impersonation.value = {
-            active: false,
-            original_user: null,
-            started_at: null,
-        };
-    } catch (error) {
-        console.error("Не удалось вернуться в исходную учётную запись:", error);
-        window.alert(
-            error?.response?.data?.message ||
-            "Не удалось вернуться в исходную учётную запись. Попробуйте ещё раз."
-        );
-    } finally {
-        stoppingImpersonation.value = false;
-    }
-};
 
 const openPrimaryRegistration = () => {
     const element = document.getElementById("primaryUserModal");
@@ -77,7 +38,7 @@ const openPrimaryRegistration = () => {
 };
 
 onMounted(async () => {
-    await loadImpersonationStatus();
+
     await settingsStore.fetchSettings();
 
     if (user.value?.blocked_at != null) {
@@ -121,31 +82,6 @@ onMounted(async () => {
         </header>
 
         <template v-if="user">
-            <!-- Индикатор режима impersonation и возврат в исходную учётную запись -->
-            <section v-if="impersonation.active" class="impersonation-banner mb-4">
-                <div class="impersonation-banner__icon">
-                    <i class="fa-solid fa-user-secret"></i>
-                </div>
-
-                <div class="impersonation-banner__content">
-                    <strong>Вы работаете от имени другого пользователя</strong>
-                    <span>
-                        Исходная учётная запись:
-                        {{ impersonation.original_user?.name || impersonation.original_user?.email || 'Администратор' }}
-                    </span>
-                    <small>Действия в системе выполняются от имени текущего пользователя.</small>
-                </div>
-
-                <button
-                    type="button"
-                    class="impersonation-banner__button"
-                    :disabled="stoppingImpersonation"
-                    @click="stopImpersonation"
-                >
-                    <i :class="stoppingImpersonation ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-arrow-rotate-left'"></i>
-                    <span>{{ stoppingImpersonation ? 'Возврат...' : 'Вернуться' }}</span>
-                </button>
-            </section>
 
             <!-- Профиль -->
             <section
