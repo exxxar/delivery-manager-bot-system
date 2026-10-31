@@ -536,65 +536,60 @@ export default {
         },
 
         runAgentAction(action) {
-            const agent = this.selectedAgent
-            this.closeAgentActions()
-            if (!agent) return
+            const agent = this.selectedAgent;
+
+            this.closeAgentActions();
+
+            if (!agent) return;
+
+            // Переключение выполняем отдельно, без nextTick,
+            // чтобы браузер разрешил открыть новую вкладку.
+            if (action === 'impersonate') {
+                this.impersonateAgent(agent);
+                return;
+            }
+
             this.$nextTick(() => {
                 switch (action) {
                     case 'select':
                         this.selectAgent(agent);
-                        break
+                        break;
                     case 'view':
                         this.openAgentInfo(agent);
-                        break
+                        break;
                     case 'edit':
                         this.openEditAgent(agent);
-                        break
+                        break;
                     case 'salary':
                         this.openAgentSalary(agent);
-                        break
+                        break;
                     case 'statistics':
                         this.getPersonalStatistic(agent);
-                        break
+                        break;
                     case 'percentages':
                         this.openPercentages(agent);
-                        break
+                        break;
                     case 'delete':
                         this.confirmDelete(agent);
-                        break
+                        break;
                     case 'resetPassword':
                         this.resetAgentPassword(agent);
-                        break
-                    case 'impersonate':
-                        this.impersonateAgent(agent);
-                        break
+                        break;
                 }
-            })
+            });
         },
 
-        async impersonateAgent(agent) {
+        impersonateAgent(agent) {
             if (!agent?.id) return;
 
             const confirmed = window.confirm(
-                `Переключиться на учётную запись «${agent.name || 'администратора'}»?\n\n` +
-                'Текущая учётная запись сохранится — из личного кабинета можно будет вернуться обратно.'
+                `Войти под учётной записью «${agent.name}»?`
             );
+
             if (!confirmed) return;
 
-            try {
-                await this.userStore.impersonateAgent(Number(agent.id));
-                // userStore.self уже обновлён ответом сервера. Перезагрузка не требуется.
-                this.$emit?.('impersonated', agent);
-                window.alert(`Теперь вы работаете от имени: ${agent.name || 'администратора'}.`);
-            } catch (error) {
-                console.error('Ошибка переключения учётной записи:', error);
-                window.alert(
-                    error?.response?.data?.message ||
-                    'Не удалось войти от имени администратора. Проверьте права доступа и API.'
-                );
-            }
+            this.userStore.impersonateAgent(agent);
         },
-
         openAgentSalary(agent) {
             if (!agent?.id) return;
 

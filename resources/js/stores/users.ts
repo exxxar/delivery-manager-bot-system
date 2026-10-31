@@ -39,12 +39,6 @@ export const useUsersStore = defineStore('users', {
         impersonateAgent(agent) {
             if (!agent?.id) return;
 
-            const confirmed = window.confirm(
-                `Войти под учётной записью ${agent.name}?`
-            );
-
-            if (!confirmed) return;
-
             const form = document.createElement('form');
 
             form.method = 'POST';
