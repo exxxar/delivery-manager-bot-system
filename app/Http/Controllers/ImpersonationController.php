@@ -32,7 +32,7 @@ class ImpersonationController extends Controller
             ], 403);
         }
 
-        Auth::login($target);
+        Auth::guard("web")->login($target);
         $request->session()->regenerate();
 
         return response()->json([
