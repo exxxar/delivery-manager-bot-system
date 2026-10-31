@@ -51,6 +51,12 @@ Route::post('/auth/change-password',
 );
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+Route::post(
+    '/agents/{agentId}/impersonate',
+    [ImpersonationController::class, 'start']
+);
+
 Route::get('/auth/me', [AuthController::class, 'me']);
 Route::post('/auth/register', [\App\Http\Controllers\AuthController::class, 'register']);
 Route::post('/telegram', [\App\Http\Controllers\AuthController::class, 'loginTelegram']);
@@ -79,10 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/auth/telegram', [AuthController::class, 'telegram']);
 
-Route::post(
-    '/agents/{agentId}/impersonate',
-    [ImpersonationController::class, 'start']
-)->middleware(['auth:sanctum', 'bot.user', 'tg.role:admin']);
+
 
 Route::middleware(['auth:sanctum','bot.user'])->group(function(){
 

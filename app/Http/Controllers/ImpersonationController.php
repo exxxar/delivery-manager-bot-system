@@ -29,7 +29,7 @@ class ImpersonationController extends Controller
 
 
         // Создаём новую авторизацию
-        Auth::guard("web")->login($target);
+        Auth::guard("api")->login($target);
 
         // Обновляем идентификатор сессии
         $request->session()->regenerate();
