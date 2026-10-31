@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+
 class ImpersonationController extends Controller
 {
     /**
@@ -31,10 +32,7 @@ class ImpersonationController extends Controller
             ], 403);
         }
 
-        // Авторизуем агента
         Auth::login($target);
-
-        // Обновляем идентификатор сессии
         $request->session()->regenerate();
 
         return response()->json([

@@ -145,8 +145,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::post('/{agentId}/impersonate', [
                 ImpersonationController::class,
                 'start',
-            ])->whereNumber('agentId')
-                ->middleware(["tg.role:admin"]);
+            ])->whereNumber('agentId');
 
             Route::post('/{agentId}/login-link', [AgentLoginLinkController::class, 'store']);
             Route::delete('/{agentId}/login-link', [AgentLoginLinkController::class, 'destroy']);
