@@ -188,45 +188,117 @@
         </div>
 
         <div v-else class="pm__table-wrap">
-            <table class="table pm__table align-middle mb-0">
-                <thead>
-                <tr>
-                    <th>{{ isUserOwner && direction === 'incoming' ? 'Плательщик' : 'Получатель' }}</th>
-                    <th>Размер</th>
-                    <th>Состояние</th>
-                    <th class="text-end">Управление</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="item in percentages" :key="item.id">
-                    <td>
-                        <div class="pm__table-person">
-                            <span class="pm__table-avatar"><i class="fa-solid fa-user"></i></span>
-                            <span>
-                  <strong>{{ relatedUser(item)?.name || ('Пользователь #' + relatedUserId(item)) }}</strong>
-                  <small v-if="relatedUser(item)?.email">{{ relatedUser(item).email }}</small>
-                </span>
-                        </div>
-                    </td>
-                    <td><span class="pm__percent-pill">{{ formatPercent(item.percentage) }}%</span></td>
-                    <td>
-              <span class="pm__status" :class="item.is_active ? 'pm__status--active' : 'pm__status--inactive'">
-                <span></span>{{ item.is_active ? 'Активен' : 'Отключён' }}
-              </span>
-                    </td>
-                    <td class="text-end text-nowrap">
-                        <button class="pm__icon-button" type="button" :disabled="busyId === item.id"
-                                :title="item.is_active ? 'Отключить' : 'Включить'" @click="toggleActive(item)">
-                            <i :class="item.is_active ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
-                        </button>
-                        <button class="pm__icon-button pm__icon-button--danger" type="button"
-                                :disabled="busyId === item.id" title="Удалить" @click="removePercentage(item)">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="pm__table-scroll">
+                <table class="table pm__table align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>{{ isUserOwner && direction === 'incoming' ? 'Плательщик' : 'Получатель' }}</th>
+                        <th>Размер</th>
+                        <th>Состояние</th>
+                        <th class="text-end">Управление</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="item in percentages" :key="item.id">
+                        <td>
+                            <div class="pm__table-person">
+                                <span class="pm__table-avatar"><i class="fa-solid fa-user"></i></span>
+                                <span>
+                                    <strong>{{ relatedUser(item)?.name || ('Пользователь #' + relatedUserId(item)) }}</strong>
+                                    <small v-if="relatedUser(item)?.email">{{ relatedUser(item).email }}</small>
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div v-if="editingId === item.id" class="pm__inline-editor">
+                                <div class="input-group input-group-sm">
+                                    <input
+                                        v-model.number="editingPercentage"
+                                        type="number"
+                                        class="form-control"
+                                        min="0.01"
+                                        max="100"
+                                        step="0.01"
+                                        aria-label="Размер процента"
+                                        @keyup.enter="savePercentage(item)"
+                                        @keyup.esc="cancelEdit"
+                                    >
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <button
+                                v-else
+                                type="button"
+                                class="pm__percent-pill pm__percent-edit"
+                                :disabled="busyId === item.id"
+                                title="Изменить процент"
+                                @click="startEdit(item)"
+                            >
+                                {{ formatPercent(item.percentage) }}%
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <span class="pm__status" :class="item.is_active ? 'pm__status--active' : 'pm__status--inactive'">
+                                <span></span>{{ item.is_active ? 'Активен' : 'Отключён' }}
+                            </span>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <template v-if="editingId === item.id">
+                                <button
+                                    class="pm__icon-button pm__icon-button--success"
+                                    type="button"
+                                    :disabled="busyId === item.id"
+                                    title="Сохранить"
+                                    @click="savePercentage(item)"
+                                >
+                                    <span v-if="busyId === item.id" class="spinner-border spinner-border-sm"></span>
+                                    <i v-else class="fa-solid fa-check"></i>
+                                </button>
+                                <button
+                                    class="pm__icon-button"
+                                    type="button"
+                                    :disabled="busyId === item.id"
+                                    title="Отменить"
+                                    @click="cancelEdit"
+                                >
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </template>
+                            <template v-else>
+                                <button
+                                    class="pm__icon-button"
+                                    type="button"
+                                    :disabled="busyId === item.id"
+                                    title="Редактировать"
+                                    @click="startEdit(item)"
+                                >
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button
+                                    class="pm__icon-button"
+                                    type="button"
+                                    :disabled="busyId === item.id"
+                                    :title="item.is_active ? 'Отключить' : 'Включить'"
+                                    @click="toggleActive(item)"
+                                >
+                                    <i :class="item.is_active ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
+                                </button>
+                                <button
+                                    class="pm__icon-button pm__icon-button--danger"
+                                    type="button"
+                                    :disabled="busyId === item.id"
+                                    title="Удалить"
+                                    @click="removePercentage(item)"
+                                >
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </template>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
 </template>
@@ -254,6 +326,8 @@ export default {
             loading: false,
             saving: false,
             busyId: null,
+            editingId: null,
+            editingPercentage: null,
             showAddForm: false,
             userSearch: '',
             newPercentage: {payer_user_id: null, recipient_user_id: null, percentage: 0, is_active: true},
@@ -443,6 +517,46 @@ export default {
                 this.notify(error?.response?.data?.message || 'Не удалось сохранить процент', 'error')
             } finally {
                 this.saving = false
+            }
+        },
+        startEdit(item) {
+            this.editingId = item.id
+            this.editingPercentage = Number(item.percentage)
+        },
+        cancelEdit() {
+            this.editingId = null
+            this.editingPercentage = null
+        },
+        async savePercentage(item) {
+            const value = Number(this.editingPercentage)
+
+            if (!Number.isFinite(value) || value <= 0 || value > 100) {
+                this.notify('Процент должен быть больше 0 и не больше 100', 'error')
+                return
+            }
+
+            this.busyId = item.id
+
+            try {
+                const {data} = await makeAxiosFactory(
+                    `/percentages/${item.id}`,
+                    'PUT',
+                    {percentage: value}
+                )
+
+                const index = this.percentages.findIndex(row => row.id === item.id)
+                if (index !== -1) this.percentages.splice(index, 1, data)
+
+                this.cancelEdit()
+                this.$emit('saved')
+                this.notify('Процент успешно обновлён')
+            } catch (error) {
+                this.notify(
+                    error?.response?.data?.message || 'Не удалось обновить процент',
+                    'error'
+                )
+            } finally {
+                this.busyId = null
             }
         },
         async toggleActive(item) {
@@ -883,9 +997,65 @@ export default {
 }
 
 .pm__table-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow: hidden;
     border: 1px solid var(--pm-border);
     border-radius: .8rem;
+}
+
+.pm__table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+.pm__table {
+    width: 100%;
+    min-width: 620px;
+    margin-bottom: 0;
+}
+
+.pm__table th,
+.pm__table td {
+    white-space: nowrap;
+}
+
+.pm__inline-editor {
+    width: 120px;
+    min-width: 100px;
+}
+
+.pm__percent-edit {
+    border: 0;
+    cursor: pointer;
+    gap: .4rem;
+    align-items: center;
+    transition: background .15s;
+}
+
+.pm__percent-edit:hover {
+    background: rgba(21, 150, 106, .2);
+}
+
+.pm__percent-edit i {
+    font-size: .65rem;
+    opacity: .55;
+}
+
+.pm__icon-button--success {
+    color: #13845f;
+    border-color: rgba(19, 132, 95, .35);
+}
+
+.pm__icon-button--success:hover:not(:disabled) {
+    color: #fff;
+    background: #13845f;
+    border-color: #13845f;
 }
 
 .pm__table thead th {
@@ -1014,6 +1184,26 @@ export default {
 }
 
 @media (max-width: 650px) {
+    .pm__table-scroll {
+        overflow-x: scroll;
+        scrollbar-width: thin;
+    }
+
+    .pm__table {
+        min-width: 620px;
+    }
+
+    .pm__table thead th,
+    .pm__table tbody td {
+        padding: .75rem .8rem;
+    }
+
+    .pm__icon-button {
+        width: 36px;
+        height: 36px;
+        margin-left: .2rem;
+    }
+
     .pm__direction-switch {
         display: flex;
         max-width: 100%;
