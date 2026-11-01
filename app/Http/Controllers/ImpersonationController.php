@@ -16,7 +16,7 @@ class ImpersonationController extends Controller
 
         $target = User::query()->find($agent->user_id);
 
-        if (!$target || (int) $target->role !== RoleEnum::AGENT->value) {
+        if (!$target) {
             return response()->json([
                 'message' => 'Учётная запись агента не найдена',
             ], 404);
