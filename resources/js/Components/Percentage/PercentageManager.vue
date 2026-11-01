@@ -16,290 +16,306 @@
             </div>
         </header>
 
-        <div class="pm__own-percent">
-            <div class="pm__own-percent-icon"><i class="fa-solid fa-percent"></i></div>
-            <div class="pm__own-percent-copy">
-                <strong>Собственный процент</strong>
-                <span>Процент, который получает этот пользователь</span>
+        <div v-if="!canManageOwner" class="pm__missing-profile">
+            <div class="pm__missing-profile-icon">
+                <i class="fa-solid fa-user-plus"></i>
             </div>
-            <div class="pm__own-percent-editor">
-                <div class="input-group input-group-sm">
-                    <input v-model.number="ownPercentValue" class="form-control" type="number" min="0" max="100"
-                           step="0.01" aria-label="Собственный процент пользователя">
-                    <span class="input-group-text">%</span>
-                    <button type="button" class="btn btn-primary"
-                            :disabled="savingOwnPercent || !isValidOwnPercent || Number(ownPercentValue) === Number(ownerPercent ?? 0)"
-                            @click="saveOwnPercent">
-                        <span v-if="savingOwnPercent" class="spinner-border spinner-border-sm"></span>
-                        <i v-else class="fa-solid fa-floppy-disk"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="pm__direction-switch" role="tablist" aria-label="Направление процента">
-            <button
-                type="button"
-                class="pm__direction"
-                :class="{ 'is-active': direction === 'outgoing' }"
-                role="tab"
-                :aria-selected="direction === 'outgoing'"
-                @click="switchDirection('outgoing')"
-            >Кому начисляет
-            </button>
-            <button
-                type="button"
-                class="pm__direction"
-                :class="{ 'is-active': direction === 'incoming' }"
-                role="tab"
-                :aria-selected="direction === 'incoming'"
-                @click="switchDirection('incoming')"
-            >От кого получает
-            </button>
-        </div>
-
-        <div class="pm__toolbar">
             <div>
-                <h6 class="pm__section-title">
-                    {{ direction === 'incoming' && isUserOwner ? 'Входящие начисления' : 'Исходящие начисления' }}
-                </h6>
-                <p class="pm__hint mb-0">
-                    {{
-                        direction === 'incoming' && isUserOwner
-                            ? 'Настройте, от каких пользователей администратору начисляется процент.'
-                            : 'Настройте, кому этот владелец начисляет процент.'
-                    }}
+                <strong>{{ isAgentWithoutProfile ? 'Профиль администратора ещё не создан' : 'Не указан владелец начислений' }}</strong>
+                <p class="mb-0">
+                    {{ isAgentWithoutProfile
+                    ? 'Сначала создайте профиль администратора в списке администраторов. После создания можно будет настраивать проценты.'
+                    : 'Перед настройкой процентов необходимо передать корректный ID владельца.' }}
                 </p>
             </div>
-            <button type="button" class="pm__add-button" @click="toggleForm">
-                <i :class="showAddForm ? 'fa-solid fa-xmark' : 'fa-solid fa-plus'"></i>
-                {{ showAddForm ? 'Закрыть' : 'Добавить правило' }}
-            </button>
         </div>
 
-        <form v-if="showAddForm" class="pm__form" @submit.prevent="addPercentage">
-            <div class="pm__form-heading">
-                <span class="pm__form-icon"><i class="fa-solid fa-sliders"></i></span>
-                <div>
-                    <h6 class="mb-1">Новое правило</h6>
-                    <p class="pm__hint mb-0">{{
-                            isIncomingUserDirection ? 'Выберите плательщика: процент будет начисляться администратору.' : 'Выберите получателя: процент будет начисляться ему от текущего владельца.'
-                        }}</p>
+        <template v-else>
+            <div class="pm__own-percent">
+                <div class="pm__own-percent-icon"><i class="fa-solid fa-percent"></i></div>
+                <div class="pm__own-percent-copy">
+                    <strong>Собственный процент</strong>
+                    <span>Процент, который получает этот пользователь</span>
+                </div>
+                <div class="pm__own-percent-editor">
+                    <div class="input-group input-group-sm">
+                        <input v-model.number="ownPercentValue" class="form-control" type="number" min="0" max="100"
+                               step="0.01" aria-label="Собственный процент пользователя">
+                        <span class="input-group-text">%</span>
+                        <button type="button" class="btn btn-primary"
+                                :disabled="savingOwnPercent || !isValidOwnPercent || Number(ownPercentValue) === Number(ownerPercent ?? 0)"
+                                @click="saveOwnPercent">
+                            <span v-if="savingOwnPercent" class="spinner-border spinner-border-sm"></span>
+                            <i v-else class="fa-solid fa-floppy-disk"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="pm__flow">
-                <div class="pm__person-card">
-                    <label class="pm__label">От кого начисляется</label>
-                    <div class="pm__person">
+            <div class="pm__direction-switch" role="tablist" aria-label="Направление процента">
+                <button
+                    type="button"
+                    class="pm__direction"
+                    :class="{ 'is-active': direction === 'outgoing' }"
+                    role="tab"
+                    :aria-selected="direction === 'outgoing'"
+                    @click="switchDirection('outgoing')"
+                >Кому начисляет
+                </button>
+                <button
+                    type="button"
+                    class="pm__direction"
+                    :class="{ 'is-active': direction === 'incoming' }"
+                    role="tab"
+                    :aria-selected="direction === 'incoming'"
+                    @click="switchDirection('incoming')"
+                >От кого получает
+                </button>
+            </div>
+
+            <div class="pm__toolbar">
+                <div>
+                    <h6 class="pm__section-title">
+                        {{ direction === 'incoming' && isUserOwner ? 'Входящие начисления' : 'Исходящие начисления' }}
+                    </h6>
+                    <p class="pm__hint mb-0">
+                        {{
+                            direction === 'incoming' && isUserOwner
+                                ? 'Настройте, от каких пользователей администратору начисляется процент.'
+                                : 'Настройте, кому этот владелец начисляет процент.'
+                        }}
+                    </p>
+                </div>
+                <button type="button" class="pm__add-button" @click="toggleForm">
+                    <i :class="showAddForm ? 'fa-solid fa-xmark' : 'fa-solid fa-plus'"></i>
+                    {{ showAddForm ? 'Закрыть' : 'Добавить правило' }}
+                </button>
+            </div>
+
+            <form v-if="showAddForm" class="pm__form" @submit.prevent="addPercentage">
+                <div class="pm__form-heading">
+                    <span class="pm__form-icon"><i class="fa-solid fa-sliders"></i></span>
+                    <div>
+                        <h6 class="mb-1">Новое правило</h6>
+                        <p class="pm__hint mb-0">{{
+                                isIncomingUserDirection ? 'Выберите плательщика: процент будет начисляться администратору.' : 'Выберите получателя: процент будет начисляться ему от текущего владельца.'
+                            }}</p>
+                    </div>
+                </div>
+
+                <div class="pm__flow">
+                    <div class="pm__person-card">
+                        <label class="pm__label">От кого начисляется</label>
+                        <div class="pm__person">
                         <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isPayerFixed }">
                             <i :class="isPayerFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
                         </span>
-                        <div class="pm__person-info">
-                            <strong>{{
-                                    isPayerFixed ? (ownerName || `${ownerTypeLabel} #${ownerId}`) : (selectedPayer?.name || 'Выберите плательщика')
-                                }}</strong>
-                            <small>{{ isPayerFixed ? 'Текущий владелец' : 'Пользователь-плательщик' }}</small>
+                            <div class="pm__person-info">
+                                <strong>{{
+                                        isPayerFixed ? (ownerName || `${ownerTypeLabel} #${ownerId}`) : (selectedPayer?.name || 'Выберите плательщика')
+                                    }}</strong>
+                                <small>{{ isPayerFixed ? 'Текущий владелец' : 'Пользователь-плательщик' }}</small>
+                            </div>
+                            <i v-if="isPayerFixed" class="fa-solid fa-lock pm__lock"></i>
                         </div>
-                        <i v-if="isPayerFixed" class="fa-solid fa-lock pm__lock"></i>
+                        <template v-if="!isPayerFixed">
+                            <input v-model.trim="userSearch" type="search" class="form-control pm__search"
+                                   placeholder="Найти плательщика по имени или email" autocomplete="off">
+                            <select v-model.number="newPercentage.payer_user_id" class="form-select pm__select" required>
+                                <option :value="null" disabled>Выберите плательщика</option>
+                                <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
+                                    {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
+                                </option>
+                            </select>
+                        </template>
                     </div>
-                    <template v-if="!isPayerFixed">
-                        <input v-model.trim="userSearch" type="search" class="form-control pm__search"
-                               placeholder="Найти плательщика по имени или email" autocomplete="off">
-                        <select v-model.number="newPercentage.payer_user_id" class="form-select pm__select" required>
-                            <option :value="null" disabled>Выберите плательщика</option>
-                            <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
-                                {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
-                            </option>
-                        </select>
-                    </template>
-                </div>
 
-                <div class="pm__flow-arrow" :class="{ 'pm__flow-arrow--incoming': isIncomingUserDirection }">
-                    <span>{{ formatPercent(newPercentage.percentage) }}%</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </div>
+                    <div class="pm__flow-arrow" :class="{ 'pm__flow-arrow--incoming': isIncomingUserDirection }">
+                        <span>{{ formatPercent(newPercentage.percentage) }}%</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
 
-                <div class="pm__person-card">
-                    <label class="pm__label">Кому начисляется</label>
-                    <div class="pm__person">
+                    <div class="pm__person-card">
+                        <label class="pm__label">Кому начисляется</label>
+                        <div class="pm__person">
                         <span class="pm__avatar" :class="{ 'pm__avatar--fixed': isRecipientFixed }">
                             <i :class="isRecipientFixed ? 'fa-solid fa-user-shield' : 'fa-solid fa-user'"></i>
                         </span>
-                        <div class="pm__person-info">
-                            <strong>{{
-                                    isRecipientFixed ? (ownerName || `${ownerTypeLabel} #${ownerId}`) : (selectedRecipient?.name || 'Выберите получателя')
-                                }}</strong>
-                            <small>{{ isRecipientFixed ? 'Текущий получатель' : 'Пользователь-получатель' }}</small>
+                            <div class="pm__person-info">
+                                <strong>{{
+                                        isRecipientFixed ? (ownerName || `${ownerTypeLabel} #${ownerId}`) : (selectedRecipient?.name || 'Выберите получателя')
+                                    }}</strong>
+                                <small>{{ isRecipientFixed ? 'Текущий получатель' : 'Пользователь-получатель' }}</small>
+                            </div>
+                            <i v-if="isRecipientFixed" class="fa-solid fa-lock pm__lock"></i>
                         </div>
-                        <i v-if="isRecipientFixed" class="fa-solid fa-lock pm__lock"></i>
+                        <template v-if="!isRecipientFixed">
+                            <input v-model.trim="userSearch" type="search" class="form-control pm__search"
+                                   placeholder="Найти получателя по имени или email" autocomplete="off">
+                            <select v-model.number="newPercentage.recipient_user_id" class="form-select pm__select"
+                                    required>
+                                <option :value="null" disabled>Выберите получателя</option>
+                                <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
+                                    {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
+                                </option>
+                            </select>
+                        </template>
                     </div>
-                    <template v-if="!isRecipientFixed">
-                        <input v-model.trim="userSearch" type="search" class="form-control pm__search"
-                               placeholder="Найти получателя по имени или email" autocomplete="off">
-                        <select v-model.number="newPercentage.recipient_user_id" class="form-select pm__select"
-                                required>
-                            <option :value="null" disabled>Выберите получателя</option>
-                            <option v-for="user in filteredUsers" :key="user.id" :value="Number(user.id)">
-                                {{ user.name }}{{ user.email ? ` — ${user.email}` : '' }}
-                            </option>
-                        </select>
-                    </template>
                 </div>
+
+                <div class="pm__form-bottom">
+                    <div class="pm__percent-field">
+                        <label class="pm__label" for="percentage-value">Размер процента</label>
+                        <div class="input-group">
+                            <input id="percentage-value" v-model.number="newPercentage.percentage" class="form-control"
+                                   type="number" min="0.01" max="100" step="0.01" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="pm__form-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>{{
+                                isIncomingUserDirection
+                                    ? 'Направление: выбранный пользователь → текущий администратор.'
+                                    : 'Направление: текущий владелец → выбранный пользователь.'
+                            }}</span>
+                    </div>
+                    <button class="pm__save-button" type="submit" :disabled="saving || !isFormSelectionValid">
+                        <span v-if="saving" class="spinner-border spinner-border-sm"></span>
+                        <i v-else class="fa-solid fa-check"></i>
+                        {{ saving ? 'Сохраняем…' : 'Сохранить правило' }}
+                    </button>
+                </div>
+            </form>
+
+            <div v-if="loading" class="pm__loading">
+                <span class="spinner-border spinner-border-sm"></span>
+                Загружаем начисления…
             </div>
 
-            <div class="pm__form-bottom">
-                <div class="pm__percent-field">
-                    <label class="pm__label" for="percentage-value">Размер процента</label>
-                    <div class="input-group">
-                        <input id="percentage-value" v-model.number="newPercentage.percentage" class="form-control"
-                               type="number" min="0.01" max="100" step="0.01" required>
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
-                <div class="pm__form-note">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <span>{{
-                            isIncomingUserDirection
-                                ? 'Направление: выбранный пользователь → текущий администратор.'
-                                : 'Направление: текущий владелец → выбранный пользователь.'
-                        }}</span>
-                </div>
-                <button class="pm__save-button" type="submit" :disabled="saving || !isFormSelectionValid">
-                    <span v-if="saving" class="spinner-border spinner-border-sm"></span>
-                    <i v-else class="fa-solid fa-check"></i>
-                    {{ saving ? 'Сохраняем…' : 'Сохранить правило' }}
+            <div v-else-if="!percentages.length" class="pm__empty">
+                <div class="pm__empty-icon"><i class="fa-solid fa-arrows-left-right-to-line"></i></div>
+                <h6>Пока нет правил начисления</h6>
+                <p>Добавьте правило, чтобы настроить направление и размер процента.</p>
+                <button type="button" class="pm__empty-button" @click="toggleForm">
+                    <i class="fa-solid fa-plus me-1"></i> Добавить первое правило
                 </button>
             </div>
-        </form>
 
-        <div v-if="loading" class="pm__loading">
-            <span class="spinner-border spinner-border-sm"></span>
-            Загружаем начисления…
-        </div>
-
-        <div v-else-if="!percentages.length" class="pm__empty">
-            <div class="pm__empty-icon"><i class="fa-solid fa-arrows-left-right-to-line"></i></div>
-            <h6>Пока нет правил начисления</h6>
-            <p>Добавьте правило, чтобы настроить направление и размер процента.</p>
-            <button type="button" class="pm__empty-button" @click="toggleForm">
-                <i class="fa-solid fa-plus me-1"></i> Добавить первое правило
-            </button>
-        </div>
-
-        <div v-else class="pm__table-wrap">
-            <div class="pm__table-scroll">
-                <table class="table pm__table align-middle mb-0">
-                    <thead>
-                    <tr>
-                        <th>{{ isUserOwner && direction === 'incoming' ? 'Плательщик' : 'Получатель' }}</th>
-                        <th>Размер</th>
-                        <th>Состояние</th>
-                        <th class="text-end">Управление</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr v-for="item in percentages" :key="item.id">
-                        <td>
-                            <div class="pm__table-person">
-                                <span class="pm__table-avatar"><i class="fa-solid fa-user"></i></span>
-                                <span>
+            <div v-else class="pm__table-wrap">
+                <div class="pm__table-scroll">
+                    <table class="table pm__table align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>{{ isUserOwner && direction === 'incoming' ? 'Плательщик' : 'Получатель' }}</th>
+                            <th>Размер</th>
+                            <th>Состояние</th>
+                            <th class="text-end">Управление</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="item in percentages" :key="item.id">
+                            <td>
+                                <div class="pm__table-person">
+                                    <span class="pm__table-avatar"><i class="fa-solid fa-user"></i></span>
+                                    <span>
                                     <strong>{{ relatedUser(item)?.name || ('Пользователь #' + relatedUserId(item)) }}</strong>
                                     <small v-if="relatedUser(item)?.email">{{ relatedUser(item).email }}</small>
                                 </span>
-                            </div>
-                        </td>
-                        <td>
-                            <div v-if="editingId === item.id" class="pm__inline-editor">
-                                <div class="input-group input-group-sm">
-                                    <input
-                                        v-model.number="editingPercentage"
-                                        type="number"
-                                        class="form-control"
-                                        min="0.01"
-                                        max="100"
-                                        step="0.01"
-                                        aria-label="Размер процента"
-                                        @keyup.enter="savePercentage(item)"
-                                        @keyup.esc="cancelEdit"
-                                    >
-                                    <span class="input-group-text">%</span>
                                 </div>
-                            </div>
-                            <button
-                                v-else
-                                type="button"
-                                class="pm__percent-pill pm__percent-edit"
-                                :disabled="busyId === item.id"
-                                title="Изменить процент"
-                                @click="startEdit(item)"
-                            >
-                                {{ formatPercent(item.percentage) }}%
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                        </td>
-                        <td>
+                            </td>
+                            <td>
+                                <div v-if="editingId === item.id" class="pm__inline-editor">
+                                    <div class="input-group input-group-sm">
+                                        <input
+                                            v-model.number="editingPercentage"
+                                            type="number"
+                                            class="form-control"
+                                            min="0.01"
+                                            max="100"
+                                            step="0.01"
+                                            aria-label="Размер процента"
+                                            @keyup.enter="savePercentage(item)"
+                                            @keyup.esc="cancelEdit"
+                                        >
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <button
+                                    v-else
+                                    type="button"
+                                    class="pm__percent-pill pm__percent-edit"
+                                    :disabled="busyId === item.id"
+                                    title="Изменить процент"
+                                    @click="startEdit(item)"
+                                >
+                                    {{ formatPercent(item.percentage) }}%
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </td>
+                            <td>
                             <span class="pm__status" :class="item.is_active ? 'pm__status--active' : 'pm__status--inactive'">
                                 <span></span>{{ item.is_active ? 'Активен' : 'Отключён' }}
                             </span>
-                        </td>
-                        <td class="text-end text-nowrap">
-                            <template v-if="editingId === item.id">
-                                <button
-                                    class="pm__icon-button pm__icon-button--success"
-                                    type="button"
-                                    :disabled="busyId === item.id"
-                                    title="Сохранить"
-                                    @click="savePercentage(item)"
-                                >
-                                    <span v-if="busyId === item.id" class="spinner-border spinner-border-sm"></span>
-                                    <i v-else class="fa-solid fa-check"></i>
-                                </button>
-                                <button
-                                    class="pm__icon-button"
-                                    type="button"
-                                    :disabled="busyId === item.id"
-                                    title="Отменить"
-                                    @click="cancelEdit"
-                                >
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </template>
-                            <template v-else>
-                                <button
-                                    class="pm__icon-button"
-                                    type="button"
-                                    :disabled="busyId === item.id"
-                                    title="Редактировать"
-                                    @click="startEdit(item)"
-                                >
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button
-                                    class="pm__icon-button"
-                                    type="button"
-                                    :disabled="busyId === item.id"
-                                    :title="item.is_active ? 'Отключить' : 'Включить'"
-                                    @click="toggleActive(item)"
-                                >
-                                    <i :class="item.is_active ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
-                                </button>
-                                <button
-                                    class="pm__icon-button pm__icon-button--danger"
-                                    type="button"
-                                    :disabled="busyId === item.id"
-                                    title="Удалить"
-                                    @click="removePercentage(item)"
-                                >
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </template>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <template v-if="editingId === item.id">
+                                    <button
+                                        class="pm__icon-button pm__icon-button--success"
+                                        type="button"
+                                        :disabled="busyId === item.id"
+                                        title="Сохранить"
+                                        @click="savePercentage(item)"
+                                    >
+                                        <span v-if="busyId === item.id" class="spinner-border spinner-border-sm"></span>
+                                        <i v-else class="fa-solid fa-check"></i>
+                                    </button>
+                                    <button
+                                        class="pm__icon-button"
+                                        type="button"
+                                        :disabled="busyId === item.id"
+                                        title="Отменить"
+                                        @click="cancelEdit"
+                                    >
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </template>
+                                <template v-else>
+                                    <button
+                                        class="pm__icon-button"
+                                        type="button"
+                                        :disabled="busyId === item.id"
+                                        title="Редактировать"
+                                        @click="startEdit(item)"
+                                    >
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button
+                                        class="pm__icon-button"
+                                        type="button"
+                                        :disabled="busyId === item.id"
+                                        :title="item.is_active ? 'Отключить' : 'Включить'"
+                                        @click="toggleActive(item)"
+                                    >
+                                        <i :class="item.is_active ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
+                                    </button>
+                                    <button
+                                        class="pm__icon-button pm__icon-button--danger"
+                                        type="button"
+                                        :disabled="busyId === item.id"
+                                        title="Удалить"
+                                        @click="removePercentage(item)"
+                                    >
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </template>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        </template>
     </section>
 </template>
 
@@ -312,7 +328,9 @@ export default {
     name: 'PercentageManager',
     props: {
         ownerType: {type: String, required: true}, // agent, supplier, user
-        ownerId: {type: Number, required: true},
+        // Для ownerType="agent" сюда передаётся именно agents.id, не users.id.
+        ownerId: {type: [Number, String], default: null},
+        ownerExists: {type: Boolean, default: true},
         ownerName: {type: String, default: ''},
         ownerPercent: {type: [Number, String], default: null},
     },
@@ -335,6 +353,16 @@ export default {
         }
     },
     computed: {
+        canManageOwner() {
+            const id = Number(this.ownerId)
+            return Number.isInteger(id)
+                && id > 0
+                && (String(this.ownerType).toLowerCase() !== 'agent' || this.ownerExists)
+        },
+        isAgentWithoutProfile() {
+            return String(this.ownerType).toLowerCase() === 'agent'
+                && (!this.ownerExists || !Number.isInteger(Number(this.ownerId)) || Number(this.ownerId) <= 0)
+        },
         isValidOwnPercent() {
             const value = Number(this.ownPercentValue)
             return Number.isFinite(value) && value >= 0 && value <= 100
@@ -379,12 +407,31 @@ export default {
         ownerId: {
             immediate: true,
             handler() {
-                this.loadUsers()
-                this.loadPercentages()
+                if (this.canManageOwner) {
+                    this.loadUsers()
+                    this.loadPercentages()
+                } else {
+                    this.percentages = []
+                    this.users = []
+                    this.loading = false
+                }
             },
         },
         ownerType() {
-            this.loadPercentages()
+            if (this.canManageOwner) {
+                this.loadPercentages()
+            } else {
+                this.percentages = []
+            }
+        },
+        ownerExists() {
+            if (this.canManageOwner) {
+                this.loadUsers()
+                this.loadPercentages()
+            } else {
+                this.percentages = []
+                this.loading = false
+            }
         },
     },
     methods: {
@@ -393,6 +440,14 @@ export default {
             else if (type === 'error') console.error(message)
         },
         async saveOwnPercent() {
+            if (!this.canManageOwner) {
+                this.notify('Сначала создайте профиль администратора', 'error')
+                return
+            }
+            if (!Number.isInteger(Number(this.ownerId)) || Number(this.ownerId) <= 0) {
+                this.notify('Не указан корректный ID владельца процентов', 'error')
+                return
+            }
             if (!this.isValidOwnPercent) {
                 this.notify('Процент должен быть от 0 до 100', 'error')
                 return
@@ -416,6 +471,10 @@ export default {
             }
         },
         async loadUsers() {
+            if (!this.canManageOwner) {
+                this.users = []
+                return
+            }
             try {
                 const store = useUsersStore()
                 if (!store.items?.length) await store.fetchAll()
@@ -425,11 +484,23 @@ export default {
             }
         },
         async loadPercentages() {
+            if (!this.canManageOwner) {
+                this.percentages = []
+                this.loading = false
+                return
+            }
+            const ownerId = Number(this.ownerId)
+            if (!Number.isInteger(ownerId) || ownerId <= 0) {
+                this.percentages = []
+                this.loading = false
+                return
+            }
+
             this.loading = true
             try {
                 const params = new URLSearchParams({
                     type: String(this.ownerType).toLowerCase(),
-                    id: String(this.ownerId),
+                    id: String(ownerId),
                     direction: this.direction,
                     _: String(Date.now()),
                 })
@@ -474,6 +545,14 @@ export default {
             return Number(value || 0).toLocaleString('ru-RU', {maximumFractionDigits: 2})
         },
         async addPercentage() {
+            if (!this.canManageOwner) {
+                this.notify('Сначала создайте профиль администратора', 'error')
+                return
+            }
+            if (!Number.isInteger(Number(this.ownerId)) || Number(this.ownerId) <= 0) {
+                this.notify('Не указан корректный ID владельца процентов', 'error')
+                return
+            }
             const value = Number(this.newPercentage.percentage)
 
             if (!this.isFormSelectionValid || !Number.isFinite(value) || value <= 0 || value > 100) {
@@ -608,6 +687,35 @@ export default {
 .pm__header, .pm__heading, .pm__toolbar, .pm__form-heading, .pm__person, .pm__table-person {
     display: flex;
     align-items: center;
+}
+
+.pm__missing-profile {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: 1rem;
+    border: 1px dashed var(--pm-border);
+    border-radius: .85rem;
+    background: var(--bs-tertiary-bg, #f8fafc);
+}
+.pm__missing-profile-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 12px;
+    color: var(--pm-primary);
+    background: color-mix(in srgb, var(--pm-primary) 10%, transparent);
+}
+.pm__missing-profile strong {
+    display: block;
+    margin-bottom: .2rem;
+    font-size: .9rem;
+}
+.pm__missing-profile p {
+    color: var(--pm-muted);
+    font-size: .82rem;
 }
 
 .pm__header {

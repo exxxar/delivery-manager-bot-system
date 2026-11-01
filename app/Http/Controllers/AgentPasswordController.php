@@ -18,13 +18,18 @@ class AgentPasswordController extends Controller
         $actor = $request->user();
 
         if (!$actor) {
-            return response()->json(['message' => 'Необходима авторизация'], 401);
+            return response()->json([
+                'message' => 'Необходима авторизация',
+            ], 401);
         }
 
         if ((int) $actor->role < 3) {
-            return response()->json(['message' => 'Недостаточно прав для сброса пароля'], 403);
+            return response()->json([
+                'message' => 'Недостаточно прав для сброса пароля',
+            ], 403);
         }
 
+        // В URL передаётся именно agents.id, а не users.id.
         $agent = Agent::query()->findOrFail($agentId);
 
         if (!$agent->user_id) {

@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use HttpException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
@@ -131,46 +132,102 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    /**
+     * Создаёт отдельный профиль Agent для существующей учётной записи User.
+     * В URL приходит users.id, связь создаётся строго через agents.user_id.
+     */
+    public function createAgentProfile(Request $request, $id)
+    {
+        $actor = $request->user();
+
+        if (!$actor || (int) $actor->role < 3) {
+            return response()->json([
+                'message' => 'Недостаточно прав для создания профиля администратора.',
+            ], 403);
+        }
+
+        $user = User::query()->with('agent')->findOrFail($id);
+
+        if ((int) $user->role < 3) {
+            return response()->json([
+                'message' => 'Профиль Agent можно создать только для старшего администратора.',
+            ], 422);
+        }
+
+        $agent = DB::transaction(function () use ($user) {
+            // Повторный вызов безопасен: существующая запись не дублируется.
+            return Agent::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'name' => $user->fio_from_telegram ?: $user->name ?: 'Администратор',
+                    'phone' => $user->phone ?? '',
+                    'email' => $user->email ?? '',
+                    'region' => $user->region ?? '',
+                ]
+            );
+        });
+
+        $user->load(['agent', 'supplier']);
+
+        return response()->json([
+            'message' => 'Профиль Agent успешно создан или уже существовал.',
+            'user' => $user,
+            'agent' => $agent,
+        ], 200);
+    }
+
     public function update(Request $request, $id)
     {
         $user = User::query()
             ->with(["agent"])
             ->findOrFail($id);
 
-
         $data = $request->all();
 
         $name = $data["name"] ?? null;
-        $role = $data["role"] ?? RoleEnum::USER->value;
+        // Если роль не передана, сохраняем текущую, а не сбрасываем её до USER.
+        $role = array_key_exists("role", $data) ? (int) $data["role"] : (int) $user->role;
         $region = $data["region"] ?? null;
         $phone = $data["phone"] ?? null;
         $email = $data["email"] ?? null;
 
-        if (!is_null($phone))
-            unset($data["phone"]);
+        DB::transaction(function () use ($user, $name, $role, $region, $phone, $email) {
+            $user->update([
+                "name" => $name ?? $user->name,
+                "role" => $role,
+            ]);
 
-        if (!is_null($region))
-            unset($data["region"]);
+            $agent = $user->agent;
 
-        if (!is_null($email))
-            unset($data["email"]);
+            // Старший администратор (роль 3 и выше) должен иметь связанную
+            // агентскую сущность. firstOrCreate защищает от дубликатов.
+            if ($role >= 3 && !$agent) {
+                $agent = Agent::firstOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'name' => $name ?? $user->fio_from_telegram ?? $user->name,
+                        'phone' => $phone ?? $user->fio_from_telegram ?? '',
+                        'email' => $email ?? $user->email ?? '',
+                        'region' => $region ?? '',
+                    ]
+                );
+            }
 
-        $user->update([
-            "name" => $name,
-            "role" => $role,
-        ]);
+            // Если агентская запись уже существует, обновляем только те
+            // поля, которые действительно передали, не затирая остальные.
+            if ($agent) {
+                $agent->update([
+                    'name' => $name ?? $agent->name ?? $user->fio_from_telegram ?? $user->name,
+                    'phone' => $phone ?? $agent->phone ?? $user->fio_from_telegram ?? '',
+                    'email' => $email ?? $agent->email ?? $user->email ?? '',
+                    'region' => $region ?? $agent->region ?? '',
+                ]);
+            }
+        });
 
-        $agent = $user->agent;
-
-        $agent->update([
-            'name' => $name ?? $user->fio_from_telegram,
-            'phone' => $phone ?? '',
-            'email' => $email ?? '',
-            'region' => $region ?? '',
-        ]);
+        $user->load(["agent", "supplier"]);
 
         $tmpUserLink = $user->getUserTelegramLink();
-
         $userInfo = $user->toTelegramText();
 
         UserLog::logSuper("#обновление_данных_пользователя\n<b>Пользователю изменены его персональные данные</b>\n$userInfo\n$tmpUserLink");
@@ -196,24 +253,42 @@ class UserController extends Controller
     // 🔹 Дополнительные методы
     public function updateRole(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $validated = $request->validate([
+            'role' => ['required', 'integer'],
+        ]);
+
+        $user = User::query()->with('agent')->findOrFail($id);
         $oldRoleName = $user->getRoleName();
-        $user->role = $request->input('role');
-        $user->save();
+        $newRole = (int) $validated['role'];
 
+        DB::transaction(function () use ($user, $newRole) {
+            $user->role = $newRole;
+            $user->save();
 
+            // Роли 3+ — старший администратор / суперадминистратор.
+            // При назначении такой роли гарантируем наличие Agent.
+            // Существующую запись не перезаписываем и не дублируем.
+            if ($newRole >= 3 && !$user->agent()->exists()) {
+                Agent::firstOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'name' => $user->fio_from_telegram ?: $user->name,
+                        'phone' => $user->fio_from_telegram ?? '',
+                        'email' => $user->email ?? '',
+                        'region' => '',
+                    ]
+                );
+            }
+        });
 
+        $user->load('agent');
         $newRoleName = $user->getRoleName();
 
         $tmpUserLink = $user->getUserTelegramLink();
-
         $userInfo = $user->toTelegramText();
 
         UserLog::logSuper("#смена_роли_пользователя\n<b>Пользователю изменена роль с $oldRoleName на $newRoleName</b>\n$userInfo\n$tmpUserLink");
-
-
         UserLog::log("Вам была изменена роль в системе с $oldRoleName на $newRoleName", $user->id);
-
 
         return response()->json($user);
     }

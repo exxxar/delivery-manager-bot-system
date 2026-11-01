@@ -91,7 +91,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
     Route::get('/my-income', [MyIncomeController::class, 'index'])
         ->name('my-income.index');
 
-
+    Route::post('/users/{id}/create-agent-profile', [\App\Http\Controllers\UserController::class, 'createAgentProfile']);
 
 
     Route::post(
