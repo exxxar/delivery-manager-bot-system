@@ -23,6 +23,13 @@ const menuItems = [
         action: () => goTo("SalePage"),
     },
     {
+        title: "Администраторы",
+        description: "Управление администраторами",
+        icon: "fa-user-shield",
+        color: "blue",
+        action: () => goTo("AgentPage"),
+    },
+    {
         title: "Внести доставку",
         description: "Создание нового задания на доставку",
         icon: "fa-circle-plus",

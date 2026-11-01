@@ -453,7 +453,7 @@ export default {
                 rejected: "Отклонено",
                 delivered: "Доставляется"
             },
-            size: 20,
+            size: 50,
             search: '', sortBy: 'id', sortDirection: 'desc',
             selectedAdmin: null,
             agentStore: useAgentsStore(),
