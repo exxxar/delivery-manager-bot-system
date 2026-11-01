@@ -26,7 +26,8 @@ class AdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::query()
+            ->with(["agent","supplier"]);
         $query->whereIn('role', [
             RoleEnum::ADMIN->value,
             RoleEnum::SUPERADMIN->value
