@@ -557,10 +557,9 @@ export default {
     },
     methods: {
         // В списке администраторов id — это users.id.
-        // Для операций с моделью Agent используем только связанный agents.id.
+        // Для операций с Agent используем исключительно ID связи admin.agent.id.
         getAgentId(admin) {
-            const value = admin?.agent?.id ?? admin?.agent_id ?? admin?.agentId ?? null;
-            const id = Number(value);
+            const id = Number(admin?.agent?.id ?? 0);
             return Number.isInteger(id) && id > 0 ? id : null;
         },
 
@@ -733,17 +732,24 @@ export default {
             }
         },
 
-        async impersonateAdmin(user) {
-            if (!user?.id) return;
+        async impersonateAdmin(admin) {
+            const agentId = this.getAgentId(admin);
+            const agent = admin?.agent;
+
+            if (!agentId || !agent) {
+                window.alert("У администратора не найден связанный профиль Agent. Для входа от его имени требуется agents.id.");
+                return;
+            }
 
             const confirmed = window.confirm(
-                `Войти под учётной записью «${user.name || "администратора"}»?`
+                `Войти под учётной записью «${agent.name || admin.name || "администратора"}»?`
             );
             if (!confirmed) return;
 
             try {
-                // Используется существующий метод авторизации от имени пользователя.
-                await this.userStore.impersonateAgent(user);
+                // Как и в Списке агентов, передаём в store объект Agent,
+                // а не User. Идентификатор берётся из admin.agent.id.
+                await this.userStore.impersonateAgent(agent);
                 window.location.href = "/pwa";
             } catch (error) {
                 console.error("Ошибка входа от имени администратора:", error);
