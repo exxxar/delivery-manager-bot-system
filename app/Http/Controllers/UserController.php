@@ -201,18 +201,7 @@ class UserController extends Controller
         $user->role = $request->input('role');
         $user->save();
 
-        if ($user->role === RoleEnum::AGENT->value) {
-            Agent::query()
-                ->updateOrCreate([
-                    'user_id' => $user->id,
 
-                ], [
-                    'name' => $user->fio_from_telegram ?? $user->name,
-                    'phone' => '',
-                    'email' => '',
-                    'region' => '',
-                ]);
-        }
 
         $newRoleName = $user->getRoleName();
 
