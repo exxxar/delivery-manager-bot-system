@@ -65,15 +65,26 @@
 
                     <div class="admin-main">
                         <button type="button" class="admin-name" @click="forSelect ? selectAdmin(user) : openView(user)">
-                            {{ user.name || 'Без имени' }}
+                            {{ user.agent?.name || user.name || 'Без имени' }}
                         </button>
-                        <div v-if="user.fio_from_telegram" class="admin-fullname">{{ user.fio_from_telegram }}</div>
+                        <div v-if="user.fio_from_telegram && user.fio_from_telegram !== user.agent?.name" class="admin-fullname">
+                            {{ user.fio_from_telegram }}
+                        </div>
                         <div class="admin-phone">
                             <i class="fa-solid fa-phone"></i>
-                            {{ user.phone || 'Телефон не указан' }}
+                            {{ user.agent?.phone || user.phone || 'Телефон не указан' }}
                         </div>
-                        <div class="admin-meta" v-if="user.email">
-                            <i class="fa-solid fa-envelope"></i> {{ user.email }}
+                        <div class="admin-meta" v-if="user.agent?.email || user.email">
+                            <i class="fa-solid fa-envelope"></i> {{ user.agent?.email || user.email }}
+                        </div>
+                        <div class="admin-meta" v-if="user.agent?.region">
+                            <i class="fa-solid fa-location-dot"></i> {{ user.agent.region }}
+                        </div>
+                        <div v-if="user.agent" class="agent-quick-meta">
+                            <span v-if="user.agent.id" class="agent-meta-chip"><i class="fa-solid fa-id-card"></i> Agent #{{ user.agent.id }}</span>
+                            <span v-if="user.agent.in_learning" class="agent-meta-chip is-learning"><i class="fa-solid fa-graduation-cap"></i> Обучается</span>
+                            <span v-if="user.agent.is_test" class="agent-meta-chip is-test"><i class="fa-solid fa-flask"></i> Тестовый</span>
+                            <span v-if="Number(user.agent.total_percent || 0) > 0" class="agent-meta-chip"><i class="fa-solid fa-percent"></i> {{ user.agent.total_percent }}%</span>
                         </div>
                         <div class="admin-status-row">
                             <span class="status-pill" :class="user.is_work ? 'status-working' : 'status-paused'">
@@ -124,8 +135,8 @@
                             <span class="admin-sheet-avatar"><i class="fa-solid fa-user-tie"></i></span>
                             <div>
                                 <h5 class="modal-title">Действия</h5>
-                                <div class="admin-sheet-name">{{ selectedAdmin?.name || 'Администратор' }}</div>
-                                <small class="text-muted">{{ selectedAdmin?.phone || 'Телефон не указан' }}</small>
+                                <div class="admin-sheet-name">{{ selectedAdmin?.agent?.name || selectedAdmin?.name || 'Администратор' }}</div>
+                                <small class="text-muted">{{ selectedAdmin?.agent?.phone || selectedAdmin?.phone || 'Телефон не указан' }}</small>
                             </div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
@@ -225,19 +236,51 @@
                     <div class="modal-body" v-if="selectedAdmin">
                         <div class="admin-info-card">
                             <div class="admin-info-avatar"><i class="fa-solid fa-user-tie"></i></div>
-                            <h4>{{ selectedAdmin.name || 'Без имени' }}</h4>
-                            <p v-if="selectedAdmin.fio_from_telegram">{{ selectedAdmin.fio_from_telegram }}</p>
+                            <h4>{{ selectedAdmin.agent?.name || selectedAdmin.name || 'Без имени' }}</h4>
+                            <p v-if="selectedAdmin.fio_from_telegram && selectedAdmin.fio_from_telegram !== selectedAdmin.agent?.name">
+                                {{ selectedAdmin.fio_from_telegram }}
+                            </p>
                             <span class="status-pill" :class="selectedAdmin.is_work ? 'status-working' : 'status-paused'">
                                 <span class="status-dot"></span>{{ selectedAdmin.is_work ? 'Работает' : 'Не работает' }}
                             </span>
                         </div>
-                        <dl class="admin-details">
-                            <div><dt>ID</dt><dd>{{ selectedAdmin.id }}</dd></div>
-                            <div><dt>Телефон</dt><dd>{{ selectedAdmin.phone || 'Не указан' }}</dd></div>
-                            <div><dt>Email</dt><dd>{{ selectedAdmin.email || 'Не указан' }}</dd></div>
-                            <div><dt>Роль</dt><dd>{{ roleLabel(selectedAdmin.role) }}</dd></div>
-                            <div><dt>Дата регистрации</dt><dd>{{ formatDate(selectedAdmin.created_at) }}</dd></div>
-                        </dl>
+                        <div v-if="selectedAdmin.agent" class="agent-profile-panel">
+                            <div class="agent-profile-heading">
+                                <span><i class="fa-solid fa-id-badge me-2"></i>Профиль Agent</span>
+                                <span class="agent-id-badge">#{{ selectedAdmin.agent.id }}</span>
+                            </div>
+                            <dl class="admin-details">
+                                <div><dt>Имя Agent</dt><dd>{{ selectedAdmin.agent.name || 'Не указано' }}</dd></div>
+                                <div><dt>Телефон Agent</dt><dd>{{ selectedAdmin.agent.phone || 'Не указан' }}</dd></div>
+                                <div><dt>Email Agent</dt><dd>{{ selectedAdmin.agent.email || 'Не указан' }}</dd></div>
+                                <div><dt>Регион</dt><dd>{{ selectedAdmin.agent.region || 'Не указан' }}</dd></div>
+                                <div><dt>ID наставника</dt><dd>{{ selectedAdmin.agent.mentor_id || 'Не назначен' }}</dd></div>
+                                <div><dt>Начало обучения</dt><dd>{{ formatDate(selectedAdmin.agent.start_learning_date) }}</dd></div>
+                                <div><dt>Окончание обучения</dt><dd>{{ formatDate(selectedAdmin.agent.end_learning_date) }}</dd></div>
+                                <div><dt>Обучение</dt><dd>{{ selectedAdmin.agent.in_learning ? 'Да' : 'Нет' }}</dd></div>
+                                <div><dt>Тестовый профиль</dt><dd>{{ selectedAdmin.agent.is_test ? 'Да' : 'Нет' }}</dd></div>
+                                <div><dt>Процент Agent</dt><dd>{{ selectedAdmin.agent.percent ?? 0 }}%</dd></div>
+                                <div><dt>Общий процент</dt><dd>{{ selectedAdmin.agent.total_percent ?? 0 }}%</dd></div>
+                                <div><dt>Избранные поставщики</dt><dd>{{ selectedAdmin.agent.favorite_suppliers?.length ? selectedAdmin.agent.favorite_suppliers.join(', ') : 'Нет' }}</dd></div>
+                                <div v-if="selectedAdmin.agent.user_info"><dt>Доп. информация</dt><dd>{{ selectedAdmin.agent.user_info }}</dd></div>
+                            </dl>
+                        </div>
+                        <div class="agent-profile-panel account-profile-panel">
+                            <div class="agent-profile-heading"><span><i class="fa-solid fa-user me-2"></i>Учётная запись</span></div>
+                            <dl class="admin-details">
+                                <div><dt>User ID</dt><dd>{{ selectedAdmin.id }}</dd></div>
+                                <div><dt>Имя пользователя</dt><dd>{{ selectedAdmin.name || 'Не указано' }}</dd></div>
+                                <div><dt>ФИО из Telegram</dt><dd>{{ selectedAdmin.fio_from_telegram || 'Не указано' }}</dd></div>
+                                <div><dt>Телефон</dt><dd>{{ selectedAdmin.agent?.phone || selectedAdmin.phone || 'Не указан' }}</dd></div>
+                                <div><dt>Email</dt><dd>{{ selectedAdmin.agent?.email || selectedAdmin.email || 'Не указан' }}</dd></div>
+                                <div><dt>Telegram ID</dt><dd>{{ selectedAdmin.telegram_chat_id || 'Не указан' }}</dd></div>
+                                <div><dt>Роль</dt><dd>{{ roleLabel(selectedAdmin.role) }}</dd></div>
+                                <div><dt>Рабочий статус</dt><dd>{{ selectedAdmin.is_work ? 'Работает' : 'Не работает' }}</dd></div>
+                                <div><dt>Дата регистрации</dt><dd>{{ formatDate(selectedAdmin.created_at) }}</dd></div>
+                                <div><dt>Дата регистрации (система)</dt><dd>{{ formatDate(selectedAdmin.registration_at) }}</dd></div>
+                                <div><dt>День рождения</dt><dd>{{ formatDate(selectedAdmin.birthday) }}</dd></div>
+                            </dl>
+                        </div>
                         <button type="button" class="btn btn-primary action-submit" @click="editFromInfo">
                             <i class="fa-solid fa-pen-to-square me-2"></i>Редактировать
                         </button>
@@ -375,7 +418,7 @@
                     </div>
                     <div class="modal-body">
                         <PercentageManager v-if="selectedAdmin && getAgentId(selectedAdmin)" owner-type="agent" :owner-id="getAgentId(selectedAdmin)"
-                                           :owner-name="selectedAdmin.name" :owner-percent="selectedAdmin.agent?.percent ?? selectedAdmin.percent ?? 0"
+                                           :owner-name="selectedAdmin.agent?.name || selectedAdmin.name" :owner-percent="selectedAdmin.agent?.percent ?? selectedAdmin.percent ?? 0"
                                            @saved="fetchData" />
                         <div v-else-if="selectedAdmin" class="alert alert-warning mb-0">
                             <div>Нельзя открыть проценты: у учётной записи отсутствует связанный профиль Agent. Для этого действия нужен agents.id, а не users.id.</div>
@@ -471,9 +514,14 @@ export default {
 
                 const searchable = [
                     user.name,
+                    user.agent?.name,
+                    user.agent?.phone,
+                    user.agent?.email,
+                    user.agent?.region,
                     user.phone,
                     user.email,
                     user.fio_from_telegram,
+                    user.agent?.id,
                     user.id,
                 ];
                 return searchable.some((value) =>
@@ -1360,6 +1408,77 @@ export default {
 
 
 
+
+
+/* Краткая информация Agent в карточке администратора */
+.agent-quick-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.agent-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid #e3eaf5;
+    border-radius: 999px;
+    color: #526783;
+    background: #f7f9fd;
+    font-size: 10px;
+    font-weight: 700;
+}
+.agent-meta-chip i { color: var(--admin-blue); }
+.agent-meta-chip.is-learning {
+    color: #137547;
+    border-color: #ccebd9;
+    background: #effaf3;
+}
+.agent-meta-chip.is-test {
+    color: #8652bf;
+    border-color: #e6d8f5;
+    background: #f8f2ff;
+}
+
+/* Расширенная информация связанного профиля */
+.agent-profile-panel {
+    margin: 0 0 18px;
+    padding: 14px 16px 2px;
+    border: 1px solid #e4ebf5;
+    border-radius: 15px;
+    background: #fbfcff;
+}
+.agent-profile-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+    color: var(--admin-blue-dark);
+    font-size: 13px;
+    font-weight: 800;
+}
+.agent-id-badge {
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: var(--admin-blue);
+    background: #eaf1ff;
+    font-size: 11px;
+}
+.agent-profile-panel .admin-details {
+    margin-bottom: 10px;
+}
+.account-profile-panel {
+    background: #fff;
+}
+@media (max-width: 575.98px) {
+    .agent-profile-panel { padding: 12px 11px 1px; }
+    .agent-profile-panel .admin-details > div { gap: 10px; }
+    .agent-profile-panel .admin-details dt,
+    .agent-profile-panel .admin-details dd { font-size: 11px; }
+}
+
 /* Кнопка создания связанного Agent-профиля */
 .agent-profile-create-btn {
     display: flex;
@@ -1401,4 +1520,3 @@ export default {
 .agent-profile-create-arrow { color: #5a7fb9; font-size: 13px; transition: transform .2s ease; }
 .agent-profile-create-btn:hover .agent-profile-create-arrow { transform: translateX(3px); }
 </style>
-
