@@ -149,7 +149,7 @@
                 >
                     <!-- Левая часть -->
                     <div class="flex-grow-1 text-break" @click="selectSupplier(supplier)">
-                        <div class="fw-bold" @click="toggleSelection(supplier)">
+                        <div class="fw-bold" @click.stop="toggleSelection(supplier)">
                             <span class="badge bg-primary" v-if="field_visible?.id||false">#{{ supplier.id }}</span>
                             {{ supplier.name }}
                             <span
@@ -199,7 +199,7 @@
                             type="button"
                             class="btn btn-sm"
                             @click="toggleFavorites(supplier.id)"
-                            :disabled="!user"
+                            :disabled="!user || favoriteRequests[supplier.id]"
                         >
                         <span v-if="!favorites.includes(supplier.id)">
                             <i class="fa-regular fa-star text-danger"></i>
@@ -237,9 +237,8 @@
                         <option value="30">30</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
+                        <option value="250">250</option>
                         <option value="500">500</option>
-                        <option value="1000">1000</option>
-                        <option value="5000">5000</option>
                     </select>
                     <label for="itemsPerPage">Элементов на странице</label>
                 </div>
@@ -286,10 +285,17 @@
                     </div>
                     <div class="modal-body">
                         <!-- Загрузка -->
-                        <div v-if="suppliersStore.loading" class="text-center py-5">
+                        <div v-if="salesLoading" class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Загрузка...</span>
                             </div>
+                        </div>
+
+                        <div v-else-if="salesError" class="alert alert-danger" role="alert">
+                            {{ salesError }}
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" @click="openSupplierSales(selectedSupplier)">
+                                Повторить
+                            </button>
                         </div>
 
                         <template v-else>
@@ -512,7 +518,13 @@ export default {
         SaleCard,
         PercentageManager
     },
-    props: ["forSelect"],
+    props: {
+        forSelect: {
+            type: Boolean,
+            default: false
+        }
+    },
+    emits: ['select'],
     data() {
         return {
             field_visible: null,
@@ -534,14 +546,21 @@ export default {
             suppliersStore: useSuppliersStore(),
             viewMode: 'all',
             selectedMonth: this.getCurrentMonth(),
+            searchTimer: null,
+            salesLoading: false,
+            salesError: null,
+            favoriteRequests: {},
         }
     },
     watch: {
-        search: function () {
-            this.findSupplier()
+        search() {
+            if (this.searchTimer) clearTimeout(this.searchTimer)
+            this.searchTimer = setTimeout(() => {
+                if (this.viewMode === 'all') this.findSupplier()
+            }, 350)
         },
-        size: function () {
-            this.loadByMode()
+        size() {
+            this.loadByMode(1)
         }
     },
     computed: {
@@ -554,17 +573,24 @@ export default {
     },
     created() {
         if (!this.userStore.self) {
-            this.userStore.fetchSelf()
+            this.userStore.fetchSelf().catch(error => {
+                console.error('Не удалось загрузить пользователя:', error)
+            })
         }
-        this.loadByMode()
+        this.loadByMode(1)
+    },
+    beforeUnmount() {
+        if (this.searchTimer) clearTimeout(this.searchTimer)
     },
     methods: {
 
         openActionsModal(supplier) {
+            if (!supplier?.id) return
             this.selectedSupplier = {...supplier}
             this.$nextTick(() => {
-                const modal = new bootstrap.Modal(document.getElementById('supplierActionsModal'))
-                modal.show()
+                const modalEl = document.getElementById('supplierActionsModal')
+                if (!modalEl || !window.bootstrap?.Modal) return
+                window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
             })
         },
         openSupplierSalary(supplier) {
@@ -577,86 +603,146 @@ export default {
         },
 
         async openSupplierSales(supplier) {
+            if (!supplier?.id) return
+
             this.selectedSupplier = supplier
+            this.salesError = null
+            this.salesLoading = true
+
+            await this.$nextTick()
+            const modalEl = document.getElementById('supplierSalesModal')
+            if (modalEl && window.bootstrap?.Modal) {
+                window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
+            }
+
             try {
                 await this.suppliersStore.fetchSupplierSales(supplier.id, this.selectedMonth)
-                new bootstrap.Modal(document.getElementById('supplierSalesModal')).show()
-            } catch (e) {
-                console.error('Ошибка загрузки сделок поставщика:', e)
-                this.alertStore.show('Не удалось загрузить сделки поставщика', 'error')
+            } catch (error) {
+                console.error('Ошибка загрузки сделок поставщика:', error)
+                this.salesError = 'Не удалось загрузить сделки поставщика. Попробуйте ещё раз.'
+            } finally {
+                this.salesLoading = false
             }
         },
 
         async fetchSupplierSalesPage(url) {
-            const match = url.match(/page=(\d+)/)
-            const page = match ? parseInt(match[1]) : 1
-            if (this.selectedSupplier) {
+            if (!this.selectedSupplier?.id) return
+
+            let page = 1
+            if (typeof url === 'string') {
+                const match = url.match(/[?&]page=(\d+)/)
+                if (match) page = Number.parseInt(match[1], 10) || 1
+            } else if (typeof url === 'number') {
+                page = url
+            }
+
+            this.salesLoading = true
+            this.salesError = null
+            try {
                 await this.suppliersStore.fetchSupplierSales(
                     this.selectedSupplier.id,
                     this.selectedMonth,
                     page
                 )
+            } catch (error) {
+                console.error('Ошибка загрузки страницы сделок:', error)
+                this.salesError = 'Не удалось загрузить сделки. Попробуйте ещё раз.'
+            } finally {
+                this.salesLoading = false
             }
         },
 
-        findSupplier() {
-            this.suppliersStore.setFilters({
-                name: this.search || ''
-            })
+        async findSupplier() {
+            this.viewMode = 'all'
+            this.suppliersStore.setFilters({ name: this.search || '' })
             this.suppliersStore.setSort('id', 'desc')
-            this.suppliersStore.fetchFiltered(0, this.size)
+            try {
+                await this.suppliersStore.fetchFiltered(0, Number(this.size) || 30)
+            } catch (error) {
+                console.error('Ошибка поиска поставщиков:', error)
+                this.alertStore.show('Не удалось выполнить поиск поставщиков', 'error')
+            }
         },
 
         addNewSupplier(supplier) {
             this.$emit("select", supplier)
         },
 
-        applyFilters(filters) {
-            this.field_visible = filters.field_visible
-            let size = filters.size || this.size || 30
-            let page = filters.page || 0
-            delete filters.field_visible
-            this.suppliersStore.setFilters(filters.filters)
-            this.suppliersStore.setSort(filters.sort.field, filters.sort.direction)
-            this.suppliersStore.fetchFiltered(page, size)
+        async applyFilters(filters) {
+            if (!filters) return
+            this.field_visible = filters.field_visible ?? null
+            const size = Number(filters.size || this.size || 30)
+            const page = Number(filters.page ?? 0)
+            const filterPayload = {...(filters.filters || {})}
+
+            this.suppliersStore.setFilters(filterPayload)
+            if (filters.sort?.field) {
+                this.suppliersStore.setSort(filters.sort.field, filters.sort.direction || 'desc')
+            }
+
+            try {
+                await this.suppliersStore.fetchFiltered(page, size)
+            } catch (error) {
+                console.error('Ошибка применения фильтров:', error)
+                this.alertStore.show('Не удалось применить фильтры', 'error')
+            }
         },
 
-        toggleFavorites(id) {
+        async toggleFavorites(id) {
             if (!this.user) {
                 this.alertStore.show('Необходимо авторизоваться', 'warning')
                 return
             }
+            if (!id || this.favoriteRequests[id]) return
 
-            this.suppliersStore.toggleFavorites(id).then(() => {
+            const wasFavorite = this.favorites.includes(id)
+            this.favoriteRequests = {...this.favoriteRequests, [id]: true}
+            try {
+                await this.suppliersStore.toggleFavorites(id)
+                await this.userStore.fetchSelf()
                 this.alertStore.show(
-                    this.favorites.includes(id)
-                        ? "Убираем из избранного"
-                        : "Добавляем в избранное",
-                    "success"
+                    wasFavorite ? 'Поставщик удалён из избранного' : 'Поставщик добавлен в избранное',
+                    'success'
                 )
-                this.userStore.fetchSelf()
-            })
+            } catch (error) {
+                console.error('Ошибка изменения избранного:', error)
+                this.alertStore.show('Не удалось изменить избранное', 'error')
+            } finally {
+                const next = {...this.favoriteRequests}
+                delete next[id]
+                this.favoriteRequests = next
+            }
         },
 
         removeAll() {
+            if (!this.selection.length) return
+            const ids = [...this.selection]
             this.modalStore.open(
-                `Вы уверены, что хотите удалить все выбранные элементы?`,
-                () => {
-                    this.suppliersStore.removeAll(this.selection)
-                    this.selection = []
+                'Вы уверены, что хотите удалить все выбранные элементы?',
+                async () => {
+                    try {
+                        await this.suppliersStore.removeAll(ids)
+                        this.selection = []
+                        await this.loadByMode(1)
+                    } catch (error) {
+                        console.error('Ошибка массового удаления поставщиков:', error)
+                        this.alertStore.show('Не удалось удалить выбранных поставщиков', 'error')
+                    } finally {
+                        this.modalStore.close()
+                    }
                 },
-                () => {
-                    this.modalStore.close()
-                    this.selection = []
-                }
+                () => this.modalStore.close()
             )
         },
 
         openEditModal(supplier) {
             this.selectedSupplier = null
             this.$nextTick(() => {
-                this.selectedSupplier = supplier
-                new bootstrap.Modal(document.getElementById("editSupplierModal")).show()
+                this.selectedSupplier = {...supplier}
+                const modalEl = document.getElementById('editSupplierModal')
+                if (modalEl && window.bootstrap?.Modal) {
+                    window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
+                }
             })
         },
 
@@ -665,8 +751,10 @@ export default {
             this.$nextTick(() => {
                 this.selectedSupplier = {...supplier}
                 this.$nextTick(() => {
-                    const modal = new bootstrap.Modal(document.getElementById('percentagesModal'))
-                    modal.show()
+                    const modalEl = document.getElementById('percentagesModal')
+                    if (modalEl && window.bootstrap?.Modal) {
+                        window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
+                    }
                 })
             })
         },
@@ -688,23 +776,32 @@ export default {
         },
 
         selectAll() {
-            if (this.selection.length === 0)
-                this.suppliersStore.items.forEach(i => {
-                    if (this.selection.indexOf(i.id) === -1)
-                        this.selection.push(i.id)
-                })
-            else
+            const items = Array.isArray(this.suppliersStore.items) ? this.suppliersStore.items : []
+            if (this.selection.length === 0) {
+                this.selection = items.map(item => item.id).filter(id => id != null)
+            } else {
                 this.selection = []
-
-            this.$emit("select", this.selection)
+            }
+            this.$emit('select', [...this.selection])
         },
 
-        async fetchData(page = 0) {
-            await this.suppliersStore.fetchAllByPage(page, this.size)
+        async fetchData(page = 1) {
+            try {
+                await this.suppliersStore.fetchAllByPage(page, Number(this.size) || 30)
+            } catch (error) {
+                console.error('Ошибка загрузки поставщиков:', error)
+                this.alertStore.show('Не удалось загрузить список поставщиков', 'error')
+            }
         },
 
         async fetchDataByUrl(url) {
-            await this.suppliersStore.fetchByUrl(url)
+            if (typeof url !== 'string' || !url.trim()) return
+            try {
+                await this.suppliersStore.fetchByUrl(url)
+            } catch (error) {
+                console.error('Ошибка перехода по страницам поставщиков:', error)
+                this.alertStore.show('Не удалось загрузить страницу поставщиков', 'error')
+            }
         },
 
         selectSupplier(supplier) {
@@ -714,18 +811,26 @@ export default {
         },
 
         openDeleteModal(supplier) {
-            this.selectedSupplier = supplier
+            if (!supplier?.id) return
+            this.selectedSupplier = {...supplier}
+            const supplierId = supplier.id
+            const supplierName = supplier.name || 'этого поставщика'
             this.modalStore.open(
-                `Вы уверены, что хотите удалить ${this.selectedSupplier.name}?`,
-                () => {
-                    this.suppliersStore.remove(this.selectedSupplier.id)
-                    this.selection = []
-                    this.fetchData()
+                `Вы уверены, что хотите удалить ${supplierName}?`,
+                async () => {
+                    try {
+                        await this.suppliersStore.remove(supplierId)
+                        this.selection = this.selection.filter(id => id !== supplierId)
+                        await this.loadByMode(1)
+                    } catch (error) {
+                        console.error('Ошибка удаления поставщика:', error)
+                        this.alertStore.show('Не удалось удалить поставщика', 'error')
+                    } finally {
+                        this.modalStore.close()
+                    }
                 },
-                () => {
-                    this.modalStore.close()
-                    this.selection = []
-                })
+                () => this.modalStore.close()
+            )
         },
 
         getCurrentMonth() {
@@ -756,12 +861,18 @@ export default {
         },
 
         async loadByMode(page = 1) {
-            if (this.viewMode === 'active') {
-                await this.suppliersStore.fetchActive(this.selectedMonth, page, this.size)
-            } else if (this.viewMode === 'inactive') {
-                await this.suppliersStore.fetchInactive(this.selectedMonth, page, this.size)
-            } else {
-                await this.fetchData(page)
+            const pageSize = Number(this.size) || 30
+            try {
+                if (this.viewMode === 'active') {
+                    await this.suppliersStore.fetchActive(this.selectedMonth, page, pageSize)
+                } else if (this.viewMode === 'inactive') {
+                    await this.suppliersStore.fetchInactive(this.selectedMonth, page, pageSize)
+                } else {
+                    await this.fetchData(page)
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки списка поставщиков:', error)
+                this.alertStore.show('Не удалось загрузить поставщиков', 'error')
             }
         },
 
@@ -769,34 +880,44 @@ export default {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
         handleAction(action) {
-            // Закрываем модалку
-            const modalEl = document.getElementById('supplierActionsModal')
-            const modal = bootstrap.Modal.getInstance(modalEl)
-            modal?.hide()
+            const supplier = this.selectedSupplier ? {...this.selectedSupplier} : null
+            if (!supplier?.id) return
 
-            // Выполняем действие после закрытия
-            setTimeout(() => {
+            const execute = () => {
                 switch (action) {
                     case 'salary':
-                        this.openSupplierSalary(this.selectedSupplier)
+                        this.openSupplierSalary(supplier)
                         break
                     case 'favorite':
-                        this.toggleFavorites(this.selectedSupplier.id)
+                        this.toggleFavorites(supplier.id)
                         break
                     case 'edit':
-                        this.openEditModal(this.selectedSupplier)
+                        this.openEditModal(supplier)
                         break
                     case 'percentages':
-                        this.openPercentages(this.selectedSupplier)
+                        this.openPercentages(supplier)
                         break
                     case 'select':
-                        this.selectSupplier(this.selectedSupplier)
+                        this.selectSupplier(supplier)
                         break
                     case 'delete':
-                        this.openDeleteModal(this.selectedSupplier)
+                        this.openDeleteModal(supplier)
                         break
                 }
-            }, 300)
+            }
+
+            const modalEl = document.getElementById('supplierActionsModal')
+            const modal = modalEl && window.bootstrap?.Modal
+                ? window.bootstrap.Modal.getOrCreateInstance(modalEl)
+                : null
+
+            if (!modal || !modalEl.classList.contains('show')) {
+                execute()
+                return
+            }
+
+            modalEl.addEventListener('hidden.bs.modal', execute, {once: true})
+            modal.hide()
         },
     }
 }

@@ -33,6 +33,11 @@ class Percentage extends Model
         return $this->morphTo();
     }
 
+    public function scopeWithExistingUser($query)
+    {
+        return $query->whereHas('user');
+    }
+
     /**
      * Пользователь, которому назначен процент (менеджер/агент, получающий %)
      */

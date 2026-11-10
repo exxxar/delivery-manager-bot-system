@@ -44,13 +44,19 @@ class SummaryAgentReport implements WithMultipleSheets
                 ->pluck("id");
 
             $agents = Agent::query()
-                ->with(["percentages"])
+                ->with([
+                    'user',
+                    'percentages.user',
+                ])
                 ->whereIn("user_id", $usersIds)
                 ->where("is_test", false)
                 ->get();
         } else
             $agents = Agent::query()
-                ->with(["percentages"])
+                ->with([
+                    'user',
+                    'percentages.user',
+                ])
                 ->whereIn("id", $this->agentsIds)->get();
 
 

@@ -332,22 +332,21 @@ class BusinessLogic
 
         // Админы по связи percentages
         $agentAdmins = $agent->percentages()
-            ->with(['user'])
+            ->with('user')
             ->where('is_active', true)
-           /* ->whereHas('user', function ($q) {
-                $q->where('is_work', true);
-            })*/
+            ->whereHas('user')
             ->get();
 
         $adminsRevenue = $agentAdmins->map(function ($item) use ($totalSales, $taxPercent) {
 
             $admin = $item->user;
-            $percent = (float)$item->percentage;
+
+            $percent = (float) $item->percentage;
 
             $incomeTotal = $totalSales * ($percent / 100);
 
-            $tax = $incomeTotal*($taxPercent/100);
-            $incomeAfterTax = $incomeTotal-$tax;
+            $tax = $incomeTotal * ($taxPercent / 100);
+            $incomeAfterTax = $incomeTotal - $tax;
 
             return [
                 'admin_id' => $admin->id,
