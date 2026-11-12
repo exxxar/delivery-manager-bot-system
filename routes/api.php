@@ -350,6 +350,8 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
         ->group(function () {
             // Список всех продаж
             Route::get('/', [AdminController::class, 'index']);
+
+            Route::post('/report-data', [AdminController::class, 'reportData']);
             // Создать новую продажу
             Route::post('/download-report', [AdminController::class, 'downloadReport']);
             Route::post('/download-personal-report', [AdminController::class, 'downloadPersonalReport']);

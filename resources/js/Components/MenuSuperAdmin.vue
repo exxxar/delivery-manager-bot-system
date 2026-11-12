@@ -27,6 +27,13 @@ const menuItems = [
         action: () => openReportModal(),
     },
     {
+        title: "Общая сводка",
+        description: "Общие отчеты на странице",
+        icon: "fa-file-circle-plus",
+        color: "green",
+        action: () => goTo("reports.summary"),
+    },
+    {
         title: "Мои отчеты",
         description: "Просмотр сформированных документов",
         icon: "fa-file-lines",

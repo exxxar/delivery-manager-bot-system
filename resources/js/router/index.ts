@@ -26,6 +26,16 @@ const routes = [
         name: 'AuthPage',
         component: AuthPage,
     },
+
+    {
+        path: '/reports/summary',
+        name: 'reports.summary',
+        component: () => import('@/pages/SummaryReport.vue'),
+        meta: {
+            requiresAuth: true,
+            title: 'Отчеты',
+        },
+    },
 // Добавить объект в массив routes существующего Vue Router.
     {
         path: '/suppliers/:supplierId/salary',

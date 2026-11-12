@@ -24,21 +24,24 @@ class ProductsSheet implements FromView, WithTitle
 
     public function view(): View
     {
-        if (empty($this->suppliersIds))
-            $products = Product::query()
-                ->with('category', 'supplier')
-                ->get();
-        else
-            $products = Product::query()
-                ->with('category', 'supplier')
-                ->whereIn("id", $this->suppliersIds)
-                ->get();
+        $products = Product::query()
+            ->with(['category', 'supplier'])
+            ->when(
+                !empty($this->suppliersIds),
+                fn($query) => $query->whereIn(
+                    'supplier_id',
+                    $this->suppliersIds
+                )
+            )
+            ->orderBy('name')
+            ->get();
 
-
-        return view($this->resultType == 0 ?
-            'exports.products-v2' :
-            'exports.products',
-            ['products' => $products]);
+        return view(
+            $this->resultType == 0
+                ? 'exports.products-v2'
+                : 'exports.products',
+            ['products' => $products]
+        );
     }
 
     public function title(): string

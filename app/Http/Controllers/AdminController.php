@@ -21,6 +21,7 @@ use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Writer;
 use Telegram\Bot\FileUpload\InputFile;
+use App\Services\Reports\SummaryAgentReportService;
 
 class AdminController extends Controller
 {
@@ -239,4 +240,38 @@ class AdminController extends Controller
             'reports' => $reports
         ]);
     }
+
+
+
+    public function reportData(Request $request)
+    {
+        $validated = $request->validate([
+            'startDate' => ['required', 'date'],
+            'endDate' => ['required', 'date', 'after_or_equal:startDate'],
+
+            'selected_agents' => ['nullable', 'array'],
+            'selected_agents.*' => ['integer'],
+
+            'selected_suppliers' => ['nullable', 'array'],
+            'selected_suppliers.*' => ['integer'],
+
+            'result_type' => ['nullable', 'integer', 'in:0,1'],
+        ]);
+
+        $fromDate = Carbon::parse($validated['startDate'])->startOfDay();
+        $toDate = Carbon::parse($validated['endDate'])->endOfDay();
+
+        $service = app(SummaryAgentReportService::class);
+
+        $data = $service->build(
+            $fromDate,
+            $toDate,
+            $validated['selected_agents'] ?? [],
+            $validated['selected_suppliers'] ?? [],
+            (int) ($validated['result_type'] ?? 0)
+        );
+
+        return response()->json($data);
+    }
+
 }
