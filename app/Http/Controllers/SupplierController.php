@@ -367,11 +367,13 @@ class SupplierController extends Controller
                     $endDate,
                 ]);
 
+            $user = auth()->user();
+
             if (
                 $request->boolean('only_self_sales') ||
-                auth()->user()->hasRole('AGENT')
+                (int) $user->role === RoleEnum::AGENT->value
             ) {
-                $query->where('agent_id', auth()->id());
+                $query->where('agent_id', $user->id);
             }
         };
 
