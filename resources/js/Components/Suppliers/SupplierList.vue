@@ -1,1680 +1,411 @@
 <template>
-    <div class="supplier-list-redesign">
-        <div class="supplier-toolbar">
-            <div class="supplier-toolbar-title">
-                <span class="supplier-toolbar-icon"><i class="fa-solid fa-truck-field"></i></span>
-                <div>
-                    <strong>Поставщики</strong>
-                    <small>Каталог, активность и распределение доходов</small>
-                </div>
-            </div>
+    <div class="supplier-filter-toolbar">
+        <button type="button" class="toolbar-btn filter-trigger" @click="openFilter">
+            <span class="toolbar-icon"><i class="fa-solid fa-sliders"></i></span>
+            <span>Фильтр</span>
+        </button>
+
+        <div class="dropdown sort-dropdown">
             <button
-                v-if="!forSelect"
                 type="button"
-                class="supplier-create-btn"
-                @click="showSimpleSupplierForm = !showSimpleSupplierForm"
+                class="toolbar-btn sort-trigger"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
             >
-                <i :class="showSimpleSupplierForm ? 'fa-solid fa-list' : 'fa-solid fa-plus'"></i>
-                <span>{{ showSimpleSupplierForm ? 'К списку' : 'Добавить' }}</span>
+                <span class="toolbar-icon"><i class="fa-solid fa-arrow-down-wide-short"></i></span>
+                <span class="sort-label">
+                    {{ (sortOptions[sort.field] || 'Сортировка').slice(0, 17) }}
+                    <span v-if="(sortOptions[sort.field] || '').length > 17">…</span>
+                </span>
+                <i :class="sort.direction === 'asc' ? 'fa-solid fa-arrow-down-short-wide' : 'fa-solid fa-arrow-up-short-wide'" class="sort-direction"></i>
             </button>
-        </div>
-        <div class="form-check form-switch mb-2">
-            <input
-                class="form-check-input"
-                type="checkbox"
-                v-model="showSimpleSupplierForm"
-                :id="`show-simple-supplier-form`"
-            />
-            <label class="form-check-label" :for="`show-simple-supplier-form`">
-                Добавить и выбрать нового поставщика
-            </label>
-        </div>
-
-        <!-- 🔹 Табы режимов -->
-        <ul class="nav nav-pills nav-fill mb-3">
-            <li class="nav-item">
-                <button
-                    type="button"
-                    class="nav-link"
-                    :class="{ active: viewMode === 'all' }"
-                    @click="switchMode('all')"
-                >
-                    <i class="fa-solid fa-list me-1"></i>
-                    Все
-                </button>
-            </li>
-            <li class="nav-item">
-                <button
-                    type="button"
-                    class="nav-link"
-                    :class="{ active: viewMode === 'active' }"
-                    @click="switchMode('active')"
-                >
-                    <i class="fa-solid fa-bolt text-success me-1"></i>
-                    Активные
-                </button>
-            </li>
-            <li class="nav-item">
-                <button
-                    type="button"
-                    class="nav-link"
-                    :class="{ active: viewMode === 'inactive' }"
-                    @click="switchMode('inactive')"
-                >
-                    <i class="fa-solid fa-moon text-secondary me-1"></i>
-                    Неактивные
-                </button>
-            </li>
-        </ul>
-
-        <!-- 🔹 Селектор месяца (только для активных/неактивных) -->
-        <div v-if="viewMode !== 'all'" class="form-floating mb-3">
-            <select
-                class="form-select"
-                v-model="selectedMonth"
-                @change="loadByMode"
-                id="monthSelect"
-            >
-                <option v-for="m in getMonthList()" :key="m.key" :value="m.key">
-                    {{ m.label }}
-                </option>
-            </select>
-            <label for="monthSelect">
-                <i class="fa-solid fa-calendar-days me-1"></i>
-                Месяц
-            </label>
-        </div>
-
-        <!-- 🔹 Статистика (для активных/неактивных) -->
-        <div v-if="viewMode === 'active' && suppliersStore.stats" class="alert alert-info mb-3 py-2">
-            <div class="row g-2 text-center small">
-                <div class="col-6 col-md">
-                    <div class="text-muted">Поставщиков</div>
-                    <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers ?? 0 }}</div>
-                </div>
-                <div class="col-6 col-md">
-                    <div class="text-muted">Оборот</div>
-                    <div class="fw-bold fs-5 text-success">{{ formatMoney(suppliersStore.stats.total_turnover) }}</div>
-                </div>
-                <div class="col-6 col-md">
-                    <div class="text-muted">Всего сделок</div>
-                    <div class="fw-bold fs-5">{{ suppliersStore.stats.total_sales_count ?? 0 }}</div>
-                </div>
-                <div class="col-6 col-md">
-                    <div class="text-muted">Наличные</div>
-                    <div class="fw-bold fs-5 text-success">
-                        {{ suppliersStore.stats.cash_sales_count ?? 0 }}
-                        <small>({{ formatPercent(suppliersStore.stats.cash_sales_percent) }})</small>
-                    </div>
-                </div>
-                <div class="col-6 col-md">
-                    <div class="text-muted">Безнал</div>
-                    <div class="fw-bold fs-5 text-primary">
-                        {{ suppliersStore.stats.cashless_sales_count ?? 0 }}
-                        <small>({{ formatPercent(suppliersStore.stats.cashless_sales_percent) }})</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div v-else-if="viewMode === 'inactive' && suppliersStore.stats" class="alert alert-info mb-3 py-2">
-            <div class="text-center small">
-                <div class="text-muted">Неактивных поставщиков</div>
-                <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers ?? 0 }}</div>
-            </div>
-        </div>
-
-        <template v-if="showSimpleSupplierForm">
-            <SupplierForm
-                v-on:saved="addNewSupplier"
-                class="mb-2"
-            ></SupplierForm>
-        </template>
-
-        <template v-if="!showSimpleSupplierForm">
-            <div class="input-group mb-2">
-                <div class="form-floating ">
-                    <input class="form-control"
-                           type="search"
-                           v-model="search"
-                           id="supplierInput" placeholder="Поставщик"/>
-                    <label for="supplierInput">Поставщик</label>
-                </div>
-
-                <button
-                    @click="findSupplier"
-                    type="button"
-                    class="btn btn-outline-light text-primary find-btn"
-                >
-                    Найти
-                </button>
-            </div>
-
-            <template v-if="!forSelect">
-                <SupplierFilter v-on:apply-filters="applyFilters"></SupplierFilter>
-
-                <div class="d-flex" v-if="user && (user.role || 0) >= 3">
-                    <a href="javascript:void(0)"
-                       @click="selectAll"
-                       class="small">Выделить все</a>
-                    <template v-if="selection.length>0">
-                        <a href="javascript:void(0)"
-                           @click="removeAll"
-                           class="small text-danger mx-2">Удалить выделенное</a>
-                    </template>
-                </div>
-            </template>
-
-            <!-- Сортировка активных поставщиков -->
-            <div v-if="viewMode === 'active'" class="d-flex align-items-center gap-2 mb-3">
-                <div class="form-floating flex-grow-1">
-                    <select id="activeSupplierSort" class="form-select" v-model="activeSortBy">
-                        <option value="month_turnover">По сумме сделок</option>
-                        <option value="month_sales_count">По количеству сделок</option>
-                        <option value="month_cash_sales_percent">По доле наличных (%)</option>
-                        <option value="month_cashless_sales_percent">По доле безнала (%)</option>
-                    </select>
-                    <label for="activeSupplierSort">Сортировать</label>
-                </div>
-                <button
-                    type="button"
-                    class="btn btn-outline-primary sort-direction-btn"
-                    @click="activeSortDirection = activeSortDirection === 'desc' ? 'asc' : 'desc'"
-                    :title="activeSortDirection === 'desc' ? 'По убыванию' : 'По возрастанию'"
-                    :aria-label="activeSortDirection === 'desc' ? 'По убыванию' : 'По возрастанию'"
-                >
-                    <i :class="activeSortDirection === 'desc' ? 'fa-solid fa-arrow-down-wide-short' : 'fa-solid fa-arrow-up-wide-short'"></i>
-                </button>
-            </div>
-
-            <ul class="list-group">
-                <li
-                    v-for="supplier in displayedSuppliers"
-                    :key="supplier.id"
-                    class="list-group-item"
-                    v-bind:class="{'border-primary': selection.indexOf(supplier.id)!==-1}"
-                >
-                    <!-- Левая часть -->
-                    <div class="flex-grow-1 text-break" @click="selectSupplier(supplier)">
-                        <div class="fw-bold" @click.stop="toggleSelection(supplier)">
-                            <span class="badge bg-primary" v-if="field_visible?.id||false">#{{ supplier.id }}</span>
-                            {{ supplier.name }}
-                            <span
-                                v-if="field_visible?.percent||false"
-                                class="badge bg-primary rounded-pill">{{ supplier.percent }}%</span>
-                        </div>
-
-                        <p class="mb-0" v-if="field_visible?.description||true">{{ supplier.description || '-' }}</p>
-                        <p class="mb-0 fw-bold small" v-if="field_visible?.phone||true">{{ supplier.phone }}</p>
-                        <p class="mb-2" v-if="field_visible?.email||false">{{ supplier.email }}</p>
-                        <p class="mb-2" v-if="field_visible?.address||false">{{ supplier.address }}</p>
-                        <p class="mb-2" v-if="field_visible?.birthday||false">{{ supplier.birthday }}</p>
-
-                        <!-- 🔹 Статистика для активных (чистая, без пометок избранного) -->
-                        <template v-if="viewMode === 'active' && supplier.month_sales_count">
-                            <div class="d-flex flex-wrap gap-2 mt-1">
-                                <span
-                                    class="badge bg-success clickable-badge"
-                                    @click.stop="openSupplierSales(supplier)"
-                                    :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
-                                >
-                                    <i class="fa-solid fa-receipt me-1"></i>
-                                    {{ supplier.month_sales_count }} сделок
-                                    <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
-                                </span>
-                                <span class="badge bg-info text-dark">
-                                    <i class="fa-solid fa-money-bill-trend-up me-1"></i>
-                                    {{ formatMoney(supplier.month_turnover) }}
-                                </span>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2 mt-2 small">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                    <i class="fa-solid fa-money-bill-wave me-1"></i>
-                                    Наличные: {{ supplier.month_cash_sales_count ?? 0 }}
-                                    ({{ formatPercent(supplier.month_cash_sales_percent) }})
-                                </span>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                    <i class="fa-solid fa-building-columns me-1"></i>
-                                    Безнал: {{ supplier.month_cashless_sales_count ?? 0 }}
-                                    ({{ formatPercent(supplier.month_cashless_sales_percent) }})
-                                </span>
-                            </div>
-                        </template>
-
-                        <!-- 🔹 Для неактивных (чистая, без пометок избранного) -->
-                        <template v-if="viewMode === 'inactive'">
-                            <div class="mt-1">
-            <span class="badge bg-secondary">
-                <i class="fa-solid fa-pause me-1"></i>
-                Нет сделок за выбранный месяц
-            </span>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Правая часть (меню) -->
-                    <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
-                        <button
-                            type="button"
-                            class="btn btn-sm"
-                            @click="toggleFavorites(supplier.id)"
-                            :disabled="!user || favoriteRequests[supplier.id]"
-                        >
-                        <span v-if="!favorites.includes(supplier.id)">
-                            <i class="fa-regular fa-star text-danger"></i>
-                        </span>
-                            <span v-else>
-                            <i class="fa-solid fa-star text-danger"></i>
-                        </span>
-                        </button>
-                        <!-- Нижняя часть: кнопки (прижаты к низу) -->
-                        <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
-
-
-                            <!-- 🔹 Кнопка открытия нижней модалки -->
-                            <button
-                                type="button"
-                                class="btn btn-sm actions-btn"
-                                @click.stop="openActionsModal(supplier)"
-                                title="Действия"
-                            >
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                        </div>
-                    </div>
+            <ul class="dropdown-menu dropdown-menu-end sort-menu">
+                <li class="dropdown-header">Сортировать по</li>
+                <li v-for="(name, field) in sortOptions" :key="field">
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        :class="{ active: sort.field === field }"
+                        @click="changeSort(field)"
+                    >
+                        <span>{{ name }}</span>
+                        <i v-if="sort.field === field" :class="sort.direction === 'asc' ? 'fa-solid fa-arrow-down' : 'fa-solid fa-arrow-up'"></i>
+                    </button>
                 </li>
             </ul>
-
-            <template v-if="suppliersStore.pagination?.total>0">
-                <div class="form-floating my-2">
-                    <select
-                        id="itemsPerPage"
-                        class="form-select"
-                        v-model="size"
-                    >
-                        <option value="10">10</option>
-                        <option value="30">30</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="250">250</option>
-                        <option value="500">500</option>
-                    </select>
-                    <label for="itemsPerPage">Элементов на странице</label>
-                </div>
-                <!-- Пагинация -->
-                <Pagination
-                    :pagination="suppliersStore.pagination"
-                    @page-changed="fetchDataByUrl"
-                />
-            </template>
-
-            <!-- Сообщение если список пуст -->
-            <div v-if="suppliersStore.items?.length === 0" class="alert alert-info mt-3">
-                Поставщиков пока нет.
-            </div>
-        </template>
-
-        <!-- Модалка редактирования -->
-        <div class="modal fade" id="editSupplierModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Редактирование поставщика</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <SupplierForm
-                            v-if="selectedSupplier"
-                            :initial-data="selectedSupplier" @saved="fetchData"/>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Модалка со сделками поставщика -->
-        <div class="modal fade" id="supplierSalesModal" tabindex="-1">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fa-solid fa-truck text-primary me-2"></i>
-                            Сделки: <span class="text-primary">{{ selectedSupplier?.name }}</span>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Загрузка -->
-                        <div v-if="salesLoading" class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Загрузка...</span>
-                            </div>
-                        </div>
-
-                        <div v-else-if="salesError" class="alert alert-danger" role="alert">
-                            {{ salesError }}
-                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" @click="openSupplierSales(selectedSupplier)">
-                                Повторить
-                            </button>
-                        </div>
-
-                        <template v-else>
-                            <!-- Компактный список сделок -->
-                            <div v-if="suppliersStore.supplierSales.length > 0">
-                                <div class="d-flex flex-wrap gap-2 mb-3">
-                                    <span class="badge bg-primary">
-                                        Сделок: {{ suppliersStore.supplierSalesPagination?.total ?? suppliersStore.supplierSales.length }}
-                                    </span>
-                                    <span class="badge bg-light text-dark border">
-                                        Период: {{ selectedMonth }}
-                                    </span>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle supplier-sales-table mb-2">
-                                        <thead class="table-light">
-                                        <tr>
-                                            <th scope="col">№ сделки</th>
-                                            <th scope="col" class="text-end">Сумма</th>
-                                            <th scope="col">Тип оплаты</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr v-for="sale in suppliersStore.supplierSales" :key="sale.id">
-                                            <td class="fw-semibold">
-                                                #{{ sale.id }}
-                                            </td>
-                                            <td class="text-end text-nowrap fw-semibold">
-                                                {{ formatMoney(sale.total_price) }}
-                                            </td>
-                                            <td>
-                                                <span
-                                                    class="badge"
-                                                    :class="getPaymentType(sale).kind === 'cash'
-                                                        ? 'bg-success'
-                                                        : getPaymentType(sale).kind === 'cashless'
-                                                            ? 'bg-primary'
-                                                            : 'bg-secondary'"
-                                                >
-                                                    <i
-                                                        class="fa-solid me-1"
-                                                        :class="getPaymentType(sale).kind === 'cash'
-                                                            ? 'fa-money-bill-wave'
-                                                            : getPaymentType(sale).kind === 'cashless'
-                                                                ? 'fa-building-columns'
-                                                                : 'fa-circle-question'"
-                                                    ></i>
-                                                    {{ getPaymentType(sale).label }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <!-- Пагинация -->
-                                <Pagination
-                                    v-if="suppliersStore.supplierSalesPagination?.total > 0"
-                                    :pagination="suppliersStore.supplierSalesPagination"
-                                    @page-changed="fetchSupplierSalesPage"
-                                />
-                            </div>
-
-                            <!-- Пусто -->
-                            <div v-else class="text-center text-muted py-5">
-                                <i class="fa-solid fa-inbox fs-1 mb-3 d-block"></i>
-                                <p class="mb-0">За выбранный период сделок не найдено</p>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🔹 Модалка управления процентами -->
-        <div class="modal fade" id="percentagesModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fa-solid fa-percent text-success me-2"></i>
-                            Управление процентами поставщика
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <PercentageManager
-                            v-if="selectedSupplier"
-                            owner-type="supplier"
-                            :owner-id="selectedSupplier.id"
-                            :owner-name="selectedSupplier.name"
-                        />
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
-    <!-- 🔹 Нижняя модалка с действиями -->
-    <div class="modal fade bottom-sheet-modal" id="supplierActionsModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-bottom">
-            <div class="modal-content">
-                <!-- Ручка для перетаскивания (визуальный элемент) -->
-                <div class="bottom-sheet-handle">
-                    <div class="handle-bar"></div>
-                </div>
-
-                <!-- Заголовок с информацией о поставщике -->
-                <div class="modal-header border-0 pb-0">
-                    <div class="d-flex align-items-center gap-3 w-100">
-                        <div class="supplier-avatar">
-                            <i class="fa-solid fa-truck"></i>
-                        </div>
-                        <div class="flex-grow-1 min-width-0">
-                            <h6 class="modal-title mb-0 text-truncate">
-                                {{ selectedSupplier?.name }}
-                            </h6>
-                            <small class="text-muted" v-if="selectedSupplier?.phone">
-                                <i class="fa-solid fa-phone me-1"></i>
-                                {{ selectedSupplier.phone }}
-                            </small>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Модальное окно фильтров -->
+    <div class="modal fade supplier-filter-modal" id="supplierFilterModal" tabindex="-1" aria-labelledby="supplierFilterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <form class="modal-content" @submit.prevent="applyFilters">
+                <div class="modal-header filter-modal-header">
+                    <div>
+                        <div class="modal-eyebrow"><i class="fa-solid fa-sliders me-2"></i>Настройка списка</div>
+                        <h5 class="modal-title" id="supplierFilterTitle">Фильтры поставщиков</h5>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
 
-                <!-- Пункты меню -->
-                <div class="modal-body pt-3">
-                    <div class="actions-list">
-                        <!-- Доход за месяц -->
-                        <button
-                            type="button"
-                            v-if="!forSelect"
-                            class="action-item action-item-highlight"
-                            @click="handleAction('salary')"
-                        >
-                        <span class="action-icon salary-icon">
-                            <i class="fa-solid fa-wallet"></i>
-                        </span>
-                            <div class="action-content">
-                                <div class="action-title">Доход за месяц</div>
-                                <div class="action-desc">Начисления, проценты и сделки</div>
+                <div class="modal-body filter-modal-body">
+                    <section class="filter-section">
+                        <div class="section-heading">
+                            <span class="section-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <div>
+                                <h6>Поиск поставщиков</h6>
+                                <p>Укажите данные, чтобы сузить список</p>
                             </div>
-                            <i class="fa-solid fa-chevron-right action-arrow"></i>
-                        </button>
+                        </div>
 
-                        <!-- Избранное -->
-                        <button
-                            type="button"
-                            class="action-item"
-                            @click="handleAction('favorite')"
-                            :disabled="!user"
-                        >
-                        <span class="action-icon favorite-icon">
-                            <i :class="favorites.includes(selectedSupplier?.id)
-                                ? 'fa-solid fa-star'
-                                : 'fa-regular fa-star'"></i>
-                        </span>
-                            <div class="action-content">
-                                <div class="action-title">
-                                    {{ favorites.includes(selectedSupplier?.id)
-                                    ? 'Убрать из избранного'
-                                    : 'Добавить в избранное' }}
-                                </div>
-                                <div class="action-desc">Быстрый доступ к поставщику</div>
+                        <div class="filter-fields">
+                            <div class="form-floating filter-field">
+                                <input v-model="filters.name" class="form-control" id="nameInput" placeholder="Название" />
+                                <label for="nameInput">Название</label>
                             </div>
-                        </button>
+                            <div class="form-floating filter-field">
+                                <input v-model="filters.description" class="form-control" id="descInput" placeholder="Описание" />
+                                <label for="descInput">Описание</label>
+                            </div>
+                            <div class="form-floating filter-field">
+                                <input v-model="filters.address" class="form-control" id="addressInput" placeholder="Адрес" />
+                                <label for="addressInput">Адрес</label>
+                            </div>
+                            <div class="form-floating filter-field">
+                                <input v-model="filters.phone" class="form-control" id="phoneInput" placeholder="Телефон" />
+                                <label for="phoneInput">Телефон</label>
+                            </div>
+                            <div class="form-floating filter-field">
+                                <input v-model="filters.email" class="form-control" id="emailInput" placeholder="Email" />
+                                <label for="emailInput">Email</label>
+                            </div>
+                            <div class="form-floating filter-field">
+                                <input type="number" v-model="filters.percent" class="form-control" id="percentInput" placeholder="Процент" />
+                                <label for="percentInput">Процент</label>
+                            </div>
+                            <div class="form-floating filter-field">
+                                <input type="date" v-model="filters.birthday" class="form-control" id="birthdayInput" />
+                                <label for="birthdayInput">Дата рождения</label>
+                            </div>
+                        </div>
+                    </section>
 
-                        <!-- Редактировать -->
-                        <button
-                            type="button"
-                            v-if="!forSelect"
-                            class="action-item"
-                            @click="handleAction('edit')"
-                        >
-                        <span class="action-icon edit-icon">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </span>
-                            <div class="action-content">
-                                <div class="action-title">Редактировать</div>
-                                <div class="action-desc">Изменить данные поставщика</div>
+                    <section class="filter-section visible-fields-section">
+                        <div class="section-heading">
+                            <span class="section-icon section-icon-red"><i class="fa-solid fa-table-columns"></i></span>
+                            <div>
+                                <h6>Отображаемые поля</h6>
+                                <p>Выберите, какие данные показывать в списке</p>
                             </div>
-                        </button>
+                        </div>
 
-                        <!-- Проценты -->
-                        <button
-                            type="button"
-                            v-if="!forSelect"
-                            class="action-item"
-                            @click="handleAction('percentages')"
-                        >
-                        <span class="action-icon percent-icon">
-                            <i class="fa-solid fa-percent"></i>
-                        </span>
-                            <div class="action-content">
-                                <div class="action-title">Управление процентами</div>
-                                <div class="action-desc">Настройка распределения доходов</div>
-                            </div>
-                        </button>
-
-                        <!-- Выбрать (режим forSelect) -->
-                        <button
-                            type="button"
-                            v-if="forSelect"
-                            class="action-item action-item-primary"
-                            @click="handleAction('select')"
-                        >
-                        <span class="action-icon select-icon">
-                            <i class="fa-solid fa-check"></i>
-                        </span>
-                            <div class="action-content">
-                                <div class="action-title">Выбрать поставщика</div>
-                                <div class="action-desc">Использовать этого поставщика</div>
-                            </div>
-                        </button>
-
-                        <!-- Удалить (только для админов) -->
-                        <button
-                            type="button"
-                            v-if="!forSelect && (user?.role || 0) >= 3"
-                            class="action-item action-item-danger"
-                            @click="handleAction('delete')"
-                        >
-                        <span class="action-icon delete-icon">
-                            <i class="fa-solid fa-trash"></i>
-                        </span>
-                            <div class="action-content">
-                                <div class="action-title">Удалить</div>
-                                <div class="action-desc">Удалить поставщика из системы</div>
-                            </div>
-                        </button>
-                    </div>
+                        <div class="visible-fields-grid">
+                            <label v-for="(label, field) in sortableFields" :key="field" class="visible-field-option" :for="`switch-${field}`">
+                                <span class="visible-field-name">{{ label }}</span>
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    v-model="field_visible[field]"
+                                    :id="`switch-${field}`"
+                                />
+                            </label>
+                        </div>
+                    </section>
                 </div>
 
-                <!-- Кнопка закрытия -->
-                <div class="modal-footer border-0 pt-0">
-                    <button
-                        type="button"
-                        class="btn btn-light w-100"
-                        data-bs-dismiss="modal"
-                    >
-                        Отмена
+                <div class="modal-footer filter-modal-footer">
+                    <button type="submit" class="apply-filters-btn">
+                        <i class="fa-solid fa-check me-2"></i>Применить фильтры
                     </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </template>
 
 <script>
-import Pagination from "@/Components/Pagination.vue";
-import SupplierFilter from "@/Components/Suppliers/SupplierFilter.vue";
-import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
-import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
-import PercentageManager from "@/Components/Percentage/PercentageManager.vue";
-import {useSuppliersStore} from "@/stores/suppliers";
-import {useModalStore} from "@/stores/utillites/useConfitmModalStore";
-import {useUsersStore} from "@/stores/users";
-import {useAlertStore} from "@/stores/utillites/useAlertStore";
-
 export default {
-    name: 'SupplierListGroup',
-    components: {
-        Pagination,
-        SupplierFilter,
-        SupplierForm,
-        SaleCard,
-        PercentageManager
-    },
+    name: 'SupplierFilter',
     props: {
-        forSelect: {
-            type: Boolean,
-            default: false
+        mode: {
+            type: String,
+            default: 'all'
         }
     },
-    emits: ['select'],
     data() {
         return {
-            field_visible: null,
-            modalStore: useModalStore(),
-            userStore: useUsersStore(),
-            alertStore: useAlertStore(),
-            selection: [],
-            saleStatuses: {
-                pending: "В ожидании",
-                assigned: "Назначено",
-                completed: "Завершено",
-                rejected: "Отклонено",
-                delivered: "Доставляется"
+            field_visible: [],
+            filters: {
+                name: '',
+                description: '',
+                address: '',
+                phone: '',
+                email: '',
+                percent: '',
+                birthday: ''
             },
-            search: null,
-            size: 30,
-            showSimpleSupplierForm: false,
-            selectedSupplier: null,
-            suppliersStore: useSuppliersStore(),
-            viewMode: 'all',
-            selectedMonth: this.getCurrentMonth(),
-            activeSortBy: 'month_turnover',
-            activeSortDirection: 'desc',
-            searchTimer: null,
-            salesLoading: false,
-            salesError: null,
-            favoriteRequests: {},
-        }
-    },
-    watch: {
-        search() {
-            if (this.searchTimer) clearTimeout(this.searchTimer)
-            this.searchTimer = setTimeout(() => {
-                if (this.viewMode === 'all') this.findSupplier()
-            }, 350)
-        },
-        size() {
-            this.loadByMode(1)
+            sort: {
+                field: 'id',
+                direction: 'asc'
+            },
+            sortableFields: {
+                id: '№',
+                name: 'Название',
+                description: 'Описание',
+                address: 'Адрес',
+                phone: 'Телефон',
+                email: 'Email',
+                percent: 'Процент',
+                birthday: 'Дата рождения'
+            }
         }
     },
     computed: {
-        favorites() {
-            return this.user?.agent?.favorite_suppliers || []
-        },
-        user() {
-            return this.userStore?.self || null
-        },
-        displayedSuppliers() {
-            const items = Array.isArray(this.suppliersStore.items)
-                ? [...this.suppliersStore.items]
-                : []
+        sortOptions() {
+            const options = { ...this.sortableFields }
 
-            if (this.viewMode !== 'active') return items
+            if (this.mode === 'active') {
+                Object.assign(options, {
+                    month_turnover: 'Сумма сделок',
+                    month_sales_count: 'Количество сделок',
+                    month_cash_sales_percent: 'Доля наличных (%)',
+                    month_cashless_sales_percent: 'Доля безнала (%)'
+                })
+            }
 
-            const field = this.activeSortBy
-            const direction = this.activeSortDirection === 'asc' ? 1 : -1
-
-            return items.sort((a, b) => {
-                const aValue = Number(a?.[field] ?? 0)
-                const bValue = Number(b?.[field] ?? 0)
-                return (aValue - bValue) * direction
-            })
+            return options
+        }
+    },
+    watch: {
+        mode: {
+            immediate: true,
+            handler(mode) {
+                if (mode === 'active') {
+                    this.sort = { field: 'month_turnover', direction: 'desc' }
+                } else {
+                    this.sort = { field: 'id', direction: 'asc' }
+                }
+            }
         }
     },
     created() {
-        if (!this.userStore.self) {
-            this.userStore.fetchSelf().catch(error => {
-                console.error('Не удалось загрузить пользователя:', error)
-            })
+        const defaultVisible = ['name', 'id', 'description', 'phone']
+        for (const field in this.sortableFields) {
+            this.field_visible[field] = defaultVisible.includes(field)
         }
-        this.loadByMode(1)
-    },
-    beforeUnmount() {
-        if (this.searchTimer) clearTimeout(this.searchTimer)
     },
     methods: {
-
-        openActionsModal(supplier) {
-            if (!supplier?.id) return
-            this.selectedSupplier = {...supplier}
-            this.$nextTick(() => {
-                const modalEl = document.getElementById('supplierActionsModal')
-                if (!modalEl || !window.bootstrap?.Modal) return
-                window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
-            })
+        openFilter() {
+            new bootstrap.Modal(document.getElementById('supplierFilterModal')).show()
         },
-        openSupplierSalary(supplier) {
-            if (!supplier?.id) return
-
-            this.$router.push({
-                name: 'supplier-salary',
-                params: { supplierId: supplier.id }
-            })
-        },
-
-        async openSupplierSales(supplier) {
-            if (!supplier?.id) return
-
-            this.selectedSupplier = supplier
-            this.salesError = null
-            this.salesLoading = true
-
-            await this.$nextTick()
-            const modalEl = document.getElementById('supplierSalesModal')
-            if (modalEl && window.bootstrap?.Modal) {
-                window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
-            }
-
-            try {
-                await this.suppliersStore.fetchSupplierSales(supplier.id, this.selectedMonth)
-            } catch (error) {
-                console.error('Ошибка загрузки сделок поставщика:', error)
-                this.salesError = 'Не удалось загрузить сделки поставщика. Попробуйте ещё раз.'
-            } finally {
-                this.salesLoading = false
-            }
-        },
-
-        async fetchSupplierSalesPage(url) {
-            if (!this.selectedSupplier?.id) return
-
-            let page = 1
-            if (typeof url === 'string') {
-                const match = url.match(/[?&]page=(\d+)/)
-                if (match) page = Number.parseInt(match[1], 10) || 1
-            } else if (typeof url === 'number') {
-                page = url
-            }
-
-            this.salesLoading = true
-            this.salesError = null
-            try {
-                await this.suppliersStore.fetchSupplierSales(
-                    this.selectedSupplier.id,
-                    this.selectedMonth,
-                    page
-                )
-            } catch (error) {
-                console.error('Ошибка загрузки страницы сделок:', error)
-                this.salesError = 'Не удалось загрузить сделки. Попробуйте ещё раз.'
-            } finally {
-                this.salesLoading = false
-            }
-        },
-
-        async findSupplier() {
-            this.viewMode = 'all'
-            this.suppliersStore.setFilters({ name: this.search || '' })
-            this.suppliersStore.setSort('id', 'desc')
-            try {
-                await this.suppliersStore.fetchFiltered(0, Number(this.size) || 30)
-            } catch (error) {
-                console.error('Ошибка поиска поставщиков:', error)
-                this.alertStore.show('Не удалось выполнить поиск поставщиков', 'error')
-            }
-        },
-
-        addNewSupplier(supplier) {
-            this.$emit("select", supplier)
-        },
-
-        async applyFilters(filters) {
-            if (!filters) return
-            this.field_visible = filters.field_visible ?? null
-            const size = Number(filters.size || this.size || 30)
-            const page = Number(filters.page ?? 0)
-            const filterPayload = {...(filters.filters || {})}
-
-            this.suppliersStore.setFilters(filterPayload)
-            if (filters.sort?.field) {
-                this.suppliersStore.setSort(filters.sort.field, filters.sort.direction || 'desc')
-            }
-
-            try {
-                await this.suppliersStore.fetchFiltered(page, size)
-            } catch (error) {
-                console.error('Ошибка применения фильтров:', error)
-                this.alertStore.show('Не удалось применить фильтры', 'error')
-            }
-        },
-
-        async toggleFavorites(id) {
-            if (!this.user) {
-                this.alertStore.show('Необходимо авторизоваться', 'warning')
-                return
-            }
-            if (!id || this.favoriteRequests[id]) return
-
-            const wasFavorite = this.favorites.includes(id)
-            this.favoriteRequests = {...this.favoriteRequests, [id]: true}
-            try {
-                await this.suppliersStore.toggleFavorites(id)
-                await this.userStore.fetchSelf()
-                this.alertStore.show(
-                    wasFavorite ? 'Поставщик удалён из избранного' : 'Поставщик добавлен в избранное',
-                    'success'
-                )
-            } catch (error) {
-                console.error('Ошибка изменения избранного:', error)
-                this.alertStore.show('Не удалось изменить избранное', 'error')
-            } finally {
-                const next = {...this.favoriteRequests}
-                delete next[id]
-                this.favoriteRequests = next
-            }
-        },
-
-        removeAll() {
-            if (!this.selection.length) return
-            const ids = [...this.selection]
-            this.modalStore.open(
-                'Вы уверены, что хотите удалить все выбранные элементы?',
-                async () => {
-                    try {
-                        await this.suppliersStore.removeAll(ids)
-                        this.selection = []
-                        await this.loadByMode(1)
-                    } catch (error) {
-                        console.error('Ошибка массового удаления поставщиков:', error)
-                        this.alertStore.show('Не удалось удалить выбранных поставщиков', 'error')
-                    } finally {
-                        this.modalStore.close()
-                    }
-                },
-                () => this.modalStore.close()
-            )
-        },
-
-        openEditModal(supplier) {
-            this.selectedSupplier = null
-            this.$nextTick(() => {
-                this.selectedSupplier = {...supplier}
-                const modalEl = document.getElementById('editSupplierModal')
-                if (modalEl && window.bootstrap?.Modal) {
-                    window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
-                }
-            })
-        },
-
-        openPercentages(supplier) {
-            this.selectedSupplier = null
-            this.$nextTick(() => {
-                this.selectedSupplier = {...supplier}
-                this.$nextTick(() => {
-                    const modalEl = document.getElementById('percentagesModal')
-                    if (modalEl && window.bootstrap?.Modal) {
-                        window.bootstrap.Modal.getOrCreateInstance(modalEl).show()
-                    }
-                })
-            })
-        },
-
-        toggleSelection(supplier) {
-            if (this.forSelect) {
-                this.selectSupplier(supplier)
-                return
-            }
-
-            let id = supplier.id
-            let index = this.selection.findIndex(i => i === id)
-            if (index === -1)
-                this.selection.push(id)
-            else
-                this.selection.splice(index, 1)
-
-            this.$emit("select", this.selection)
-        },
-
-        selectAll() {
-            const items = Array.isArray(this.suppliersStore.items) ? this.suppliersStore.items : []
-            if (this.selection.length === 0) {
-                this.selection = items.map(item => item.id).filter(id => id != null)
+        changeSort(field) {
+            if (this.sort.field === field) {
+                this.sort.direction = this.sort.direction === 'asc' ? 'desc' : 'asc'
             } else {
-                this.selection = []
+                this.sort.field = field
+                this.sort.direction = this.mode === 'active' ? 'desc' : 'asc'
             }
-            this.$emit('select', [...this.selection])
+            this.$emit('apply-filters', {
+                filters: { ...this.filters },
+                sort: { ...this.sort },
+                field_visible: { ...this.field_visible }
+            })
         },
-
-        async fetchData(page = 1) {
-            try {
-                await this.suppliersStore.fetchAllByPage(page, Number(this.size) || 30)
-            } catch (error) {
-                console.error('Ошибка загрузки поставщиков:', error)
-                this.alertStore.show('Не удалось загрузить список поставщиков', 'error')
+        applyFilters() {
+            const payload = {
+                filters: this.filters,
+                sort: this.sort,
+                field_visible: this.field_visible
             }
-        },
-
-        async fetchDataByUrl(url) {
-            if (typeof url !== 'string' || !url.trim()) return
-            try {
-                await this.suppliersStore.fetchByUrl(url)
-            } catch (error) {
-                console.error('Ошибка перехода по страницам поставщиков:', error)
-                this.alertStore.show('Не удалось загрузить страницу поставщиков', 'error')
-            }
-        },
-
-        selectSupplier(supplier) {
-            if (!this.forSelect)
-                return
-            this.$emit("select", supplier)
-        },
-
-        openDeleteModal(supplier) {
-            if (!supplier?.id) return
-            this.selectedSupplier = {...supplier}
-            const supplierId = supplier.id
-            const supplierName = supplier.name || 'этого поставщика'
-            this.modalStore.open(
-                `Вы уверены, что хотите удалить ${supplierName}?`,
-                async () => {
-                    try {
-                        await this.suppliersStore.remove(supplierId)
-                        this.selection = this.selection.filter(id => id !== supplierId)
-                        await this.loadByMode(1)
-                    } catch (error) {
-                        console.error('Ошибка удаления поставщика:', error)
-                        this.alertStore.show('Не удалось удалить поставщика', 'error')
-                    } finally {
-                        this.modalStore.close()
-                    }
-                },
-                () => this.modalStore.close()
-            )
-        },
-
-        getCurrentMonth() {
-            const now = new Date()
-            const year = now.getFullYear()
-            const month = String(now.getMonth() + 1).padStart(2, '0')
-            return `${year}-${month}`
-        },
-
-        getMonthList() {
-            const months = []
-            const now = new Date()
-
-            for (let i = 0; i < 12; i++) {
-                const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-                const year = date.getFullYear()
-                const month = String(date.getMonth() + 1).padStart(2, '0')
-                const key = `${year}-${month}`
-                months.push({key, label: key})
-            }
-
-            return months
-        },
-
-        switchMode(mode) {
-            this.viewMode = mode
-            this.loadByMode()
-        },
-
-        async loadByMode(page = 1) {
-            const pageSize = Number(this.size) || 30
-            try {
-                if (this.viewMode === 'active') {
-                    await this.suppliersStore.fetchActive(this.selectedMonth, page, pageSize)
-                } else if (this.viewMode === 'inactive') {
-                    await this.suppliersStore.fetchInactive(this.selectedMonth, page, pageSize)
-                } else {
-                    await this.fetchData(page)
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки списка поставщиков:', error)
-                this.alertStore.show('Не удалось загрузить поставщиков', 'error')
-            }
-        },
-
-        formatMoney(value) {
-            return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
-        },
-
-        formatPercent(value) {
-            const percent = Number(value || 0)
-            return `${new Intl.NumberFormat('ru-RU', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 1
-            }).format(percent)}%`
-        },
-
-        getPaymentType(sale) {
-            // Sale::toTelegramText(): payment_type == 0 — наличный,
-            // payment_type == 1 — безналичный расчёт.
-            const paymentType = Number(sale?.payment_type)
-
-            if (paymentType === 0) {
-                return { label: 'Наличные', kind: 'cash' }
-            }
-
-            if (paymentType === 1) {
-                return { label: 'Безнал', kind: 'cashless' }
-            }
-
-            return { label: 'Не указан', kind: 'other' }
-        },
-
-        handleAction(action) {
-            const supplier = this.selectedSupplier ? {...this.selectedSupplier} : null
-            if (!supplier?.id) return
-
-            const execute = () => {
-                switch (action) {
-                    case 'salary':
-                        this.openSupplierSalary(supplier)
-                        break
-                    case 'favorite':
-                        this.toggleFavorites(supplier.id)
-                        break
-                    case 'edit':
-                        this.openEditModal(supplier)
-                        break
-                    case 'percentages':
-                        this.openPercentages(supplier)
-                        break
-                    case 'select':
-                        this.selectSupplier(supplier)
-                        break
-                    case 'delete':
-                        this.openDeleteModal(supplier)
-                        break
-                }
-            }
-
-            const modalEl = document.getElementById('supplierActionsModal')
-            const modal = modalEl && window.bootstrap?.Modal
-                ? window.bootstrap.Modal.getOrCreateInstance(modalEl)
-                : null
-
-            if (!modal || !modalEl.classList.contains('show')) {
-                execute()
-                return
-            }
-
-            modalEl.addEventListener('hidden.bs.modal', execute, {once: true})
-            modal.hide()
-        },
+            this.$emit('apply-filters', payload)
+            bootstrap.Modal.getInstance(document.getElementById('supplierFilterModal'))?.hide()
+        }
     }
 }
 </script>
 
 <style scoped>
-.sort-direction-btn {
-    min-width: 54px;
-    height: 58px;
-    flex: 0 0 54px;
+.supplier-filter-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
-.supplier-sales-table th,
-.supplier-sales-table td {
-    vertical-align: middle;
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 9px 15px;
+    border: 1px solid #dce5f2;
+    border-radius: 12px;
+    background: #fff;
+    color: #17345f;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba(25, 55, 95, .05);
+    transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
 }
 
-.supplier-sales-table th {
-    white-space: nowrap;
+.toolbar-btn:hover {
+    border-color: #8db5ef;
+    box-shadow: 0 6px 18px rgba(25, 80, 150, .11);
+    transform: translateY(-1px);
 }
 
-@media (max-width: 575.98px) {
-    .supplier-sales-table {
-        font-size: 13px;
-    }
+.toolbar-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    background: #eaf2ff;
+    color: #1765c0;
 }
 
-.supplier-list-redesign {
-    --supplier-blue: #2056b4;
-    --supplier-ink: #172d50;
-    --supplier-muted: #7b8aa1;
-    color: var(--supplier-ink);
-    padding: 8px 0 24px;
+.filter-trigger {
+    border-color: #1765c0;
+    background: #1765c0;
+    color: #fff;
 }
-.supplier-toolbar {
+
+.filter-trigger .toolbar-icon {
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+}
+
+.filter-trigger:hover {
+    background: #1055a5;
+    border-color: #1055a5;
+    color: #fff;
+}
+
+.sort-dropdown { min-width: 0; }
+.sort-trigger { max-width: 100%; }
+.sort-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sort-direction { color: #1765c0; }
+.sort-menu {
+    min-width: 220px;
+    padding: 7px;
+    border: 1px solid #e4ebf5;
+    border-radius: 14px;
+    box-shadow: 0 12px 35px rgba(19, 43, 77, .14);
+}
+.sort-menu .dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #243b5a;
+}
+.sort-menu .dropdown-item.active,
+.sort-menu .dropdown-item:hover { background: #edf4ff; color: #145eb3; }
+.sort-menu .dropdown-item.active i { color: #1765c0; }
+
+.supplier-filter-modal .modal-content {
+    border: 0;
+    background: #f5f8fc;
+}
+.filter-modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 20px clamp(16px, 4vw, 36px);
+    border-bottom: 1px solid #e2eaf5;
+    background: #fff;
+}
+.modal-eyebrow {
+    margin-bottom: 5px;
+    color: #1765c0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+.supplier-filter-modal .modal-title { color: #172f52; font-size: 22px; font-weight: 800; }
+.filter-modal-body { width: 100%; max-width: 1050px; margin: 0 auto; padding: 24px clamp(16px, 4vw, 36px); }
+.filter-section {
+    margin-bottom: 20px;
+    padding: clamp(16px, 3vw, 24px);
+    border: 1px solid #e4ebf4;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 5px 20px rgba(25, 55, 95, .04);
+}
+.section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.section-icon {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 13px;
+    background: #eaf2ff;
+    color: #1765c0;
+    font-size: 17px;
+}
+.section-icon-red { background: #fff0f0; color: #d83b47; }
+.section-heading h6 { margin: 0 0 4px; color: #193455; font-size: 16px; font-weight: 800; }
+.section-heading p { margin: 0; color: #7b8ba2; font-size: 12px; }
+.filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.filter-field { min-width: 0; }
+.filter-field .form-control { border-color: #dce5f0; border-radius: 11px; }
+.filter-field .form-control:focus { border-color: #7eafea; box-shadow: 0 0 0 .2rem rgba(23, 101, 192, .1); }
+.visible-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.visible-field-option {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 18px;
-}
-.supplier-toolbar-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-}
-.supplier-toolbar-icon {
-    width: 46px;
-    height: 46px;
-    flex: 0 0 46px;
-    display: grid;
-    place-items: center;
-    border-radius: 14px;
-    background: #eaf1ff;
-    color: var(--supplier-blue);
-    font-size: 20px;
-}
-.supplier-toolbar-title strong {
-    display: block;
-    font-size: 19px;
-    letter-spacing: -.3px;
-}
-.supplier-toolbar-title small {
-    display: block;
-    margin-top: 2px;
-    color: var(--supplier-muted);
-    font-size: 12px;
-}
-.supplier-create-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 42px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 12px;
-    background: var(--supplier-blue);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-    box-shadow: 0 5px 14px #2056b426;
-    transition: transform .18s ease, background .18s ease;
-}
-.supplier-create-btn:hover { background: #174693; transform: translateY(-1px); }
-
-@media (max-width: 575.98px) {
-    .supplier-toolbar-title strong { font-size: 17px; }
-    .supplier-toolbar-title small { max-width: 200px; }
-    .supplier-create-btn { min-height: 38px; padding: 0 11px; }
-    .supplier-create-btn span { font-size: 12px; }
-}
-/* Общая визуальная система */
-:deep(.form-check.form-switch) {
-    display: flex;
-    align-items: center;
-    gap: .65rem;
-    padding: .9rem 1rem .9rem 3.1rem;
-    margin: 0 0 1rem;
-    border: 1px solid #dbe7f5;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #f7faff, #fff);
-}
-:deep(.form-check-input) {
-    cursor: pointer;
-    width: 2.5rem;
-    height: 1.35rem;
-    margin-left: -2.1rem;
-    box-shadow: none;
-}
-:deep(.form-check-input:checked) {
-    background-color: #1769d2;
-    border-color: #1769d2;
-}
-:deep(.form-check-label) { color: #20334f; font-weight: 600; }
-
-:deep(.nav.nav-pills) {
-    display: flex;
-    gap: .5rem;
-    padding: .4rem;
-    border: 1px solid #e0e9f5;
-    border-radius: 16px;
-    background: #f4f7fc;
-}
-:deep(.nav.nav-pills .nav-link) {
-    border: 0;
+    min-height: 48px;
+    padding: 10px 13px;
+    border: 1px solid #e5ebf3;
     border-radius: 11px;
-    color: #536781;
-    font-weight: 650;
-    padding: .75rem .85rem;
-    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
-}
-:deep(.nav.nav-pills .nav-link:hover) { background: #e8f0fc; color: #145fc1; }
-:deep(.nav.nav-pills .nav-link.active) {
-    color: #fff;
-    background: linear-gradient(135deg, #1769d2, #124da5);
-    box-shadow: 0 5px 14px rgba(23, 105, 210, .22);
-}
-:deep(.nav.nav-pills .nav-link .text-success),
-:deep(.nav.nav-pills .nav-link .text-secondary) { color: inherit !important; }
-
-:deep(.form-floating .form-select),
-:deep(.form-floating .form-control) {
-    min-height: 56px;
-    border: 1px solid #d8e3f1;
-    border-radius: 13px;
-    color: #20334f;
-    background-color: #fff;
-    box-shadow: none;
-}
-:deep(.form-floating .form-select:focus),
-:deep(.form-floating .form-control:focus) {
-    border-color: #4a91e8;
-    box-shadow: 0 0 0 3px rgba(23, 105, 210, .11);
-}
-:deep(.input-group) {
-    padding: .35rem;
-    border: 1px solid #dce6f2;
-    border-radius: 15px;
-    background: #fff;
-    box-shadow: 0 4px 16px rgba(24, 53, 91, .04);
-}
-:deep(.input-group .form-floating) { flex: 1; min-width: 0; }
-:deep(.input-group .form-control) { border: 0; border-radius: 10px; box-shadow: none; }
-:deep(.find-btn) {
-    align-self: stretch;
-    margin-left: .35rem !important;
-    padding: 0 1.2rem;
-    border: 0;
-    border-radius: 11px !important;
-    color: #fff !important;
-    background: #1769d2;
-    font-weight: 700;
-}
-:deep(.find-btn:hover) { background: #1255b0; }
-
-:deep(.alert-info) {
-    border: 1px solid #d4e7ff;
-    border-radius: 16px;
-    color: #234366;
-    background: linear-gradient(135deg, #f0f7ff, #fff);
-}
-:deep(.alert-info .text-muted) { color: #647994 !important; }
-:deep(.alert-info .fs-5) { color: #173e70; font-weight: 800; }
-
-:deep(.list-group) {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-
-/* Планшет: 2 колонки */
-@media (max-width: 1199.98px) {
-    :deep(.list-group) {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* Мобильные: 1 колонка */
-@media (max-width: 767.98px) {
-    :deep(.list-group) {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Карточки одинаковой высоты */
-:deep(.list-group-item) {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    gap: .8rem;
-    padding: 1rem;
-    border: 1px solid #e0e8f2 !important;
-    border-radius: 16px !important;
-    background: #fff;
-    color: #20334f;
-    box-shadow: 0 3px 12px rgba(27, 52, 84, .035);
-    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-}
-
-:deep(.list-group-item:hover) {
-    border-color: #b8d3f5 !important;
-    box-shadow: 0 8px 22px rgba(27, 72, 128, .08);
-    transform: translateY(-2px);
-}
-:deep(.list-group-item.border-primary) {
-    border-color: #4a91e8 !important;
-    background: #f5f9ff;
-    box-shadow: 0 0 0 2px rgba(23, 105, 210, .08);
-}
-:deep(.list-group-item .fw-bold) { color: #172f4f; line-height: 1.45; }
-:deep(.list-group-item p) { color: #62748c; font-size: .92rem; overflow-wrap: anywhere; }
-:deep(.list-group-item .badge) {
-    display: inline-flex;
-    align-items: center;
-    gap: .15rem;
-    padding: .42rem .62rem;
-    border-radius: 8px;
-    font-size: .75rem;
-    font-weight: 700;
-}
-:deep(.list-group-item .bg-primary) { background: #e8f1ff !important; color: #1459ad !important; }
-:deep(.list-group-item .bg-success) { background: #e1f7ed !important; color: #16794b !important; }
-:deep(.list-group-item .bg-info) { background: #e4f5fb !important; color: #12627b !important; }
-:deep(.list-group-item .bg-secondary) { background: #edf1f5 !important; color: #586a80 !important; }
-:deep(.list-group-item .btn-sm) {
-    display: inline-grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid #e3eaf3;
-    border-radius: 10px;
-    color: #526780;
-    background: #fff;
-}
-:deep(.list-group-item .btn-sm:hover) { border-color: #b7d1f2; background: #f2f7ff; }
-:deep(.list-group-item .dropdown-menu) {
-    padding: .4rem;
-    border: 1px solid #e1e9f3;
-    border-radius: 12px;
-    box-shadow: 0 12px 30px rgba(22, 44, 75, .14);
-}
-:deep(.list-group-item .dropdown-item) { padding: .65rem .8rem; border-radius: 8px; }
-:deep(.list-group-item .dropdown-item:hover) { background: #edf4ff; color: #1459ad; }
-:deep(.small a), :deep(a.small) { font-weight: 600; text-decoration: none; }
-
-:deep(#itemsPerPage) { border-radius: 12px; }
-:deep(.pagination) { gap: .25rem; flex-wrap: wrap; }
-:deep(.modal-content) { overflow: hidden; border: 1px solid #dfe8f3; border-radius: 18px; box-shadow: 0 20px 60px rgba(18, 38, 66, .2); }
-:deep(.modal-header) { padding: 1.1rem 1.25rem; border-bottom: 1px solid #e6edf5; background: #f7faff; }
-:deep(.modal-title) { color: #173455; font-weight: 750; }
-:deep(.modal-body) { padding: 1.25rem; }
-:deep(.clickable-badge) {
+    background: #fbfcfe;
+    color: #304764;
     cursor: pointer;
-    transition: all .2s ease;
-    display: inline-flex;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
+    transition: border-color .2s ease, background .2s ease;
 }
-:deep(.clickable-badge:hover) {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(25, 135, 84, .22);
-    filter: brightness(1.03);
+.visible-field-option:has(.form-check-input:checked) { border-color: #b8d2f5; background: #f0f6ff; }
+.visible-field-name { font-size: 13px; font-weight: 600; }
+.visible-field-option .form-check-input { flex: 0 0 auto; margin: 0; cursor: pointer; }
+.visible-field-option .form-check-input:checked { background-color: #1765c0; border-color: #1765c0; }
+.filter-modal-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 14px clamp(16px, 4vw, 36px);
+    border-top: 1px solid #e2eaf5;
+    background: rgba(255, 255, 255, .96);
+    backdrop-filter: blur(12px);
 }
-:deep(.clickable-badge:active) { transform: translateY(0); }
+.apply-filters-btn {
+    width: 100%;
+    max-width: 1050px;
+    min-height: 50px;
+    margin: 0 auto;
+    border: 0;
+    border-radius: 13px;
+    background: linear-gradient(120deg, #1765c0, #267fe0);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    box-shadow: 0 7px 18px rgba(23, 101, 192, .2);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.apply-filters-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(23, 101, 192, .27); }
 
 @media (max-width: 575.98px) {
-    :deep(.nav.nav-pills) { gap: .2rem; padding: .3rem; }
-    :deep(.nav.nav-pills .nav-link) { padding: .65rem .3rem; font-size: .84rem; }
-    :deep(.list-group-item) { padding: .8rem; gap: .35rem; }
-    :deep(.list-group-item .btn-sm) { width: 32px; height: 32px; }
-    :deep(.input-group) { align-items: stretch; }
-    :deep(.find-btn) { padding: 0 .8rem; font-size: .9rem; }
-    :deep(.modal-body) { padding: .9rem; }
+    .supplier-filter-toolbar { gap: 8px; }
+    .toolbar-btn { min-height: 40px; padding: 8px 11px; }
+    .filter-fields, .visible-fields-grid { grid-template-columns: minmax(0, 1fr); }
+    .filter-modal-body { padding: 14px 12px; }
+    .filter-section { padding: 15px; border-radius: 14px; }
+    .section-heading { align-items: flex-start; }
+    .supplier-filter-modal .modal-title { font-size: 19px; }
 }
-
-/* 🔹 Кнопка действий (заменяет dropdown) */
-.actions-btn {
-    width: 36px;
-    height: 36px;
-    border: 1px solid #e3eaf3;
-    border-radius: 10px;
-    background: #fff;
-    color: #526780;
-    transition: all 0.2s ease;
-}
-
-.actions-btn:hover {
-    border-color: #b7d1f2;
-    background: #f2f7ff;
-    color: #1769d2;
-}
-
-/* 🔹 Нижняя модалка (bottom sheet) */
-.bottom-sheet-modal {
-    --bs-modal-bg: #fff;
-}
-
-.bottom-sheet-modal .modal-dialog {
-    margin: 0;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-width: 100%;
-    height: auto;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.bottom-sheet-modal.show .modal-dialog {
-    transform: translateY(0);
-}
-
-.bottom-sheet-modal .modal-content {
-    border-radius: 24px 24px 0 0 !important;
-    border: none;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
-    max-height: 85vh;
-    overflow-y: auto;
-}
-
-/* На десктопе — модалка по центру, но с закруглёнными углами */
-@media (min-width: 768px) {
-    .bottom-sheet-modal .modal-dialog {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%) translateY(100%);
-        max-width: 500px;
-        width: 100%;
-    }
-
-    .bottom-sheet-modal.show .modal-dialog {
-        transform: translateX(-50%) translateY(0);
-    }
-
-    .bottom-sheet-modal .modal-content {
-        border-radius: 24px !important;
-        max-height: 80vh;
-    }
-}
-
-/* 🔹 Ручка для перетаскивания */
-.bottom-sheet-handle {
-    display: flex;
-    justify-content: center;
-    padding: 12px 0 4px;
-    cursor: grab;
-}
-
-.handle-bar {
-    width: 40px;
-    height: 4px;
-    background: #d1d9e6;
-    border-radius: 2px;
-    transition: background 0.2s ease;
-}
-
-.bottom-sheet-handle:hover .handle-bar {
-    background: #a8b5c9;
-}
-
-/* 🔹 Аватар поставщика в модалке */
-.supplier-avatar {
-    width: 48px;
-    height: 48px;
-    flex: 0 0 48px;
-    display: grid;
-    place-items: center;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #eaf1ff, #dceaff);
-    color: #2056b4;
-    font-size: 20px;
-}
-
-.min-width-0 {
-    min-width: 0;
-}
-
-/* 🔹 Список действий */
-.actions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.action-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    border: none;
-    border-radius: 14px;
-    background: #f7faff;
-    color: #20334f;
-    text-align: left;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.action-item:hover {
-    background: #edf4ff;
-    transform: translateX(2px);
-}
-
-.action-item:active {
-    transform: scale(0.98);
-}
-
-.action-item:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Подсветка главного действия (доход за месяц) */
-.action-item-highlight {
-    background: linear-gradient(135deg, #e8f1ff, #f0f7ff);
-    border: 1px solid #d4e7ff;
-}
-
-.action-item-highlight:hover {
-    background: linear-gradient(135deg, #dceaff, #e8f1ff);
-}
-
-/* Основное действие (выбрать) */
-.action-item-primary {
-    background: linear-gradient(135deg, #e1f7ed, #f0fff5);
-    border: 1px solid #b8e6cc;
-}
-
-.action-item-primary:hover {
-    background: linear-gradient(135deg, #d1f0e0, #e1f7ed);
-}
-
-/* Опасное действие (удалить) */
-.action-item-danger {
-    background: #fff5f5;
-    border: 1px solid #ffd4d4;
-}
-
-.action-item-danger:hover {
-    background: #ffe8e8;
-}
-
-.action-item-danger .action-title {
-    color: #c53030;
-}
-
-.action-item-danger .action-icon {
-    background: #fee;
-    color: #c53030;
-}
-
-/* 🔹 Иконки действий */
-.action-icon {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    background: #e8f1ff;
-    color: #2056b4;
-    font-size: 18px;
-}
-
-.action-icon.salary-icon {
-    background: linear-gradient(135deg, #dceaff, #e8f1ff);
-    color: #1769d2;
-}
-
-.action-icon.favorite-icon {
-    background: #fff0f0;
-    color: #e53e3e;
-}
-
-.action-icon.edit-icon {
-    background: #e8f1ff;
-    color: #2056b4;
-}
-
-.action-icon.percent-icon {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-
-.action-icon.select-icon {
-    background: #d1f0e0;
-    color: #16794b;
-}
-
-.action-icon.delete-icon {
-    background: #fee;
-    color: #c53030;
-}
-
-/* 🔹 Контент действия */
-.action-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.action-title {
-    font-size: 14px;
-    font-weight: 650;
-    color: #172f4f;
-    line-height: 1.3;
-    margin-bottom: 2px;
-}
-
-.action-desc {
-    font-size: 12px;
-    color: #647994;
-    line-height: 1.3;
-}
-
-/* Стрелка справа */
-.action-arrow {
-    color: #a8b5c9;
-    font-size: 12px;
-    margin-left: auto;
-}
-
-.action-item:hover .action-arrow {
-    color: #2056b4;
-    transform: translateX(2px);
-    transition: transform 0.2s ease;
-}
-
-/* 🔹 Кнопка отмены */
-.bottom-sheet-modal .modal-footer .btn-light {
-    background: #f4f7fc;
-    border: 1px solid #e0e9f5;
-    color: #536781;
-    font-weight: 600;
-    padding: 12px;
-    border-radius: 12px;
-    transition: all 0.2s ease;
-}
-
-.bottom-sheet-modal .modal-footer .btn-light:hover {
-    background: #e8f0fc;
-    color: #145fc1;
-}
-
-/* 🔹 Адаптив для мобильных */
-@media (max-width: 767.98px) {
-    .bottom-sheet-modal .modal-content {
-        max-height: 90vh;
-    }
-
-    .action-item {
-        padding: 12px 14px;
-        gap: 12px;
-    }
-
-    .action-icon {
-        width: 40px;
-        height: 40px;
-        flex: 0 0 40px;
-        font-size: 16px;
-    }
-
-    .action-title {
-        font-size: 13px;
-    }
-
-    .action-desc {
-        font-size: 11px;
-    }
-
-    .supplier-avatar {
-        width: 42px;
-        height: 42px;
-        flex: 0 0 42px;
-        font-size: 18px;
-    }
-}
-</style>\n
+</style>
