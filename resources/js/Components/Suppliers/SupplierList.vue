@@ -216,6 +216,10 @@
                                     <i class="fa-solid fa-chart-pie me-1"></i>
                                     {{ formatPercent(supplier.month_turnover_percent) }} от общей суммы
                                 </span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="fa-solid fa-hand-holding-dollar me-1"></i>
+                                    Отдает: {{ formatPercent(supplier.percent) }}
+                                </span>
                             </div>
                             <div class="d-flex flex-wrap gap-2 mt-2 small">
                                 <span class="badge bg-success-subtle text-success border border-success-subtle">
