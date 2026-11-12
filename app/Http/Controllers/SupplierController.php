@@ -429,7 +429,13 @@ class SupplierController extends Controller
         $perPage = max(1, (int) $request->get('per_page', $request->get('size', 30)));
         $suppliers = $query->paginate($perPage);
 
-        $suppliers->getCollection()->transform(function ($supplier) {
+        // Общий оборот по всем поставщикам за выбранный месяц.
+        $salesQueryForTotal = \App\Models\Sale::query();
+        $realSalesFilter($salesQueryForTotal);
+        $totalTurnover = (float) $salesQueryForTotal->sum('total_price');
+
+
+        $suppliers->getCollection()->transform(function ($supplier) use ($totalTurnover) {
             $total = (int) $supplier->month_sales_count;
             $cash = (int) $supplier->month_cash_sales_count;
             $cashless = (int) $supplier->month_cashless_sales_count;
@@ -440,6 +446,11 @@ class SupplierController extends Controller
 
             $supplier->month_cashless_sales_percent = $total > 0
                 ? round(($cashless / $total) * 100, 1)
+                : 0;
+
+            $supplierTurnover = (float) ($supplier->month_turnover ?? 0);
+            $supplier->month_turnover_percent = $totalTurnover > 0
+                ? round(($supplierTurnover / $totalTurnover) * 100, 1)
                 : 0;
 
             return $supplier;
@@ -485,7 +496,9 @@ class SupplierController extends Controller
         $response = $suppliers->toArray();
         $response['stats'] = [
             'total_suppliers' => $totalSuppliers,
-            'total_turnover' => (float) $totalTurnover,
+            'total_turnover' => $totalTurnover,
+            'total_turnover_after_tax' => round($totalTurnover * 0.94, 2),
+            'tax_percent' => 6,
             'total_sales_count' => $totalSalesCount,
             'cash_sales_count' => $cashSalesCount,
             'cash_sales_percent' => $cashSalesPercent,

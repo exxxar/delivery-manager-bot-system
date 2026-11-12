@@ -93,8 +93,13 @@
                     <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers ?? 0 }}</div>
                 </div>
                 <div class="col-6 col-md">
-                    <div class="text-muted">Оборот</div>
+                    <div class="text-muted">Общая сумма с поставщиков</div>
                     <div class="fw-bold fs-5 text-success">{{ formatMoney(suppliersStore.stats.total_turnover) }}</div>
+                </div>
+                <div class="col-6 col-md">
+                    <div class="text-muted">После налога 6%</div>
+                    <div class="fw-bold fs-5 text-primary">{{ formatMoney(suppliersStore.stats.total_turnover_after_tax) }}</div>
+                    <small class="text-muted">Налог: {{ formatMoney(Number(suppliersStore.stats.total_turnover || 0) * 0.06) }}</small>
                 </div>
                 <div class="col-6 col-md">
                     <div class="text-muted">Всего сделок</div>
@@ -206,6 +211,10 @@
                                 <span class="badge bg-info text-dark">
                                     <i class="fa-solid fa-money-bill-trend-up me-1"></i>
                                     {{ formatMoney(supplier.month_turnover) }}
+                                </span>
+                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle">
+                                    <i class="fa-solid fa-chart-pie me-1"></i>
+                                    {{ formatPercent(supplier.month_turnover_percent) }} от общей суммы
                                 </span>
                             </div>
                             <div class="d-flex flex-wrap gap-2 mt-2 small">
