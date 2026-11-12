@@ -86,16 +86,41 @@
         </div>
 
         <!-- 🔹 Статистика (для активных/неактивных) -->
-        <div v-if="viewMode !== 'all' && suppliersStore.stats" class="alert alert-info mb-3 py-2">
-            <div class="row text-center small">
-                <div class="col-6">
+        <div v-if="viewMode === 'active' && suppliersStore.stats" class="alert alert-info mb-3 py-2">
+            <div class="row g-2 text-center small">
+                <div class="col-6 col-md">
                     <div class="text-muted">Поставщиков</div>
-                    <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers }}</div>
+                    <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers ?? 0 }}</div>
                 </div>
-                <div class="col-6" v-if="suppliersStore.stats.total_turnover !== undefined">
-                    <div class="text-muted">Товарооборот</div>
+                <div class="col-6 col-md">
+                    <div class="text-muted">Оборот</div>
                     <div class="fw-bold fs-5 text-success">{{ formatMoney(suppliersStore.stats.total_turnover) }}</div>
                 </div>
+                <div class="col-6 col-md">
+                    <div class="text-muted">Всего сделок</div>
+                    <div class="fw-bold fs-5">{{ suppliersStore.stats.total_sales_count ?? 0 }}</div>
+                </div>
+                <div class="col-6 col-md">
+                    <div class="text-muted">Наличные</div>
+                    <div class="fw-bold fs-5 text-success">
+                        {{ suppliersStore.stats.cash_sales_count ?? 0 }}
+                        <small>({{ formatPercent(suppliersStore.stats.cash_sales_percent) }})</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md">
+                    <div class="text-muted">Безнал</div>
+                    <div class="fw-bold fs-5 text-primary">
+                        {{ suppliersStore.stats.cashless_sales_count ?? 0 }}
+                        <small>({{ formatPercent(suppliersStore.stats.cashless_sales_percent) }})</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-else-if="viewMode === 'inactive' && suppliersStore.stats" class="alert alert-info mb-3 py-2">
+            <div class="text-center small">
+                <div class="text-muted">Неактивных поставщиков</div>
+                <div class="fw-bold fs-5">{{ suppliersStore.stats.total_suppliers ?? 0 }}</div>
             </div>
         </div>
 
@@ -140,9 +165,31 @@
                 </div>
             </template>
 
+            <!-- Сортировка активных поставщиков -->
+            <div v-if="viewMode === 'active'" class="d-flex align-items-center gap-2 mb-3">
+                <div class="form-floating flex-grow-1">
+                    <select id="activeSupplierSort" class="form-select" v-model="activeSortBy">
+                        <option value="month_turnover">По сумме сделок</option>
+                        <option value="month_sales_count">По количеству сделок</option>
+                        <option value="month_cash_sales_percent">По доле наличных (%)</option>
+                        <option value="month_cashless_sales_percent">По доле безнала (%)</option>
+                    </select>
+                    <label for="activeSupplierSort">Сортировать</label>
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-outline-primary sort-direction-btn"
+                    @click="activeSortDirection = activeSortDirection === 'desc' ? 'asc' : 'desc'"
+                    :title="activeSortDirection === 'desc' ? 'По убыванию' : 'По возрастанию'"
+                    :aria-label="activeSortDirection === 'desc' ? 'По убыванию' : 'По возрастанию'"
+                >
+                    <i :class="activeSortDirection === 'desc' ? 'fa-solid fa-arrow-down-wide-short' : 'fa-solid fa-arrow-up-wide-short'"></i>
+                </button>
+            </div>
+
             <ul class="list-group">
                 <li
-                    v-for="supplier in suppliersStore.items"
+                    v-for="supplier in displayedSuppliers"
                     :key="supplier.id"
                     class="list-group-item"
                     v-bind:class="{'border-primary': selection.indexOf(supplier.id)!==-1}"
@@ -165,20 +212,32 @@
 
                         <!-- 🔹 Статистика для активных (чистая, без пометок избранного) -->
                         <template v-if="viewMode === 'active' && supplier.month_sales_count">
-                            <div class="d-flex gap-2 mt-1">
-            <span
-                class="badge bg-success clickable-badge"
-                @click.stop="openSupplierSales(supplier)"
-                :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
-            >
-                <i class="fa-solid fa-receipt me-1"></i>
-                {{ supplier.month_sales_count }} сделок
-                <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
-            </span>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                <span
+                                    class="badge bg-success clickable-badge"
+                                    @click.stop="openSupplierSales(supplier)"
+                                    :title="`Посмотреть сделки поставщика за ${selectedMonth}`"
+                                >
+                                    <i class="fa-solid fa-receipt me-1"></i>
+                                    {{ supplier.month_sales_count }} сделок
+                                    <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 10px;"></i>
+                                </span>
                                 <span class="badge bg-info text-dark">
-                <i class="fa-solid fa-money-bill-trend-up me-1"></i>
-                {{ formatMoney(supplier.month_turnover) }}
-            </span>
+                                    <i class="fa-solid fa-money-bill-trend-up me-1"></i>
+                                    {{ formatMoney(supplier.month_turnover) }}
+                                </span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-2 small">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="fa-solid fa-money-bill-wave me-1"></i>
+                                    Наличные: {{ supplier.month_cash_sales_count ?? 0 }}
+                                    ({{ formatPercent(supplier.month_cash_sales_percent) }})
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    <i class="fa-solid fa-building-columns me-1"></i>
+                                    Безнал: {{ supplier.month_cashless_sales_count ?? 0 }}
+                                    ({{ formatPercent(supplier.month_cashless_sales_percent) }})
+                                </span>
                             </div>
                         </template>
 
@@ -299,16 +358,58 @@
                         </div>
 
                         <template v-else>
-                            <!-- Список сделок -->
+                            <!-- Компактный список сделок -->
                             <div v-if="suppliersStore.supplierSales.length > 0">
-                                <SaleCard
-                                    v-for="sale in suppliersStore.supplierSales"
-                                    :key="sale.id"
-                                    :sale="sale"
-                                    :field_visible="field_visible"
-                                    :saleStatuses="saleStatuses"
-                                    class="shadow-sm mb-2 rounded-2 p-2"
-                                />
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <span class="badge bg-primary">
+                                        Сделок: {{ suppliersStore.supplierSalesPagination?.total ?? suppliersStore.supplierSales.length }}
+                                    </span>
+                                    <span class="badge bg-light text-dark border">
+                                        Период: {{ selectedMonth }}
+                                    </span>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle supplier-sales-table mb-2">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">№ сделки</th>
+                                            <th scope="col" class="text-end">Сумма</th>
+                                            <th scope="col">Тип оплаты</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="sale in suppliersStore.supplierSales" :key="sale.id">
+                                            <td class="fw-semibold">
+                                                #{{ sale.id }}
+                                            </td>
+                                            <td class="text-end text-nowrap fw-semibold">
+                                                {{ formatMoney(sale.total_price) }}
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="badge"
+                                                    :class="getPaymentType(sale).kind === 'cash'
+                                                        ? 'bg-success'
+                                                        : getPaymentType(sale).kind === 'cashless'
+                                                            ? 'bg-primary'
+                                                            : 'bg-secondary'"
+                                                >
+                                                    <i
+                                                        class="fa-solid me-1"
+                                                        :class="getPaymentType(sale).kind === 'cash'
+                                                            ? 'fa-money-bill-wave'
+                                                            : getPaymentType(sale).kind === 'cashless'
+                                                                ? 'fa-building-columns'
+                                                                : 'fa-circle-question'"
+                                                    ></i>
+                                                    {{ getPaymentType(sale).label }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
 
                                 <!-- Пагинация -->
                                 <Pagination
@@ -386,6 +487,7 @@
                     <div class="actions-list">
                         <!-- Доход за месяц -->
                         <button
+                            type="button"
                             v-if="!forSelect"
                             class="action-item action-item-highlight"
                             @click="handleAction('salary')"
@@ -402,6 +504,7 @@
 
                         <!-- Избранное -->
                         <button
+                            type="button"
                             class="action-item"
                             @click="handleAction('favorite')"
                             :disabled="!user"
@@ -423,6 +526,7 @@
 
                         <!-- Редактировать -->
                         <button
+                            type="button"
                             v-if="!forSelect"
                             class="action-item"
                             @click="handleAction('edit')"
@@ -438,6 +542,7 @@
 
                         <!-- Проценты -->
                         <button
+                            type="button"
                             v-if="!forSelect"
                             class="action-item"
                             @click="handleAction('percentages')"
@@ -453,6 +558,7 @@
 
                         <!-- Выбрать (режим forSelect) -->
                         <button
+                            type="button"
                             v-if="forSelect"
                             class="action-item action-item-primary"
                             @click="handleAction('select')"
@@ -468,6 +574,7 @@
 
                         <!-- Удалить (только для админов) -->
                         <button
+                            type="button"
                             v-if="!forSelect && (user?.role || 0) >= 3"
                             class="action-item action-item-danger"
                             @click="handleAction('delete')"
@@ -546,6 +653,8 @@ export default {
             suppliersStore: useSuppliersStore(),
             viewMode: 'all',
             selectedMonth: this.getCurrentMonth(),
+            activeSortBy: 'month_turnover',
+            activeSortDirection: 'desc',
             searchTimer: null,
             salesLoading: false,
             salesError: null,
@@ -569,6 +678,22 @@ export default {
         },
         user() {
             return this.userStore?.self || null
+        },
+        displayedSuppliers() {
+            const items = Array.isArray(this.suppliersStore.items)
+                ? [...this.suppliersStore.items]
+                : []
+
+            if (this.viewMode !== 'active') return items
+
+            const field = this.activeSortBy
+            const direction = this.activeSortDirection === 'asc' ? 1 : -1
+
+            return items.sort((a, b) => {
+                const aValue = Number(a?.[field] ?? 0)
+                const bValue = Number(b?.[field] ?? 0)
+                return (aValue - bValue) * direction
+            })
         }
     },
     created() {
@@ -879,6 +1004,31 @@ export default {
         formatMoney(value) {
             return new Intl.NumberFormat('ru-RU').format(value || 0) + ' ₽'
         },
+
+        formatPercent(value) {
+            const percent = Number(value || 0)
+            return `${new Intl.NumberFormat('ru-RU', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 1
+            }).format(percent)}%`
+        },
+
+        getPaymentType(sale) {
+            // Sale::toTelegramText(): payment_type == 0 — наличный,
+            // payment_type == 1 — безналичный расчёт.
+            const paymentType = Number(sale?.payment_type)
+
+            if (paymentType === 0) {
+                return { label: 'Наличные', kind: 'cash' }
+            }
+
+            if (paymentType === 1) {
+                return { label: 'Безнал', kind: 'cashless' }
+            }
+
+            return { label: 'Не указан', kind: 'other' }
+        },
+
         handleAction(action) {
             const supplier = this.selectedSupplier ? {...this.selectedSupplier} : null
             if (!supplier?.id) return
@@ -924,6 +1074,27 @@ export default {
 </script>
 
 <style scoped>
+.sort-direction-btn {
+    min-width: 54px;
+    height: 58px;
+    flex: 0 0 54px;
+}
+
+.supplier-sales-table th,
+.supplier-sales-table td {
+    vertical-align: middle;
+}
+
+.supplier-sales-table th {
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .supplier-sales-table {
+        font-size: 13px;
+    }
+}
+
 .supplier-list-redesign {
     --supplier-blue: #2056b4;
     --supplier-ink: #172d50;
@@ -1506,4 +1677,4 @@ export default {
         font-size: 18px;
     }
 }
-</style>
+</style>\n

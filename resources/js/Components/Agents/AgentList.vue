@@ -62,6 +62,13 @@
                         <option value="id">По ID</option>
                         <option value="created_at">По дате регистрации</option>
                         <option value="name">По имени</option>
+
+                        <!-- Дополнительная сортировка только для вкладки «Активные» -->
+                        <template v-if="viewMode === 'active'">
+                            <option value="month_turnover">По обороту</option>
+                            <option value="month_sales_count">По количеству сделок</option>
+                            <option value="month_salary">По зарплате</option>
+                        </template>
                     </select>
                     <label for="agentSort"><i class="fa-solid fa-arrow-down-wide-short me-1"></i> Сортировка</label>
                 </div>
@@ -506,7 +513,15 @@ export default {
                     return valueA.localeCompare(valueB, 'ru') * direction
                 }
 
-                if (this.sortBy === 'created_at') {
+                // Дополнительные числовые показатели вкладки «Активные».
+                if ([
+                    'month_turnover',
+                    'month_sales_count',
+                    'month_salary'
+                ].includes(this.sortBy)) {
+                    valueA = Number(a[this.sortBy]) || 0
+                    valueB = Number(b[this.sortBy]) || 0
+                } else if (this.sortBy === 'created_at') {
                     valueA = a.created_at ? new Date(a.created_at).getTime() : 0
                     valueB = b.created_at ? new Date(b.created_at).getTime() : 0
                 } else {
@@ -1318,4 +1333,3 @@ export default {
     }
 }
 </style>
-

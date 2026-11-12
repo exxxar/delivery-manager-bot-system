@@ -351,118 +351,124 @@ class SupplierController extends Controller
 
     public function active(Request $request)
     {
-        $botUser = $request->botUser;
-        $agent = Agent::where('user_id', $botUser->id)->first();
-        $month = $request->get('month', now()->format('Y-m'));
+        $month = $request->input('month', now()->format('Y-m'));
 
-        try {
-            $monthDate = \Carbon\Carbon::parse($month . '-01');
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Неверный формат месяца'], 422);
-        }
+        $startDate = \Carbon\Carbon::createFromFormat('Y-m', $month)
+            ->startOfMonth();
 
-       // $favoriteIds = $agent ? ($agent->favorite_suppliers ?? []) : [];
+        $endDate = (clone $startDate)->endOfMonth();
 
-        // 🔹 1. Замыкание для статистики (ИСКЛЮЧАЕТ избранных)
-        $salesFilter = function ($q) use ($monthDate, $botUser, $agent, $request) {
-            $q->where('status', 'completed')
+        $realSalesFilter = function ($query) use ($startDate, $endDate, $request) {
+            $query
+                ->where('status', 'completed')
                 ->whereNotNull('supplier_id')
                 ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateTimeString(),
-                    $monthDate->endOfMonth()->toDateTimeString()
+                    $startDate,
+                    $endDate,
                 ]);
 
-          /*  if (!empty($favoriteIds)) {
-                $q->whereNotIn('supplier_id', $favoriteIds);
-            }*/
-
-            $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
-
-            if ($onlySelfSales) {
-                $q->where(function ($roleQuery) use ($botUser, $agent) {
-                    if (is_null($agent)) {
-                        $roleQuery->where('created_by_id', $botUser->id);
-                    } else {
-                        $roleQuery->where('agent_id', $agent->id)
-                            ->orWhere('created_by_id', $botUser->id);
-                    }
-                });
+            if (
+                $request->boolean('only_self_sales') ||
+                auth()->user()->hasRole('AGENT')
+            ) {
+                $query->where('agent_id', auth()->id());
             }
         };
 
-        // 🔹 2. Замыкание для РЕАЛЬНОГО подсчёта сделок (без исключения избранных)
-        $realSalesFilter = function ($q) use ($monthDate, $botUser, $agent, $request) {
-            $q->where('status', 'completed')
-                ->whereNotNull('supplier_id')
-                ->whereBetween('actual_delivery_date', [
-                    $monthDate->startOfMonth()->toDateTimeString(),
-                    $monthDate->endOfMonth()->toDateTimeString()
-                ]);
+        $suppliers = Supplier::query()
+            ->withCount([
+                'sales as month_sales_count' => $realSalesFilter,
 
-            $onlySelfSales = ($request->only_self_sales ?? false) || $botUser->role == RoleEnum::AGENT->value;
+                // Наличные: payment_type = 0
+                'sales as month_cash_sales_count' => function ($query) use ($realSalesFilter) {
+                    $realSalesFilter($query);
+                    $query->where('payment_type', 0);
+                },
 
-            if ($onlySelfSales) {
-                $q->where(function ($roleQuery) use ($botUser, $agent) {
-                    if (is_null($agent)) {
-                        $roleQuery->where('created_by_id', $botUser->id);
-                    } else {
-                        $roleQuery->where('agent_id', $agent->id)
-                            ->orWhere('created_by_id', $botUser->id);
-                    }
-                });
-            }
-        };
-
-        // 🔹 3. Основной запрос для списка (с пагинацией)
-        $query = Supplier::query()
-            ->withCount(['sales as month_sales_count' => $realSalesFilter])
-            ->withSum(['sales as month_turnover' => $realSalesFilter], 'total_price')
+                // Безналичные: payment_type != 0 или NULL
+                'sales as month_cashless_sales_count' => function ($query) use ($realSalesFilter) {
+                    $realSalesFilter($query);
+                    $query->where(function ($q) {
+                        $q->where('payment_type', '!=', 0)
+                            ->orWhereNull('payment_type');
+                    });
+                },
+            ])
+            ->withSum([
+                'sales as month_turnover' => $realSalesFilter,
+            ], 'total_price')
             ->having('month_sales_count', '>', 0)
-            ->orderByDesc('month_turnover');
+            ->orderByDesc('month_turnover')
+            ->paginate(20);
 
-        if ($request->filled('name')) {
-            $query->where('name', 'like', '%' . $request->name . '%');
-        }
+        // Рассчитываем процентное соотношение для каждого поставщика
+        $suppliers->getCollection()->transform(function ($supplier) {
+            $total = (int) $supplier->month_sales_count;
 
-        $perPage = (int) $request->get('per_page', $request->size ?? 30);
-        $suppliers = $query->paginate($perPage);
+            $cash = (int) $supplier->month_cash_sales_count;
+            $cashless = (int) $supplier->month_cashless_sales_count;
 
-        // 🔹 Помечаем флагом is_favorite
-      /*  $suppliers->getCollection()->transform(function ($supplier) use ($favoriteIds) {
-            $supplier->is_favorite = in_array($supplier->id, $favoriteIds);
+            $supplier->month_cash_sales_percent = $total > 0
+                ? round(($cash / $total) * 100, 1)
+                : 0;
+
+            $supplier->month_cashless_sales_percent = $total > 0
+                ? round(($cashless / $total) * 100, 1)
+                : 0;
+
             return $supplier;
-        });*/
+        });
 
-        // 🔹 4. СУММАРНАЯ СТАТИСТИКА (без учёта пагинации)
+        // Общая статистика по всем сделкам за месяц
+        $salesQuery = Sale::query();
+        $realSalesFilter($salesQuery);
 
-        // Общий товарооборот (только не-избранные)
-        $grandTotalQuery = \App\Models\Sale::query();
-        $salesFilter($grandTotalQuery);
-        $totalTurnover = $grandTotalQuery->sum('total_price');
+        $totalSalesCount = (clone $salesQuery)->count();
 
-        // Количество активных НЕ избранных поставщиков (отдельный запрос без пагинации)
-        $nonFavoriteCountQuery = Supplier::query()
-            ->select('suppliers.id')
-            ->withCount(['sales as month_sales_count' => $realSalesFilter])
-            ->having('month_sales_count', '>', 0);
+        $cashSalesCount = (clone $salesQuery)
+            ->where('payment_type', 0)
+            ->count();
 
-       /* if (!empty($favoriteIds)) {
-            $nonFavoriteCountQuery->whereNotIn('suppliers.id', $favoriteIds);
-        }*/
+        $cashlessSalesCount = (clone $salesQuery)
+            ->where(function ($query) {
+                $query->where('payment_type', '!=', 0)
+                    ->orWhereNull('payment_type');
+            })
+            ->count();
 
-        if ($request->filled('name')) {
-            $nonFavoriteCountQuery->where('name', 'like', '%' . $request->name . '%');
-        }
+        $cashSalesPercent = $totalSalesCount > 0
+            ? round(($cashSalesCount / $totalSalesCount) * 100, 1)
+            : 0;
 
-        $nonFavoriteCount = $nonFavoriteCountQuery->count();
+        $cashlessSalesPercent = $totalSalesCount > 0
+            ? round(($cashlessSalesCount / $totalSalesCount) * 100, 1)
+            : 0;
 
-        $response = $suppliers->toArray();
-        $response['stats'] = [
-            'total_suppliers' => $nonFavoriteCount,
-            'total_turnover' => round($totalTurnover, 2),
-        ];
+        // Общий оборот
+        $totalTurnover = (clone $salesQuery)->sum('total_price');
 
-        return response()->json($response);
+        // Количество поставщиков с реальными сделками
+        $totalSuppliers = (clone $suppliers->getQuery())
+            ->count();
+
+        return response()->json([
+            'success' => true,
+
+            'data' => $suppliers,
+
+            'stats' => [
+                'total_suppliers' => $totalSuppliers,
+                'total_turnover' => (float) $totalTurnover,
+
+                'total_sales_count' => $totalSalesCount,
+
+                'cash_sales_count' => $cashSalesCount,
+                'cash_sales_percent' => $cashSalesPercent,
+
+                'cashless_sales_count' => $cashlessSalesCount,
+                'cashless_sales_percent' => $cashlessSalesPercent,
+            ],
+        ]);
     }
 
     public function inactive(Request $request)
