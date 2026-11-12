@@ -96,11 +96,11 @@
                     <div class="text-muted">Общая сумма с поставщиков</div>
                     <div class="fw-bold fs-5 text-success">{{ formatMoney(suppliersStore.stats.total_turnover) }}</div>
                 </div>
-                <div class="col-6 col-md">
+<!--                <div class="col-6 col-md">
                     <div class="text-muted">После налога 6%</div>
                     <div class="fw-bold fs-5 text-primary">{{ formatMoney(suppliersStore.stats.total_turnover_after_tax) }}</div>
                     <small class="text-muted">Налог: {{ formatMoney(Number(suppliersStore.stats.total_turnover || 0) * 0.06) }}</small>
-                </div>
+                </div>-->
                 <div class="col-6 col-md">
                     <div class="text-muted">Всего сделок</div>
                     <div class="fw-bold fs-5">{{ suppliersStore.stats.total_sales_count ?? 0 }}</div>
