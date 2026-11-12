@@ -450,7 +450,8 @@ class SupplierController extends Controller
         $totalTurnover = (clone $salesQuery)->sum('total_price');
 
         // Количество поставщиков с реальными сделками
-        $totalSuppliers = (clone $suppliers->getQuery())
+        $totalSuppliers = Supplier::query()
+            ->whereHas('sales', $realSalesFilter)
             ->count();
 
         return response()->json([
