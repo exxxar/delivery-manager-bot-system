@@ -14,6 +14,30 @@
                     <h1>Список администраторов</h1>
                     <p>Просматривайте администраторов и управляйте их данными и активностью.</p>
                 </div>
+
+
+                <button
+                    type="button"
+                    class="without-percent-card"
+                    @click="openWithoutPercentModal"
+                    :disabled="loadingWithoutPercent"
+                >
+                    <span class="without-percent-icon">
+                        <i class="fa-solid fa-percent"></i>
+                    </span>
+
+                                    <span class="without-percent-copy">
+                        <strong>Администраторы без процента</strong>
+                        <small>Нажмите, чтобы посмотреть список и настроить процент</small>
+                    </span>
+
+                                    <span class="without-percent-count">
+                        {{ loadingWithoutPercent ? '…' : withoutPercentCount }}
+                    </span>
+
+                    <i class="fa-solid fa-chevron-right without-percent-arrow"></i>
+                </button>
+
             </header>
 
             <section class="agents-panel" aria-label="Список администраторов">
@@ -47,21 +71,236 @@
                 </button>
             </div>
         </nav>
+
+
+        <!-- Администраторы без процента -->
+        <div
+            class="modal fade"
+            id="withoutPercentModal"
+            tabindex="-1"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <div class="modal-content without-percent-modal">
+
+                    <div class="modal-header">
+                        <div>
+                            <span class="modal-eyebrow">ТРЕБУЕТСЯ НАСТРОЙКА</span>
+                            <h5 class="modal-title">Администраторы без процента</h5>
+                            <p class="modal-subtitle mb-0">
+                                Выберите сотрудника, чтобы настроить процент в его профиле.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div v-if="loadingWithoutPercent" class="text-center py-5">
+                            <div class="spinner-border text-primary"></div>
+                        </div>
+
+                        <div
+                            v-else-if="withoutPercentAgents.length === 0"
+                            class="empty-without-percent"
+                        >
+                            <i class="fa-solid fa-circle-check"></i>
+                            <strong>Все проценты настроены</strong>
+                            <span>Администраторов без установленного процента нет.</span>
+                        </div>
+
+                        <div v-else class="without-percent-list">
+
+                            <article
+                                v-for="agent in withoutPercentAgents"
+                                :key="agent.id"
+                                class="without-percent-item"
+                            >
+                                <div class="without-percent-avatar">
+                                    <i class="fa-solid fa-user-tie"></i>
+                                </div>
+
+                                <div class="without-percent-person">
+                                    <strong>{{ agent.name }}</strong>
+                                    <span>{{ agent.phone || agent.user?.email || 'Контакт не указан' }}</span>
+                                    <small>Агент #{{ agent.id }}</small>
+                                </div>
+
+                                <span class="missing-percent-label">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            Не задан
+                        </span>
+
+                                <button
+                                    type="button"
+                                    class="edit-percent-button"
+                                    :disabled="!agent.user"
+                                    @click="openUserEditor(agent)"
+                                >
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    Настроить
+                                </button>
+                            </article>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                <span class="modal-footer-note">
+                    Найдено: <strong>{{ withoutPercentAgents.length }}</strong>
+                </span>
+
+                        <button
+                            type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal"
+                        >
+                            Закрыть
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Редактирование пользователя -->
+        <div
+            class="modal fade"
+            id="editUserPercentModal"
+            tabindex="-1"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Редактирование администратора</h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <UserForm
+                            v-if="selectedUser"
+                            :key="selectedUser.id"
+                            :initialData="selectedUser"
+                            @saved="onUserSaved"
+                        />
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </main>
 </template>
 
 <script setup>
 import AgentList from "@/Components/Agents/AgentList.vue";
 import BackBtn from "@/Components/BackBtn.vue";
+import axios from 'axios'
+import UserForm from "@/Components/Users/UserForm.vue"
 </script>
 
 <script>
 export default {
     name: 'AgentsPage',
+    components: {
+        UserForm,
+    },
+    data(){
+      return {
+          withoutPercentCount: 0,
+          withoutPercentAgents: [],
+          loadingWithoutPercent: false,
+          selectedUser: null,
+      }
+    },
+    mounted() {
+        this.loadWithoutPercent()
+    },
     methods: {
         goTo(name) {
             this.$router.push({ name });
         },
+
+        async loadWithoutPercent() {
+            this.loadingWithoutPercent = true
+
+            try {
+                const response = await axios.get('/api/agents/without-percent')
+
+                this.withoutPercentAgents = response.data.data || []
+                this.withoutPercentCount = Number(response.data.count || 0)
+
+            } catch (error) {
+                console.error('Ошибка загрузки администраторов без процента:', error)
+            } finally {
+                this.loadingWithoutPercent = false
+            }
+        },
+
+        async openWithoutPercentModal() {
+            await this.loadWithoutPercent()
+
+            this.$nextTick(() => {
+                const element = document.getElementById('withoutPercentModal')
+
+                if (element) {
+                    bootstrap.Modal.getOrCreateInstance(element).show()
+                }
+            })
+        },
+
+        openUserEditor(agent) {
+            if (!agent?.user) return
+
+            this.selectedUser = { ...agent.user }
+
+            this.$nextTick(() => {
+                const listModal = document.getElementById('withoutPercentModal')
+                const editModal = document.getElementById('editUserPercentModal')
+
+                const showEditor = () => {
+                    if (editModal) {
+                        bootstrap.Modal.getOrCreateInstance(editModal).show()
+                    }
+                }
+
+                if (listModal) {
+                    const instance = bootstrap.Modal.getInstance(listModal)
+
+                    if (instance && listModal.classList.contains('show')) {
+                        listModal.addEventListener('hidden.bs.modal', showEditor, { once: true })
+                        instance.hide()
+                        return
+                    }
+                }
+
+                showEditor()
+            })
+        },
+
+        async onUserSaved() {
+            const editModal = document.getElementById('editUserPercentModal')
+
+            if (editModal) {
+                bootstrap.Modal.getInstance(editModal)?.hide()
+            }
+
+            await this.loadWithoutPercent()
+
+            this.selectedUser = null
+        },
+
     },
 };
 </script>
@@ -263,4 +502,227 @@ export default {
     .bottom-action { padding: .65rem .75rem calc(.65rem + env(safe-area-inset-bottom)); }
     .bottom-action-spacer { height: 85px; }
 }
+
+
+.without-percent-card {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 0 1.5rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid #f1d9a8;
+    border-radius: 18px;
+    color: #684b17;
+    background: linear-gradient(110deg, #fffaf0, #fff 78%);
+    box-shadow: 0 7px 22px rgba(140, 100, 30, .07);
+    text-align: left;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.without-percent-card:hover {
+    transform: translateY(-2px);
+    border-color: #e8c477;
+    box-shadow: 0 11px 26px rgba(140, 100, 30, .12);
+}
+
+.without-percent-icon,
+.without-percent-avatar {
+    display: grid;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 14px;
+    color: #a86c12;
+    background: #ffedc7;
+    font-size: 1.15rem;
+}
+
+.without-percent-copy {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: .22rem;
+}
+
+.without-percent-copy strong {
+    color: #604515;
+    font-size: .96rem;
+    font-weight: 800;
+}
+
+.without-percent-copy small {
+    color: #94794c;
+    font-size: .78rem;
+}
+
+.without-percent-count {
+    min-width: 48px;
+    padding: .35rem .7rem;
+    border-radius: 12px;
+    color: #fff;
+    background: #c58a2c;
+    font-size: 1.2rem;
+    font-weight: 850;
+    text-align: center;
+}
+
+.without-percent-arrow {
+    color: #b28a4d;
+}
+
+.without-percent-modal {
+    overflow: hidden;
+    border: 0;
+    border-radius: 20px;
+    box-shadow: 0 22px 70px rgba(18, 39, 73, .2);
+}
+
+.modal-eyebrow {
+    display: block;
+    margin-bottom: .35rem;
+    color: #e44755;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .13em;
+}
+
+.modal-subtitle {
+    margin-top: .4rem;
+    color: #7b899e;
+    font-size: .82rem;
+}
+
+.without-percent-list {
+    display: grid;
+    gap: .65rem;
+}
+
+.without-percent-item {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .85rem;
+    border: 1px solid #e8edf5;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.without-percent-avatar {
+    color: #2463eb;
+    background: #edf3ff;
+}
+
+.without-percent-person {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: .18rem;
+}
+
+.without-percent-person strong {
+    color: #172b4d;
+    font-size: .9rem;
+}
+
+.without-percent-person span {
+    color: #63738c;
+    font-size: .78rem;
+}
+
+.without-percent-person small {
+    color: #9aa5b5;
+    font-size: .68rem;
+}
+
+.missing-percent-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .55rem;
+    border-radius: 8px;
+    color: #996313;
+    background: #fff3d9;
+    font-size: .7rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.edit-percent-button {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .75rem;
+    border: 1px solid #dbe6fb;
+    border-radius: 10px;
+    color: #2056b4;
+    background: #f4f7ff;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.edit-percent-button:hover:not(:disabled) {
+    border-color: #b9cef5;
+    background: #eaf1ff;
+}
+
+.empty-without-percent {
+    display: grid;
+    justify-items: center;
+    gap: .45rem;
+    padding: 2.5rem 1rem;
+    color: #7c8ca2;
+    text-align: center;
+}
+
+.empty-without-percent i {
+    color: #20a36b;
+    font-size: 2.2rem;
+}
+
+.empty-without-percent strong {
+    color: #233a5b;
+}
+
+.modal-footer-note {
+    margin-right: auto;
+    color: #8794a7;
+    font-size: .8rem;
+}
+
+@media (max-width: 640px) {
+    .without-percent-card {
+        gap: .65rem;
+        padding: .8rem;
+    }
+
+    .without-percent-copy strong {
+        font-size: .82rem;
+    }
+
+    .without-percent-copy small {
+        font-size: .68rem;
+    }
+
+    .without-percent-item {
+        flex-wrap: wrap;
+        gap: .6rem;
+    }
+
+    .without-percent-person {
+        flex-basis: calc(100% - 55px);
+    }
+
+    .edit-percent-button {
+        margin-left: auto;
+    }
+}
+
 </style>

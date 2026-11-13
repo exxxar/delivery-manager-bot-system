@@ -22,6 +22,36 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AgentController extends Controller
 {
+
+
+
+    /**
+     * Администраторы, у которых не установлен персональный процент.
+     * Процент хранится в таблице users.
+     */
+    public function withoutPercent(Request $request)
+    {
+        $agents = Agent::query()
+            ->whereHas('user', function ($query) {
+                $query->whereNull('percent')
+                    ->orWhere('percent', 0);
+            })
+            ->with(['user:id,name,email,percent'])
+            ->orderBy('name')
+            ->get([
+                'id',
+                'user_id',
+                'name',
+                'phone',
+            ]);
+
+        return response()->json([
+            'count' => $agents->count(),
+            'data' => $agents,
+        ]);
+    }
+
+
     public function agentSales(Request $request, $id)
     {
         $agent = Agent::findOrFail($id);

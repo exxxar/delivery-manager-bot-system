@@ -25,6 +25,169 @@ use Telegram\Bot\FileUpload\InputFile;
 class SaleController extends Controller
 {
 
+    /**
+     * Поиск дублирующихся сделок за период.
+     *
+     * Критерии:
+     * - одинаковая сумма;
+     * - одинаковый агент;
+     * - одинаковый поставщик.
+     *
+     * Период определяется по actual_delivery_date.
+     */
+    public function findDuplicates(Request $request)
+    {
+        $botUser = $request->botUser;
+
+        if (!$botUser) {
+            return response()->json([
+                'message' => 'Пользователь не авторизован'
+            ], 401);
+        }
+
+        if ($botUser->role < RoleEnum::ADMIN->value) {
+            return response()->json([
+                'message' => 'Недостаточно прав'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+        ]);
+
+        $dateFrom = Carbon::parse($validated['date_from'])->startOfDay();
+        $dateTo = Carbon::parse($validated['date_to'])->endOfDay();
+
+        // Находим комбинации, которые встречаются более одного раза.
+        $duplicateGroups = Sale::query()
+            ->without(['product', 'agent', 'customer', 'supplier', 'creator', 'category'])
+            ->whereNotNull('actual_delivery_date')
+            ->whereBetween('actual_delivery_date', [
+                $dateFrom,
+                $dateTo,
+            ])
+            ->whereNotNull('total_price')
+            ->select([
+                'agent_id',
+                'supplier_id',
+                'total_price',
+            ])
+            ->selectRaw('COUNT(*) as duplicate_count')
+            ->groupBy('agent_id', 'supplier_id', 'total_price')
+            ->havingRaw('COUNT(*) > 1')
+            ->get();
+
+        $groups = $duplicateGroups->map(function ($group) use ($dateFrom, $dateTo) {
+            $sales = Sale::query()
+                ->with([
+                    'agent:id,name',
+                    'supplier:id,name',
+                    'product:id,name',
+                    'creator:id,name',
+                ])
+                ->whereBetween('actual_delivery_date', [
+                    $dateFrom,
+                    $dateTo,
+                ])
+                ->where('total_price', $group->total_price)
+                ->where(function ($query) use ($group) {
+                    if ($group->agent_id === null) {
+                        $query->whereNull('agent_id');
+                    } else {
+                        $query->where('agent_id', $group->agent_id);
+                    }
+                })
+                ->where(function ($query) use ($group) {
+                    if ($group->supplier_id === null) {
+                        $query->whereNull('supplier_id');
+                    } else {
+                        $query->where('supplier_id', $group->supplier_id);
+                    }
+                })
+                ->orderBy('actual_delivery_date')
+                ->orderBy('id')
+                ->get();
+
+            return [
+                'agent_id' => $group->agent_id,
+                'agent_name' => $sales->first()?->agent?->name ?? 'Агент не указан',
+                'supplier_id' => $group->supplier_id,
+                'supplier_name' => $sales->first()?->supplier?->name ?? 'Поставщик не указан',
+                'total_price' => (float) $group->total_price,
+                'count' => $sales->count(),
+                'sales' => $sales,
+            ];
+        });
+
+        // Группируем по агенту.
+        $byAgents = $groups
+            ->groupBy(fn($group) => $group['agent_id'] ?? 'without-agent')
+            ->map(function ($agentGroups) {
+                $first = $agentGroups->first();
+
+                return [
+                    'agent_id' => $first['agent_id'],
+                    'agent_name' => $first['agent_name'],
+                    'groups_count' => $agentGroups->count(),
+                    'duplicates_count' => $agentGroups->sum('count'),
+                    'groups' => $agentGroups->values(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'date_from' => $validated['date_from'],
+            'date_to' => $validated['date_to'],
+            'groups_count' => $groups->count(),
+            'duplicates_count' => $groups->sum('count'),
+            'extra_duplicates_count' => $groups->sum(
+                fn($group) => max(0, $group['count'] - 1)
+            ),
+            'agents' => $byAgents,
+        ]);
+    }
+
+
+    /**
+     * Удаление сделки из найденной группы дублей.
+     */
+    public function destroyDuplicate(Request $request, $id)
+    {
+        $botUser = $request->botUser;
+
+        if (!$botUser) {
+            return response()->json([
+                'message' => 'Пользователь не авторизован'
+            ], 401);
+        }
+
+        if ($botUser->role < RoleEnum::SUPERADMIN->value) {
+            return response()->json([
+                'message' => 'Удалять дубли могут только старшие администраторы'
+            ], 403);
+        }
+
+        $sale = Sale::query()
+            ->with(['product', 'agent', 'supplier', 'customer', 'creator', 'category'])
+            ->findOrFail($id);
+
+        $saleInfo = $sale->toTelegramText();
+
+        $sale->delete();
+
+        UserLog::logSuper(
+            "#удаление_дубля_сделки\n" .
+            $saleInfo . "\n" .
+            $botUser->getUserTelegramLink()
+        );
+
+        return response()->json([
+            'message' => "Сделка #{$id} удалена",
+            'deleted_id' => (int) $id,
+        ]);
+    }
+
     public function bulkDelete(Request $request)
     {
         $botUser = $request->botUser;

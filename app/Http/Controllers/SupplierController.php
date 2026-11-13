@@ -22,6 +22,31 @@ use Maatwebsite\Excel\Facades\Excel;
 class SupplierController extends Controller
 {
 
+    /**
+     * Поставщики, у которых не задан процент.
+     */
+    public function withoutPercent()
+    {
+        $suppliers = Supplier::query()
+            ->where(function ($query) {
+                $query->whereNull('percent')
+                    ->orWhere('percent', 0);
+            })
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'phone',
+                'email',
+                'percent',
+            ]);
+
+        return response()->json([
+            'count' => $suppliers->count(),
+            'data' => $suppliers,
+        ]);
+    }
+
     public function supplierSales(Request $request, $id)
     {
         $botUser = $request->botUser;

@@ -152,6 +152,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             // Создать нового агента
             Route::post('/', [AgentController::class, 'store']);
 
+            Route::get('/without-percent', [AgentController::class, 'withoutPercent']);
 
 
             Route::post('/{agentId}/login-link', [AgentLoginLinkController::class, 'store']);
@@ -226,6 +227,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
     Route::prefix('suppliers')
         ->middleware(["tg.role:agent"])
         ->group(function () {
+            Route::get('/without-percent', [SupplierController::class, 'withoutPercent']);
             Route::get('/with-products', [SupplierController::class, 'indexWithProducts']);
             Route::get('/fetch-next-products/{supplierId}/products', [SupplierController::class, 'nextProducts']);
             Route::post('/remove-all', [SupplierController::class, 'removeAll'])
@@ -324,6 +326,12 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
 
             Route::get('/approve/{id}', [SaleController::class, 'approve'])
                 ->middleware(["tg.role:admin"]);
+
+            // Поиск дублей
+            Route::get('/duplicates', [SaleController::class, 'findDuplicates']);
+
+// Удаление найденного дубля
+            Route::delete('/duplicates/{id}', [SaleController::class, 'destroyDuplicate']);
 
             Route::get('/decline/{id}', [SaleController::class, 'decline'])
                 ->middleware(["tg.role:admin"]);

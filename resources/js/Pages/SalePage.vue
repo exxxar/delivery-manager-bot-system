@@ -44,6 +44,57 @@ import AgentInfo from "@/Components/Agents/AgentInfo.vue";
                 </template>
             </header>
 
+            <!-- Поиск дублирующихся сделок -->
+            <section class="duplicates-panel">
+                <div class="duplicates-panel__info">
+                    <div class="duplicates-panel__icon">
+                        <i class="fa-solid fa-copy"></i>
+                    </div>
+
+                    <div>
+                        <h3>Проверка дублирующихся сделок</h3>
+                        <p>Поиск совпадений по сумме, агенту и поставщику</p>
+                    </div>
+                </div>
+
+                <div class="duplicates-panel__controls">
+                    <div class="duplicates-panel__date">
+                        <label for="duplicatesDateFrom">С даты доставки</label>
+                        <input
+                            id="duplicatesDateFrom"
+                            type="date"
+                            class="form-control"
+                            v-model="duplicateFilters.date_from"
+                            :max="duplicateFilters.date_to || undefined"
+                        />
+                    </div>
+
+                    <div class="duplicates-panel__date">
+                        <label for="duplicatesDateTo">По дату доставки</label>
+                        <input
+                            id="duplicatesDateTo"
+                            type="date"
+                            class="form-control"
+                            v-model="duplicateFilters.date_to"
+                            :min="duplicateFilters.date_from || undefined"
+                        />
+                    </div>
+
+                    <button
+                        type="button"
+                        class="duplicates-panel__button"
+                        :disabled="duplicatesLoading || !duplicateFilters.date_from || !duplicateFilters.date_to"
+                        @click="findDuplicates"
+                    >
+                        <i
+                            class="fa-solid"
+                            :class="duplicatesLoading ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'"
+                        ></i>
+                        <span>{{ duplicatesLoading ? 'Поиск...' : 'Поиск дублей' }}</span>
+                    </button>
+                </div>
+            </section>
+
             <section class="sales-page__content" aria-label="Список доставок">
                 <div class="sales-page__section-heading">
                     <div>
@@ -174,6 +225,7 @@ import AgentInfo from "@/Components/Agents/AgentInfo.vue";
 
 <script>
 import { useUsersStore } from "@/stores/users.ts";
+import axios from 'axios';
 
 export default {
     data() {
@@ -181,6 +233,22 @@ export default {
             userStore: useUsersStore(),
             loading: false,
             selectedAgent: null,
+            duplicateFilters: {
+                date_from: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+                    .toLocaleDateString('en-CA'),
+                date_to: new Date().toLocaleDateString('en-CA'),
+            },
+
+            duplicateResults: {
+                groups_count: 0,
+                duplicates_count: 0,
+                extra_duplicates_count: 0,
+                agents: [],
+            },
+
+            duplicatesLoading: false,
+            deletingDuplicateId: null,
+            selectedDuplicate: null,
         };
     },
     computed: {
@@ -189,6 +257,151 @@ export default {
         },
     },
     methods: {
+        async findDuplicates() {
+            if (!this.duplicateFilters.date_from || !this.duplicateFilters.date_to) {
+                return;
+            }
+
+            if (this.duplicateFilters.date_from > this.duplicateFilters.date_to) {
+                alert('Начальная дата не может быть больше конечной');
+                return;
+            }
+
+            this.duplicatesLoading = true;
+
+            try {
+                const response = await axios.get('/api/sales/duplicates', {
+                    params: {
+                        date_from: this.duplicateFilters.date_from,
+                        date_to: this.duplicateFilters.date_to,
+                    },
+                });
+
+                this.duplicateResults = response.data;
+
+                this.$nextTick(() => {
+                    const modalElement = document.getElementById('duplicatesModal');
+
+                    if (modalElement && window.bootstrap?.Modal) {
+                        window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка поиска дублей:', error);
+
+                alert(
+                    error.response?.data?.message ||
+                    'Не удалось выполнить поиск дублирующихся сделок'
+                );
+            } finally {
+                this.duplicatesLoading = false;
+            }
+        },
+
+        formatDuplicateMoney(value) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                maximumFractionDigits: 2,
+            }).format(Number(value || 0));
+        },
+
+        formatDuplicateDate(value) {
+            if (!value) return '—';
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) return value;
+
+            return date.toLocaleDateString('ru-RU');
+        },
+
+        duplicateStatusLabel(status) {
+            const labels = {
+                pending: 'Ожидание',
+                assigned: 'В работе',
+                delivered: 'Доставляется',
+                completed: 'Завершено',
+                rejected: 'Отклонено',
+            };
+
+            return labels[status] || 'Неизвестно';
+        },
+
+        confirmDeleteDuplicate(sale) {
+            this.selectedDuplicate = sale;
+
+            this.$nextTick(() => {
+                const resultsModal = document.getElementById('duplicatesModal');
+                const confirmModal = document.getElementById('confirmDuplicateDeleteModal');
+
+                const showConfirmation = () => {
+                    if (confirmModal && window.bootstrap?.Modal) {
+                        window.bootstrap.Modal.getOrCreateInstance(confirmModal).show();
+                    }
+                };
+
+                if (resultsModal?.classList.contains('show')) {
+                    resultsModal.addEventListener(
+                        'hidden.bs.modal',
+                        showConfirmation,
+                        { once: true }
+                    );
+
+                    window.bootstrap.Modal.getInstance(resultsModal)?.hide();
+                } else {
+                    showConfirmation();
+                }
+            });
+        },
+
+        async deleteDuplicate() {
+            if (!this.selectedDuplicate?.id || this.deletingDuplicateId !== null) {
+                return;
+            }
+
+            const saleId = this.selectedDuplicate.id;
+
+            this.deletingDuplicateId = saleId;
+
+            try {
+                await axios.delete(`/api/sales/duplicates/${saleId}`);
+
+                const confirmModal = document.getElementById(
+                    'confirmDuplicateDeleteModal'
+                );
+
+                if (confirmModal) {
+                    const instance = bootstrap.Modal.getInstance(confirmModal);
+
+                    if (instance) {
+                        await new Promise(resolve => {
+                            confirmModal.addEventListener(
+                                'hidden.bs.modal',
+                                resolve,
+                                { once: true }
+                            );
+
+                            instance.hide();
+                        });
+                    }
+                }
+
+                this.selectedDuplicate = null;
+
+                await this.findDuplicates();
+
+            } catch (error) {
+                console.error('Ошибка удаления дубля:', error);
+
+                alert(
+                    error.response?.data?.message ||
+                    'Не удалось удалить сделку'
+                );
+            } finally {
+                this.deletingDuplicateId = null;
+            }
+        },
         openAgentInfoModal(agent) {
             this.selectedAgent = null;
             this.$nextTick(() => {
@@ -745,6 +958,348 @@ export default {
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: .01ms !important;
+    }
+}
+
+/* Панель поиска дублей */
+.duplicates-panel {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e7ecf3;
+    border-radius: 20px;
+    box-shadow: 0 8px 26px rgba(24, 39, 75, .045);
+}
+
+.duplicates-panel__info {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 230px;
+}
+
+.duplicates-panel__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    color: #d94854;
+    background: #fff0f1;
+    border-radius: 14px;
+    font-size: 19px;
+}
+
+.duplicates-panel__info h3 {
+    margin: 0;
+    color: #17243b;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.duplicates-panel__info p {
+    margin: 5px 0 0;
+    color: #718096;
+    font-size: 12px;
+}
+
+.duplicates-panel__controls {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.duplicates-panel__date {
+    min-width: 145px;
+}
+
+.duplicates-panel__date label {
+    display: block;
+    margin-bottom: 5px;
+    color: #718096;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.duplicates-panel__date input {
+    min-height: 43px;
+    border-color: #e1e7f0;
+    border-radius: 11px;
+    font-size: 13px;
+}
+
+.duplicates-panel__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 43px;
+    padding: 10px 17px;
+    color: #fff;
+    background: linear-gradient(135deg, #e5484d, #cf303c);
+    border: 0;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 750;
+    transition: .2s ease;
+}
+
+.duplicates-panel__button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 16px rgba(229, 72, 77, .2);
+}
+
+.duplicates-panel__button:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+/* Статистика */
+.duplicates-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.duplicates-stat {
+    padding: 16px;
+    background: #f4f7fc;
+    border: 1px solid #e9eef6;
+    border-radius: 14px;
+}
+
+.duplicates-stat span,
+.duplicates-stat strong {
+    display: block;
+}
+
+.duplicates-stat span {
+    color: #718096;
+    font-size: 12px;
+}
+
+.duplicates-stat strong {
+    margin-top: 5px;
+    color: #17243b;
+    font-size: 25px;
+    font-weight: 850;
+}
+
+.duplicates-stat--danger {
+    background: #fff3f3;
+    border-color: #ffe0e0;
+}
+
+.duplicates-stat--danger strong {
+    color: #dc3545;
+}
+
+/* Группы */
+.duplicate-agent {
+    margin-bottom: 18px;
+    overflow: hidden;
+    border: 1px solid #e6ebf2;
+    border-radius: 15px;
+}
+
+.duplicate-agent__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 17px;
+    background: #f4f7fc;
+}
+
+.duplicate-agent__header h6 {
+    margin: 0;
+    color: #17243b;
+    font-weight: 800;
+}
+
+.duplicate-agent__header small {
+    display: block;
+    margin-top: 4px;
+    color: #718096;
+    font-size: 12px;
+}
+
+.duplicate-agent__badge {
+    display: grid;
+    place-items: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    color: #fff;
+    background: #dc3545;
+    border-radius: 10px;
+    font-weight: 800;
+}
+
+.duplicate-group {
+    padding: 14px 16px;
+    border-top: 1px solid #edf0f5;
+}
+
+.duplicate-group__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.duplicate-group__header strong,
+.duplicate-group__header span {
+    display: block;
+}
+
+.duplicate-group__header strong {
+    color: #17243b;
+    font-size: 15px;
+    font-weight: 850;
+}
+
+.duplicate-group__header div > span {
+    margin-top: 3px;
+    color: #718096;
+    font-size: 12px;
+}
+
+.duplicate-sales {
+    display: grid;
+    gap: 8px;
+}
+
+.duplicate-sale {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    background: #fafbfd;
+    border: 1px solid #edf0f5;
+    border-radius: 11px;
+}
+
+.duplicate-sale__main {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.duplicate-sale__main strong {
+    color: #2563eb;
+    font-size: 13px;
+}
+
+.duplicate-sale__main span {
+    overflow: hidden;
+    color: #17243b;
+    font-size: 13px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+}
+
+.duplicate-sale__main small {
+    color: #718096;
+    font-size: 11px;
+}
+
+.duplicate-sale__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.duplicates-empty {
+    padding: 45px 15px;
+    text-align: center;
+}
+
+.duplicates-empty > i {
+    color: #16a36a;
+    font-size: 42px;
+}
+
+.duplicates-empty h5 {
+    margin-top: 15px;
+    color: #17243b;
+    font-weight: 800;
+}
+
+.duplicates-empty p {
+    color: #718096;
+    font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .duplicates-panel {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .duplicates-panel__controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .duplicates-panel__button {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 575px) {
+    .duplicates-panel {
+        padding: 15px;
+        border-radius: 16px;
+    }
+
+    .duplicates-panel__controls {
+        grid-template-columns: 1fr;
+    }
+
+    .duplicates-panel__button {
+        grid-column: auto;
+        width: 100%;
+    }
+
+    .duplicates-stats {
+        gap: 6px;
+    }
+
+    .duplicates-stat {
+        padding: 10px;
+    }
+
+    .duplicates-stat span {
+        font-size: 10px;
+    }
+
+    .duplicates-stat strong {
+        font-size: 20px;
+    }
+
+    .duplicate-sale {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .duplicate-sale__actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .duplicate-group__header {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 </style>

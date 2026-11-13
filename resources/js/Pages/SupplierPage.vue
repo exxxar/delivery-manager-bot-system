@@ -1,4 +1,5 @@
 <script setup>
+import axios from 'axios';
 import SupplierList from "@/Components/Suppliers/SupplierList.vue";
 import BackBtn from "@/Components/BackBtn.vue";
 import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
@@ -7,7 +8,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 <template>
     <div class="suppliers-page container-fluid ">
         <div class="suppliers-topbar">
-            <BackBtn />
+            <BackBtn/>
             <span class="page-kicker">СПРАВОЧНИК</span>
         </div>
 
@@ -25,6 +26,33 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
             </div>
         </header>
 
+        <section class="without-percent-card">
+            <div class="without-percent-info">
+                <div class="without-percent-icon">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
+
+                <div>
+                    <strong>Поставщики без процента</strong>
+                    <p>Поставщики, для которых не настроен размер отчислений</p>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="without-percent-btn"
+                @click="openWithoutPercentModal"
+            >
+        <span v-if="loadingWithoutPercent">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+        </span>
+                <template v-else>
+                    {{ withoutPercentCount }}
+                    <i class="fa-solid fa-arrow-right"></i>
+                </template>
+            </button>
+        </section>
+
         <section class="suppliers-content" aria-label="Список поставщиков">
             <div class="section-heading">
                 <div>
@@ -34,7 +62,7 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                 <span class="section-symbol"><i class="fa-solid fa-users"></i></span>
             </div>
 
-            <SupplierList />
+            <SupplierList ref="supplierList"/>
         </section>
 
         <nav class="bottom-action" aria-label="Действия с поставщиками">
@@ -55,7 +83,8 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
     </div>
 
     <!-- Модальное окно добавления поставщика -->
-    <div class="modal fade supplier-modal" id="newSupplierModal" tabindex="-1" aria-labelledby="newSupplierModalLabel" aria-hidden="true">
+    <div class="modal fade supplier-modal" id="newSupplierModal" tabindex="-1" aria-labelledby="newSupplierModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header">
@@ -69,7 +98,110 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <SupplierForm @saved="fetchData" />
+                    <SupplierForm @saved="fetchData"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список поставщиков без процента -->
+    <div
+        class="modal fade"
+        id="withoutPercentModal"
+        tabindex="-1"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">
+                            <i class="fa-solid fa-percent text-primary me-2"></i>
+                            Поставщики без процента
+                        </h5>
+                        <small class="text-muted">
+                            Найдено: {{ withoutPercentCount }}
+                        </small>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+
+                <div class="modal-body">
+                    <div v-if="loadingWithoutPercent" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+
+                    <div
+                        v-else-if="withoutPercentSuppliers.length === 0"
+                        class="text-center text-muted py-4"
+                    >
+                        <i class="fa-solid fa-circle-check fs-1 text-success mb-3"></i>
+                        <p class="mb-0">Все поставщики имеют настроенный процент.</p>
+                    </div>
+
+                    <div v-else class="list-group">
+                        <div
+                            v-for="supplier in withoutPercentSuppliers"
+                            :key="supplier.id"
+                            class="list-group-item d-flex align-items-center justify-content-between gap-3"
+                        >
+                            <div class="min-width-0">
+                                <div class="fw-bold">{{ supplier.name }}</div>
+                                <small class="text-muted">
+                                    {{ supplier.phone || supplier.email || 'Контакты не указаны' }}
+                                </small>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="btn btn-primary btn-sm flex-shrink-0"
+                                @click="openSupplierPercentEditor(supplier)"
+                            >
+                                <i class="fa-solid fa-pen me-1"></i>
+                                Настроить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Редактирование процента поставщика -->
+    <div
+        class="modal fade"
+        id="editSupplierPercentModal"
+        tabindex="-1"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">Настройка процента поставщика</h5>
+                        <small class="text-muted">
+                            {{ selectedSupplier?.name }}
+                        </small>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+
+                <div class="modal-body">
+                    <SupplierForm
+                        v-if="selectedSupplier"
+                        :initial-data="selectedSupplier"
+                        @saved="onSupplierPercentSaved"
+                    />
                 </div>
             </div>
         </div>
@@ -77,19 +209,117 @@ import SupplierForm from "@/Components/Suppliers/SupplierForm.vue";
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
+    data() {
+        return {
+            withoutPercentCount: 0,
+            withoutPercentSuppliers: [],
+            loadingWithoutPercent: false,
+            selectedSupplier: null,
+        };
+    },
+
+    mounted() {
+        this.loadWithoutPercent();
+    },
+
     methods: {
         addSupplier() {
             const modalElement = document.getElementById("newSupplierModal");
+
             if (modalElement) {
                 bootstrap.Modal.getOrCreateInstance(modalElement).show();
             }
         },
+
         async fetchData() {
             const modalElement = document.getElementById("newSupplierModal");
+
             if (modalElement) {
                 bootstrap.Modal.getInstance(modalElement)?.hide();
             }
+
+            await this.refreshSupplierData();
+        },
+
+        async refreshSupplierData() {
+            await Promise.all([
+                this.loadWithoutPercent(),
+                this.$refs.supplierList?.fetchData?.(),
+            ]);
+        },
+
+        async loadWithoutPercent() {
+            this.loadingWithoutPercent = true;
+
+            try {
+                const response = await axios.get('/api/suppliers/without-percent');
+
+                this.withoutPercentSuppliers = response.data.data || [];
+                this.withoutPercentCount = Number(response.data.count || 0);
+            } catch (error) {
+                console.error(
+                    'Ошибка загрузки поставщиков без процента:',
+                    error
+                );
+            } finally {
+                this.loadingWithoutPercent = false;
+            }
+        },
+
+        async openWithoutPercentModal() {
+            await this.loadWithoutPercent();
+
+            this.$nextTick(() => {
+                const element = document.getElementById('withoutPercentModal');
+
+                if (element) {
+                    bootstrap.Modal.getOrCreateInstance(element).show();
+                }
+            });
+        },
+
+        openSupplierPercentEditor(supplier) {
+            if (!supplier?.id) return;
+
+            this.selectedSupplier = { ...supplier };
+
+            this.$nextTick(() => {
+                const listModal = document.getElementById('withoutPercentModal');
+                const editModal = document.getElementById('editSupplierPercentModal');
+
+                const showEditor = () => {
+                    if (editModal) {
+                        bootstrap.Modal.getOrCreateInstance(editModal).show();
+                    }
+                };
+
+                if (listModal?.classList.contains('show')) {
+                    listModal.addEventListener(
+                        'hidden.bs.modal',
+                        showEditor,
+                        { once: true }
+                    );
+
+                    bootstrap.Modal.getInstance(listModal)?.hide();
+                } else {
+                    showEditor();
+                }
+            });
+        },
+
+        async onSupplierPercentSaved() {
+            const editModal = document.getElementById('editSupplierPercentModal');
+
+            if (editModal) {
+                bootstrap.Modal.getInstance(editModal)?.hide();
+            }
+
+            await this.refreshSupplierData();
+
+            this.selectedSupplier = null;
         },
     },
 };
@@ -418,6 +648,82 @@ export default {
 @media (prefers-reduced-motion: reduce) {
     .add-supplier-btn {
         transition: none;
+    }
+}
+
+.without-percent-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 20px;
+    margin-bottom: 22px;
+    border: 1px solid #f2dfe1;
+    border-radius: 18px;
+    background: linear-gradient(120deg, #fff 0%, #fff5f5 100%);
+    box-shadow: 0 6px 20px rgba(28, 53, 102, 0.04);
+}
+
+.without-percent-info {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+}
+
+.without-percent-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    color: #d94752;
+    background: #ffeaec;
+    font-size: 1.2rem;
+}
+
+.without-percent-info strong {
+    display: block;
+    color: #18243b;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.without-percent-info p {
+    margin: 3px 0 0;
+    color: #758198;
+    font-size: 0.8rem;
+}
+
+.without-percent-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-width: 70px;
+    min-height: 42px;
+    padding: 9px 15px;
+    border: 0;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(120deg, #df4652, #f06b73);
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.18s ease;
+}
+
+.without-percent-btn:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+    .without-percent-card {
+        padding: 14px;
+    }
+
+    .without-percent-info p {
+        font-size: 0.72rem;
     }
 }
 </style>
