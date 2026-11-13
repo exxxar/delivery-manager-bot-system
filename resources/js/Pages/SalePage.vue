@@ -220,6 +220,199 @@ import AgentInfo from "@/Components/Agents/AgentInfo.vue";
                 </div>
             </div>
         </div>
+
+        <!-- Результаты поиска дублей -->
+        <div
+            class="modal fade sales-modal"
+            id="duplicateResultsModal"
+            tabindex="-1"
+            aria-labelledby="duplicateResultsModalTitle"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header sales-modal__header">
+                        <div class="sales-modal__title-wrap">
+                            <span class="sales-modal__icon sales-modal__icon--red">
+                                <i class="fa-solid fa-copy"></i>
+                            </span>
+                            <div>
+                                <h5 class="modal-title" id="duplicateResultsModalTitle">
+                                    Результаты проверки дублей
+                                </h5>
+                                <p>
+                                    Период доставки:
+                                    {{ duplicateResults.date_from || duplicateFilters.date_from }}
+                                    —
+                                    {{ duplicateResults.date_to || duplicateFilters.date_to }}
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+
+                    <div class="modal-body sales-modal__body">
+                        <div class="duplicates-stats">
+                            <div class="duplicates-stat">
+                                <span>Групп дублей</span>
+                                <strong>{{ duplicateResults.groups_count }}</strong>
+                            </div>
+                            <div class="duplicates-stat">
+                                <span>Всего сделок</span>
+                                <strong>{{ duplicateResults.duplicates_count }}</strong>
+                            </div>
+                            <div class="duplicates-stat duplicates-stat--danger">
+                                <span>Лишних сделок</span>
+                                <strong>{{ duplicateResults.extra_duplicates_count }}</strong>
+                            </div>
+                        </div>
+
+                        <template v-if="duplicateResults.agents.length">
+                            <section
+                                v-for="agent in duplicateResults.agents"
+                                :key="agent.agent_id ?? 'no-agent'"
+                                class="duplicate-agent"
+                            >
+                                <div class="duplicate-agent__header">
+                                    <div>
+                                        <h6>{{ agent.agent_name || 'Агент не указан' }}</h6>
+                                        <small>
+                                            {{ agent.groups_count || (agent.groups || []).length }} групп(ы)
+                                            · {{ agent.duplicates_count || 0 }} сделок
+                                        </small>
+                                    </div>
+                                    <span class="duplicate-agent__badge">
+                                        {{ agent.duplicates_count || 0 }}
+                                    </span>
+                                </div>
+
+                                <div
+                                    v-for="group in (agent.groups || [])"
+                                    :key="`${group.agent_id ?? 'x'}-${group.supplier_id ?? 'x'}-${group.total_price}`"
+                                    class="duplicate-group"
+                                >
+                                    <div class="duplicate-group__header">
+                                        <div>
+                                            <strong>{{ formatDuplicateMoney(group.total_price) }}</strong>
+                                            <span>Поставщик: {{ group.supplier_name || 'Не указан' }}</span>
+                                        </div>
+                                        <span class="badge text-bg-danger">
+                                            {{ group.count }} совпадения
+                                        </span>
+                                    </div>
+
+                                    <div class="duplicate-sales">
+                                        <article
+                                            v-for="sale in (group.sales || [])"
+                                            :key="sale.id"
+                                            class="duplicate-sale"
+                                        >
+                                            <div class="duplicate-sale__main">
+                                                <strong>Сделка №{{ sale.id }}</strong>
+                                                <span>{{ sale.title || sale.product?.name || 'Без названия' }}</span>
+                                                <small>
+                                                    Доставка: {{ formatDuplicateDate(sale.actual_delivery_date) }}
+                                                    · Сумма: {{ formatDuplicateMoney(sale.total_price) }}
+                                                </small>
+                                                <small>
+                                                    Статус: {{ duplicateStatusLabel(sale.status) }}
+                                                </small>
+                                            </div>
+
+                                            <div class="duplicate-sale__actions">
+                                                <button
+                                                    v-if="user?.role >= 4"
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    :disabled="deletingDuplicateId !== null"
+                                                    @click="confirmDeleteDuplicate(sale)"
+                                                >
+                                                    <i class="fa-solid fa-trash"></i>
+                                                    Удалить
+                                                </button>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </section>
+                        </template>
+
+                        <div v-else class="duplicates-empty">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <h5>Дубли не найдены</h5>
+                            <p>За выбранный период совпадающих сделок нет.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Подтверждение удаления дубля -->
+        <div
+            class="modal fade sales-modal"
+            id="confirmDuplicateDeleteModal"
+            tabindex="-1"
+            aria-labelledby="confirmDuplicateDeleteModalTitle"
+            aria-hidden="true"
+            data-bs-backdrop="static"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header sales-modal__header">
+                        <div class="sales-modal__title-wrap">
+                            <span class="sales-modal__icon sales-modal__icon--red">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </span>
+                            <div>
+                                <h5 class="modal-title" id="confirmDuplicateDeleteModalTitle">
+                                    Удалить сделку?
+                                </h5>
+                                <p>Действие можно будет отменить только через восстановление записи.</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Закрыть"
+                            :disabled="deletingDuplicateId !== null"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body sales-modal__body">
+                        <p v-if="selectedDuplicate" class="mb-3">
+                            Вы действительно хотите удалить сделку
+                            <strong>№{{ selectedDuplicate.id }}</strong>
+                            — {{ selectedDuplicate.title || 'Без названия' }}?
+                        </p>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button
+                                type="button"
+                                class="btn btn-light"
+                                data-bs-dismiss="modal"
+                                :disabled="deletingDuplicateId !== null"
+                            >
+                                Отмена
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-danger"
+                                :disabled="!selectedDuplicate || deletingDuplicateId !== null"
+                                @click="deleteDuplicate"
+                            >
+                                <i
+                                    class="fa-solid"
+                                    :class="deletingDuplicateId !== null ? 'fa-spinner fa-spin' : 'fa-trash'"
+                                ></i>
+                                {{ deletingDuplicateId !== null ? 'Удаление...' : 'Удалить' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </template>
 
@@ -234,9 +427,14 @@ export default {
             loading: false,
             selectedAgent: null,
             duplicateFilters: {
-                date_from: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-                    .toLocaleDateString('en-CA'),
-                date_to: new Date().toLocaleDateString('en-CA'),
+                date_from: (() => {
+                    const date = new Date();
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+                })(),
+                date_to: (() => {
+                    const date = new Date();
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                })(),
             },
 
             duplicateResults: {
@@ -258,12 +456,15 @@ export default {
     },
     methods: {
         async findDuplicates() {
+            if (this.duplicatesLoading) return;
+
             if (!this.duplicateFilters.date_from || !this.duplicateFilters.date_to) {
+                alert('Укажите начало и конец периода.');
                 return;
             }
 
             if (this.duplicateFilters.date_from > this.duplicateFilters.date_to) {
-                alert('Начальная дата не может быть больше конечной');
+                alert('Начало периода не может быть позже его окончания.');
                 return;
             }
 
@@ -277,21 +478,40 @@ export default {
                     },
                 });
 
-                this.duplicateResults = response.data;
+                // Laravel может вернуть как сам объект, так и объект внутри data.
+                let result = response.data;
+                if (result?.data && !Array.isArray(result.agents)) {
+                    result = result.data;
+                }
 
-                this.$nextTick(() => {
-                    const modalElement = document.getElementById('duplicatesModal');
+                console.log('Результат поиска дублей:', result);
 
-                    if (modalElement && window.bootstrap?.Modal) {
-                        window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
-                    }
-                });
+                const agents = Array.isArray(result?.agents) ? result.agents : [];
+
+                this.duplicateResults = {
+                    date_from: result?.date_from || this.duplicateFilters.date_from,
+                    date_to: result?.date_to || this.duplicateFilters.date_to,
+                    groups_count: Number(result?.groups_count || 0),
+                    duplicates_count: Number(result?.duplicates_count || 0),
+                    extra_duplicates_count: Number(result?.extra_duplicates_count || 0),
+                    agents,
+                };
+
+                await this.$nextTick();
+
+                const modalElement = document.getElementById('duplicateResultsModal');
+                if (!modalElement || !window.bootstrap?.Modal) {
+                    console.error('Не найден Bootstrap modal duplicateResultsModal или Bootstrap JS.');
+                    alert('Не удалось открыть окно результатов. Проверьте подключение Bootstrap JS.');
+                    return;
+                }
+
+                window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
             } catch (error) {
                 console.error('Ошибка поиска дублей:', error);
-
                 alert(
                     error.response?.data?.message ||
-                    'Не удалось выполнить поиск дублирующихся сделок'
+                    'Не удалось выполнить поиск дублей'
                 );
             } finally {
                 this.duplicatesLoading = false;
@@ -309,11 +529,13 @@ export default {
         formatDuplicateDate(value) {
             if (!value) return '—';
 
+            const parts = String(value).slice(0, 10).split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            }
+
             const date = new Date(value);
-
-            if (Number.isNaN(date.getTime())) return value;
-
-            return date.toLocaleDateString('ru-RU');
+            return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('ru-RU');
         },
 
         duplicateStatusLabel(status) {
@@ -329,25 +551,26 @@ export default {
         },
 
         confirmDeleteDuplicate(sale) {
+            if (!sale?.id || this.deletingDuplicateId !== null) return;
+
             this.selectedDuplicate = sale;
 
             this.$nextTick(() => {
-                const resultsModal = document.getElementById('duplicatesModal');
+                const resultsModal = document.getElementById('duplicateResultsModal');
                 const confirmModal = document.getElementById('confirmDuplicateDeleteModal');
 
+                if (!confirmModal || !window.bootstrap?.Modal) {
+                    alert('Не удалось открыть окно подтверждения удаления.');
+                    return;
+                }
+
                 const showConfirmation = () => {
-                    if (confirmModal && window.bootstrap?.Modal) {
-                        window.bootstrap.Modal.getOrCreateInstance(confirmModal).show();
-                    }
+                    window.bootstrap.Modal.getOrCreateInstance(confirmModal).show();
                 };
 
+                // Не держим два Bootstrap modal открытыми одновременно.
                 if (resultsModal?.classList.contains('show')) {
-                    resultsModal.addEventListener(
-                        'hidden.bs.modal',
-                        showConfirmation,
-                        { once: true }
-                    );
-
+                    resultsModal.addEventListener('hidden.bs.modal', showConfirmation, { once: true });
                     window.bootstrap.Modal.getInstance(resultsModal)?.hide();
                 } else {
                     showConfirmation();
@@ -361,39 +584,30 @@ export default {
             }
 
             const saleId = this.selectedDuplicate.id;
-
             this.deletingDuplicateId = saleId;
 
             try {
                 await axios.delete(`/api/sales/duplicates/${saleId}`);
 
-                const confirmModal = document.getElementById(
-                    'confirmDuplicateDeleteModal'
-                );
+                const confirmModal = document.getElementById('confirmDuplicateDeleteModal');
+                const confirmInstance = confirmModal
+                    ? window.bootstrap?.Modal?.getInstance(confirmModal)
+                    : null;
 
-                if (confirmModal) {
-                    const instance = bootstrap.Modal.getInstance(confirmModal);
-
-                    if (instance) {
-                        await new Promise(resolve => {
-                            confirmModal.addEventListener(
-                                'hidden.bs.modal',
-                                resolve,
-                                { once: true }
-                            );
-
-                            instance.hide();
-                        });
-                    }
+                if (confirmInstance && confirmModal.classList.contains('show')) {
+                    await new Promise(resolve => {
+                        confirmModal.addEventListener('hidden.bs.modal', resolve, { once: true });
+                        confirmInstance.hide();
+                    });
                 }
 
                 this.selectedDuplicate = null;
+                this.deletingDuplicateId = null;
 
+                // Повторный поиск обновит статистику и список, а затем откроет окно результатов.
                 await this.findDuplicates();
-
             } catch (error) {
                 console.error('Ошибка удаления дубля:', error);
-
                 alert(
                     error.response?.data?.message ||
                     'Не удалось удалить сделку'
@@ -402,6 +616,7 @@ export default {
                 this.deletingDuplicateId = null;
             }
         },
+
         openAgentInfoModal(agent) {
             this.selectedAgent = null;
             this.$nextTick(() => {
@@ -465,9 +680,9 @@ export default {
     min-height: 100vh;
     padding-bottom: 112px;
     color: var(--sales-ink);
-   /* background:
-        radial-gradient(ellipse at 85% 0%, rgba(37, 99, 235, .07), transparent 34rem),
-        var(--sales-bg);*/
+    /* background:
+         radial-gradient(ellipse at 85% 0%, rgba(37, 99, 235, .07), transparent 34rem),
+         var(--sales-bg);*/
     background: transparent;
 }
 
