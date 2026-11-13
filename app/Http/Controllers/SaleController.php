@@ -39,112 +39,191 @@ class SaleController extends Controller
     {
         $botUser = $request->botUser;
 
+        // Проверка авторизации
         if (!$botUser) {
             return response()->json([
-                'message' => 'Пользователь не авторизован'
+                'message' => 'Пользователь не авторизован',
             ], 401);
         }
 
+        // Поиск доступен администраторам и выше
         if ($botUser->role < RoleEnum::ADMIN->value) {
             return response()->json([
-                'message' => 'Недостаточно прав'
+                'message' => 'Недостаточно прав для поиска дублей',
             ], 403);
         }
 
+        // Проверка периода
         $validated = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date|after_or_equal:date_from',
+            'date_from' => ['required', 'date'],
+            'date_to' => ['required', 'date', 'after_or_equal:date_from'],
         ]);
 
         $dateFrom = Carbon::parse($validated['date_from'])->startOfDay();
         $dateTo = Carbon::parse($validated['date_to'])->endOfDay();
 
-        // Находим комбинации, которые встречаются более одного раза.
+        /*
+         * 1. Ищем группы совпадений.
+         *
+         * Критерии дубля:
+         * - одинаковый agent_id;
+         * - одинаковый supplier_id;
+         * - одинаковый total_price;
+         * - одинаковая календарная дата actual_delivery_date.
+         *
+         * Дата доставки одновременно ограничивается выбранным периодом.
+         */
+
         $duplicateGroups = Sale::query()
-            ->without(['product', 'agent', 'customer', 'supplier', 'creator', 'category'])
+            ->without([
+                'product',
+                'agent',
+                'customer',
+                'supplier',
+                'creator',
+                'category',
+            ])
+            ->select([
+                'agent_id',
+                'supplier_id',
+                'total_price',
+            ])
+            ->selectRaw('DATE(actual_delivery_date) as delivery_date')
             ->whereNotNull('actual_delivery_date')
             ->whereBetween('actual_delivery_date', [
                 $dateFrom,
                 $dateTo,
             ])
             ->whereNotNull('total_price')
-            ->select([
+            ->groupBy(
                 'agent_id',
                 'supplier_id',
-                'total_price',
-            ])
-            ->selectRaw('COUNT(*) as duplicate_count')
-            ->groupBy('agent_id', 'supplier_id', 'total_price')
+                'total_price'
+            )
+            ->groupByRaw('DATE(actual_delivery_date)')
             ->havingRaw('COUNT(*) > 1')
+            ->orderBy('agent_id')
+            ->orderBy('supplier_id')
+            ->orderBy('delivery_date')
             ->get();
 
-        $groups = $duplicateGroups->map(function ($group) use ($dateFrom, $dateTo) {
+        /*
+         * 2. Получаем сделки каждой найденной группы.
+         */
+
+        $agents = [];
+
+        $groupsCount = 0;
+        $duplicatesCount = 0;
+        $extraDuplicatesCount = 0;
+
+        foreach ($duplicateGroups as $group) {
+
             $sales = Sale::query()
                 ->with([
-                    'agent:id,name',
-                    'supplier:id,name',
-                    'product:id,name',
-                    'creator:id,name',
+                    'product',
+                    'agent',
+                    'supplier',
                 ])
+                ->where('agent_id', $group->agent_id)
+                ->where('supplier_id', $group->supplier_id)
+                ->where('total_price', $group->getRawOriginal('total_price'))
+                ->whereDate('actual_delivery_date', $group->delivery_date)
                 ->whereBetween('actual_delivery_date', [
                     $dateFrom,
                     $dateTo,
                 ])
-                ->where('total_price', $group->total_price)
-                ->where(function ($query) use ($group) {
-                    if ($group->agent_id === null) {
-                        $query->whereNull('agent_id');
-                    } else {
-                        $query->where('agent_id', $group->agent_id);
-                    }
-                })
-                ->where(function ($query) use ($group) {
-                    if ($group->supplier_id === null) {
-                        $query->whereNull('supplier_id');
-                    } else {
-                        $query->where('supplier_id', $group->supplier_id);
-                    }
-                })
-                ->orderBy('actual_delivery_date')
                 ->orderBy('id')
                 ->get();
 
-            return [
-                'agent_id' => $group->agent_id,
-                'agent_name' => $sales->first()?->agent?->name ?? 'Агент не указан',
-                'supplier_id' => $group->supplier_id,
-                'supplier_name' => $sales->first()?->supplier?->name ?? 'Поставщик не указан',
+            // Дополнительная защита от групп с одной сделкой
+            if ($sales->count() < 2) {
+                continue;
+            }
+
+            $firstSale = $sales->first();
+
+            $agentId = $group->agent_id;
+            $supplierId = $group->supplier_id;
+
+            $agentName = $firstSale->agent?->name
+                ?? $firstSale->agent?->user?->name
+                ?? 'Агент не указан';
+
+            $supplierName = $firstSale->supplier?->name
+                ?? 'Поставщик не указан';
+
+            /*
+             * 3. Формируем группу дублей.
+             */
+
+            $duplicateGroup = [
+                'agent_id' => $agentId,
+                'agent_name' => $agentName,
+
+                'supplier_id' => $supplierId,
+                'supplier_name' => $supplierName,
+
+                'delivery_date' => $group->delivery_date,
+
                 'total_price' => (float) $group->total_price,
+
                 'count' => $sales->count(),
+
                 'sales' => $sales,
             ];
-        });
 
-        // Группируем по агенту.
-        $byAgents = $groups
-            ->groupBy(fn($group) => $group['agent_id'] ?? 'without-agent')
-            ->map(function ($agentGroups) {
-                $first = $agentGroups->first();
+            /*
+             * 4. Объединяем группы по агентам.
+             */
 
-                return [
-                    'agent_id' => $first['agent_id'],
-                    'agent_name' => $first['agent_name'],
-                    'groups_count' => $agentGroups->count(),
-                    'duplicates_count' => $agentGroups->sum('count'),
-                    'groups' => $agentGroups->values(),
+            $agentKey = $agentId ?? 'null';
+
+            if (!isset($agents[$agentKey])) {
+                $agents[$agentKey] = [
+                    'agent_id' => $agentId,
+                    'agent_name' => $agentName,
+
+                    'groups_count' => 0,
+                    'duplicates_count' => 0,
+
+                    'groups' => [],
                 ];
-            })
-            ->values();
+            }
+
+            $agents[$agentKey]['groups'][] = $duplicateGroup;
+
+            $agents[$agentKey]['groups_count']++;
+
+            $agents[$agentKey]['duplicates_count'] += $sales->count();
+
+            /*
+             * 5. Общая статистика.
+             */
+
+            $groupsCount++;
+
+            $duplicatesCount += $sales->count();
+
+            // Лишние сделки: из каждой группы оставляем одну
+            $extraDuplicatesCount += $sales->count() - 1;
+        }
+
+        /*
+         * 6. Возвращаем результат.
+         */
 
         return response()->json([
-            'date_from' => $validated['date_from'],
-            'date_to' => $validated['date_to'],
-            'groups_count' => $groups->count(),
-            'duplicates_count' => $groups->sum('count'),
-            'extra_duplicates_count' => $groups->sum(
-                fn($group) => max(0, $group['count'] - 1)
-            ),
-            'agents' => $byAgents,
+            'date_from' => $dateFrom->format('Y-m-d'),
+            'date_to' => $dateTo->format('Y-m-d'),
+
+            'groups_count' => $groupsCount,
+
+            'duplicates_count' => $duplicatesCount,
+
+            'extra_duplicates_count' => $extraDuplicatesCount,
+
+            'agents' => array_values($agents),
         ]);
     }
 
