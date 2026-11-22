@@ -551,7 +551,7 @@ class SaleController extends Controller
     {
         $sales = Sale::query()
             ->without([
-                "product", "agent", "customer", "supplier", "category"
+                "product", "agent", "customer",  "category"
             ])
             ->with(['supplier.percentages'])
             ->where("payment_type", 1)
