@@ -107,6 +107,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                 :field_visible="field_visible"
                                 :saleStatuses="saleStatuses"
                                 @toggle-selection="toggleSelection"
+                                @open-comments="openSaleComments"
                             >
                                 <template #actions>
                                     <div class="sale-card__dropdown">
@@ -166,7 +167,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                         :sale="sale"
                                         :field_visible="field_visible"
                                         :saleStatuses="saleStatuses"
-                                        @toggle-selection="toggleSelection">
+                                        @toggle-selection="toggleSelection"
+                                        @open-comments="openSaleComments">
                                         <template #actions>
                                             <div class="sale-card__dropdown">
                                                 <button
@@ -180,7 +182,6 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                             </div>
                                         </template>
                                     </SaleCard>
-
                                 </div>
 
                             </div>
@@ -314,7 +315,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                                 :sale="sale"
                                                 :field_visible="field_visible"
                                                 :saleStatuses="saleStatuses"
-                                                @toggle-selection="toggleSelection">
+                                                @toggle-selection="toggleSelection"
+                                                @open-comments="openSaleComments">
                                                 <template #actions>
                                                     <div class="sale-card__dropdown">
                                                         <button
@@ -629,7 +631,8 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                                             :sale="sale"
                                             :field_visible="field_visible"
                                             :saleStatuses="saleStatuses"
-                                            @toggle-selection="toggleSelection">
+                                            @toggle-selection="toggleSelection"
+                                            @open-comments="openSaleComments">
                                             <template #actions>
                                                 <div class="sale-card__dropdown">
                                                     <button
@@ -688,7 +691,7 @@ import SaleCard from "@/Components/Sales/Forms/SaleCard.vue";
                         <div class="modal-body">
                             <TaskCard
                                 v-if="selectedSale"
-                                :task="selectedSale"></TaskCard>
+                                :task="selectedSale" :initial-tab="selectedSaleInitialTab"></TaskCard>
                         </div>
                     </div>
                 </div>
@@ -791,6 +794,7 @@ export default {
             agentStore: useAgentsStore(),
             modalStore: useModalStore(),
             selectedSale: null,
+            selectedSaleInitialTab: 'info',
             showSaleActions: false,
             selectedActionSale: null,
             selectedActionContext: 'standard',
@@ -1083,12 +1087,16 @@ export default {
                 console.error('Ошибка удаления продажи:', error)
             }
         },
-        openView(sale) {
+        openView(sale, tab = 'info') {
+            this.selectedSaleInitialTab = tab
             this.selectedSale = null
             this.$nextTick(() => {
                 this.selectedSale = sale
                 new bootstrap.Modal(document.getElementById('viewSaleModal')).show()
             })
+        },
+        openSaleComments(sale) {
+            this.openView(sale, 'comments')
         },
         openConfirmPayment(sale) {
             this.selectedSale = null
@@ -2220,3 +2228,4 @@ p {
     }
 }
 </style>
+

@@ -327,6 +327,7 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::get('/approve/{id}', [SaleController::class, 'approve'])
                 ->middleware(["tg.role:admin"]);
 
+
             // Поиск дублей
             Route::get('/duplicates', [SaleController::class, 'findDuplicates']);
 
@@ -344,6 +345,13 @@ Route::middleware(['auth:sanctum','bot.user'])->group(function(){
             Route::post('/confirm-deal', [SaleController::class, 'confirmDeal']);
             Route::get('/self-sales', [AgentController::class, 'selfSales']);
             Route::get('/payment-document/{id}', [SaleController::class, 'getPaymentDocument']);
+
+            Route::get('/{saleId}/comments', [\App\Http\Controllers\SaleCommentController::class, 'index'])
+                ->whereNumber('saleId');
+
+            Route::post('/{saleId}/comments', [\App\Http\Controllers\SaleCommentController::class, 'store'])
+                ->whereNumber('saleId');
+
             // Получить конкретную продажу по ID
             Route::get('/{id}', [SaleController::class, 'show']);
             // Обновить данные продажи

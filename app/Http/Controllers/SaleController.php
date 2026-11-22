@@ -86,6 +86,7 @@ class SaleController extends Controller
             ->select([
                 'agent_id',
                 'supplier_id',
+
                 'total_price',
             ])
             ->selectRaw('DATE(actual_delivery_date) as delivery_date')
@@ -350,6 +351,7 @@ class SaleController extends Controller
         $agent = Agent::where('user_id', $botUser->id)->first();
 
         $query = Sale::query()
+            ->withCount('comments')
             ->with(['product', 'agent', 'customer', 'supplier', 'creator'])
             ->where(function ($q) use ($includeMissingDate, $includeStatus, $includeMissingPrice) {
                 $conditions = [];
@@ -427,6 +429,7 @@ class SaleController extends Controller
     public function index(Request $request)
     {
         $query = Sale::query()
+            ->withCount('comments')
             ->filter($request)
             ->sort($request);
 
@@ -550,6 +553,7 @@ class SaleController extends Controller
             ->without([
                 "product", "agent", "customer", "supplier", "category"
             ])
+            ->with(['supplier.percentages'])
             ->where("payment_type", 1)
             ->whereNull("verified_at");
 

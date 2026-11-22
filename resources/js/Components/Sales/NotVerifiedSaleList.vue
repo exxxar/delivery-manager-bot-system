@@ -1,3 +1,4 @@
+```
 <script setup>
 import SaleForm from "@/Components/Sales/SaleForm.vue";
 import Pagination from "@/Components/Pagination.vue";
@@ -173,21 +174,34 @@ import AgentList from "@/Components/Agents/AgentList.vue";
                             <span class="fw-bold">{{ sale.total_price }}</span> руб.
                         </p>
 
+                        <p
+                            v-if="getSupplierPercent(sale) !== null"
+                            class="mb-2 small d-flex align-items-center flex-wrap gap-2"
+                        >
+                            <span class="text-muted">Отчисления поставщика:</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                {{ formatPercent(getSupplierPercent(sale)) }}%
+                            </span>
+                            <span class="fw-bold text-success">
+                                {{ formatMoney(Number(sale.total_price || 0) * getSupplierPercent(sale) / 100) }} руб.
+                            </span>
+                        </p>
+
                         <p class="fw-bold mb-0 small" style="font-size:14px;">
                             Дата продажи {{ sale.sale_date || 'не указана' }}
                         </p>
 
-                        <div class="w-100 btn-group btn-group-sm">
+                        <div class="w-100 d-flex">
                             <button
                                 :disabled="sale.verified_at"
                                 type="button"
                                 @click="approve(sale)"
-                                class="btn btn-success p-2">Да
+                                class="btn btn-success p-2 w-100">Да
                             </button>
                             <button
                                 :disabled="sale.verified_at"
                                 @click="decline(sale)"
-                                class="btn btn-danger">Нет
+                                class="btn btn-danger w-100 ms-2">Нет
                             </button>
                         </div>
                     </li>
@@ -393,6 +407,29 @@ export default {
         agentClear(){
             this.filters.agent_id = null
             this.filters.agentName = null
+        },
+
+        getSupplierPercent(sale) {
+            const rawPercent = sale?.supplier?.total_percent ?? sale?.supplier?.percent;
+            if (rawPercent === null || rawPercent === undefined || rawPercent === '') {
+                return null;
+            }
+
+            const percent = Number(rawPercent);
+            return Number.isFinite(percent) ? percent : null;
+        },
+
+        formatPercent(value) {
+            return Number(value).toLocaleString('ru-RU', {
+                maximumFractionDigits: 2
+            });
+        },
+
+        formatMoney(value) {
+            return Number(value || 0).toLocaleString('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
 
 
@@ -617,3 +654,5 @@ p {
     .nvs-header-count { margin-left: 54px; flex-direction: row; gap: 7px; }
 }
 </style>
+
+```

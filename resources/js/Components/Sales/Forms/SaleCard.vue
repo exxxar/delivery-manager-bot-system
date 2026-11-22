@@ -149,6 +149,19 @@
                 К сделке не добавлен платёжный документ.
             </span>
         </div>
+
+        <div class="sale-card__footer">
+            <button
+                type="button"
+                class="sale-card__comments"
+                :aria-label="`Открыть комментарии к сделке №${sale.id}. Количество: ${sale.comments_count ?? 0}`"
+                @click.stop="$emit('open-comments', sale)"
+            >
+                <i class="fa-regular fa-comments"></i>
+                <span>{{ sale.comments_count ?? 0 }}</span>
+                <span>{{ commentWord(sale.comments_count ?? 0) }}</span>
+            </button>
+        </div>
     </article>
 </template>
 
@@ -156,7 +169,7 @@
 export default {
     name: 'SaleCard',
 
-    emits: ['toggle-selection'],
+    emits: ['toggle-selection', 'open-comments'],
 
     props: {
         sale: {
@@ -189,6 +202,17 @@ export default {
                     'rejected'
                 ].includes(this.sale.status)
             };
+        }
+    },
+
+    methods: {
+        commentWord(count) {
+            const n = Math.abs(Number(count) || 0) % 100;
+            const last = n % 10;
+            if (n > 10 && n < 20) return 'комментариев';
+            if (last > 1 && last < 5) return 'комментария';
+            if (last === 1) return 'комментарий';
+            return 'комментариев';
         }
     }
 };
@@ -506,6 +530,43 @@ export default {
     margin-top: 2px;
 }
 
+/* Нижняя строка с комментариями */
+.sale-card__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 11px;
+    border-top: 1px solid #edf0f5;
+}
+
+.sale-card__comments {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    color: #596780;
+    background: #f5f7fb;
+    border: 1px solid #e5eaf2;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: color .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.sale-card__comments i {
+    color: #2457d6;
+    font-size: 13px;
+}
+
+.sale-card__comments:hover,
+.sale-card__comments:focus-visible {
+    color: #173b91;
+    background: #eaf0ff;
+    border-color: #c5d4fa;
+    outline: none;
+}
+
 /* Мобильная версия */
 @media (max-width: 576px) {
     .sale-card__header {
@@ -559,3 +620,4 @@ export default {
     }
 }
 </style>
+
