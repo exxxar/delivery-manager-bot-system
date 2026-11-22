@@ -410,12 +410,23 @@ export default {
         },
 
         getSupplierPercent(sale) {
-            const rawPercent = sale?.supplier?.total_percent ?? sale?.supplier?.percent;
-            if (rawPercent === null || rawPercent === undefined || rawPercent === '') {
+            const supplier = sale?.supplier;
+
+            if (!supplier) {
                 return null;
             }
 
-            const percent = Number(rawPercent);
+            const percentages = supplier.percentages;
+
+            // Если есть дополнительные активные проценты — используем их сумму.
+            if (Array.isArray(percentages) && percentages.length > 0) {
+                const total = Number(supplier.total_percent ?? 0);
+                return Number.isFinite(total) ? total : null;
+            }
+
+            // Если дополнительных процентов нет — используем базовый процент поставщика.
+            const percent = Number(supplier.percent ?? 0);
+
             return Number.isFinite(percent) ? percent : null;
         },
 
