@@ -188,7 +188,7 @@ import AgentList from "@/Components/Agents/AgentList.vue";
                         </p>
 
                         <p class="fw-bold mb-0 small" style="font-size:14px;">
-                            Дата продажи {{ sale.sale_date || 'не указана' }}
+                            Дата продажи {{ sale.actual_delivery_date || 'не указана' }}
                         </p>
 
                         <div class="w-100 d-flex">

@@ -46,13 +46,6 @@ class SaleController extends Controller
             ], 401);
         }
 
-        // Поиск доступен администраторам и выше
-        if ($botUser->role < RoleEnum::ADMIN->value) {
-            return response()->json([
-                'message' => 'Недостаточно прав для поиска дублей',
-            ], 403);
-        }
-
         // Проверка периода
         $validated = $request->validate([
             'date_from' => ['required', 'date'],

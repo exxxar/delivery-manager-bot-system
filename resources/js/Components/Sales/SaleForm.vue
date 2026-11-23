@@ -168,6 +168,27 @@ const today = new Date().toISOString().split('T')[0]
                     </div>
                 </template>
 
+                <!-- Предварительный расчёт отчисления поставщика -->
+                <div
+                    v-if="!isEdit && form.supplier_id && supplierPercent !== null"
+                    class="supplier-contribution-preview mb-3"
+                >
+                    <div class="d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <div class="supplier-contribution-preview__label">
+                                <i class="fa-solid fa-percent me-1"></i>
+                                Ваше отчисление от поставщика
+                            </div>
+                            <div class="supplier-contribution-preview__hint">
+                                {{ formatPercent(supplierPercent) }}% от суммы сделки
+                            </div>
+                        </div>
+                        <div class="supplier-contribution-preview__amount">
+                            {{ formatMoney(supplierContribution) }} руб.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Кнопка отправки -->
                 <button :disabled="spent_time > 0 || salesStore.loading"
 
@@ -248,6 +269,29 @@ export default {
         },
         isOnline() {
             return this.onlineStatus
+        },
+        supplierPercent() {
+            if (!this.supplier) return null
+
+            const percentages = this.supplier.percentages
+            const rawPercent = Array.isArray(percentages) && percentages.length > 0
+                ? this.supplier.total_percent
+                : this.supplier.percent
+
+            if (rawPercent === null || rawPercent === undefined || rawPercent === '') {
+                return null
+            }
+
+            const percent = Number(rawPercent)
+            return Number.isFinite(percent) ? percent : null
+        },
+        supplierContribution() {
+            if (this.supplierPercent === null) return 0
+
+            const totalPrice = Number(this.form.total_price || 0)
+            return Number.isFinite(totalPrice)
+                ? totalPrice * this.supplierPercent / 100
+                : 0
         }
     },
     data() {
@@ -285,6 +329,7 @@ export default {
             customerName: '',
             supplierName: '',
             product: null,
+            supplier: null,
             isEdit: false
         }
     },
@@ -297,6 +342,7 @@ export default {
             this.agentName = this.initialData.agent?.name || ''
             this.customerName = this.initialData.customer?.name || ''
             this.supplierName = this.initialData.supplier?.name || ''
+            this.supplier = this.initialData.supplier || null
             this.product = this.initialData.product || null
         }
 
@@ -320,6 +366,19 @@ export default {
         window.removeEventListener('offline-queue-changed', this.updateOfflineCount);
     },
     methods: {
+        formatPercent(value) {
+            return Number(value).toLocaleString('ru-RU', {
+                maximumFractionDigits: 2
+            })
+        },
+
+        formatMoney(value) {
+            return Number(value || 0).toLocaleString('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })
+        },
+
         pluralize(n, forms) {
             const abs = Math.abs(n) % 100;
             const n1 = abs % 10;
@@ -367,6 +426,7 @@ export default {
             const oldSupplierId = this.form.supplier_id
             this.form.supplier_id = null
             this.supplierName = null
+            this.supplier = null
             this.product_filters.supplier_id = null
 
             if (oldSupplierId !== supplier.id) {
@@ -377,6 +437,7 @@ export default {
             this.$nextTick(() => {
                 this.form.supplier_id = supplier.id
                 this.supplierName = supplier.name
+                this.supplier = supplier
                 this.tab = 'main'
                 this.product_filters.supplier_id = supplier.id
             })
@@ -447,6 +508,7 @@ export default {
                 this.agentName = '';
                 this.customerName = '';
                 this.supplierName = '';
+                this.supplier = null;
                 this.product = null;
             }
         },
@@ -577,7 +639,7 @@ export default {
 }
 .sale-form .form-floating,
 .sale-form .input-group {
-    //margin-bottom: 14px !important;
+//margin-bottom: 14px !important;
 }
 .sale-form .form-control,
 .sale-form .form-select {
@@ -666,6 +728,32 @@ export default {
     background-color: #fff3d6 !important;
     color: #8b5b00 !important;
 }
+.sale-form .supplier-contribution-preview {
+    padding: 14px 16px;
+    border: 1px solid #b9e4cc;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #f0fbf5 0%, #e6f7ed 100%);
+}
+
+.sale-form .supplier-contribution-preview__label {
+    color: #18794e;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.sale-form .supplier-contribution-preview__hint {
+    margin-top: 3px;
+    color: #638372;
+    font-size: 11px;
+}
+
+.sale-form .supplier-contribution-preview__amount {
+    color: #137347;
+    font-size: 19px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
 .sale-form .btn-primary {
     min-height: 50px;
     border: 0;
